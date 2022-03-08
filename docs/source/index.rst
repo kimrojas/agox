@@ -27,6 +27,7 @@ Contents
    pt14_example/example_pt14
    pt14_example/example_pt14_slurm
    pt14_example/example_pt14_analysis
+   Ru3N4_example/ru3n4_script
    observers
    abstract_base_classes
    inheritance_generator/example
