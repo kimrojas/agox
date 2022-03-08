@@ -1,0 +1,226 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Observers &#8212; AGOX 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/pyramid.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Abstract Base Classes" href="abstract_base_classes.html" />
+    <link rel="prev" title="Pt14-Au (EMT): Analysis" href="pt14_example/example_pt14_analysis.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="abstract_base_classes.html" title="Abstract Base Classes"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="pt14_example/example_pt14_analysis.html" title="Pt14-Au (EMT): Analysis"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">AGOX 1.0.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Observers</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="observers">
+<h1>Observers<a class="headerlink" href="#observers" title="Permalink to this headline">¶</a></h1>
+<p>The AGOX code relies on an observer-pattern coding scheme to enable the code to be adaptive to new ideas. In fact the
+main function that a normal run is started by just starts an iterative call to the observers of the AGOX object.</p>
+<section id="observers-in-general">
+<h2>Observers in general<a class="headerlink" href="#observers-in-general" title="Permalink to this headline">¶</a></h2>
+<p>An attempt at illustrating observers is shown in the figure below. In the top row two subprograms are called sequentially,
+in the second row we have a similar situation, however the second program calls an observer. In this example there is not
+really a difference between this and sequentially calling the three programs <span class="math notranslate nohighlight">\(P_1, \ P_2, \ O_1\)</span>. The key difference
+is that with observers is that <span class="math notranslate nohighlight">\(O_1\)</span> is not hardcoded to follow <span class="math notranslate nohighlight">\(P_2\)</span> so the code skeleton enables both
+overall programs and in fact it allows any sequence of subprograms.</p>
+<figure class="align-default">
+<img alt="_images/observer_figure.png" src="_images/observer_figure.png" />
+</figure>
+</section>
+<section id="observers-to-agox">
+<h2>Observers to AGOX<a class="headerlink" href="#observers-to-agox" title="Permalink to this headline">¶</a></h2>
+<p>The ‘highest level’ of observers in the AGOX code are those to that are observers to the AGOX object.
+The main loop, the one that runs over episodes, of the search function is in the AGOX class of main_agox.py written
+as such</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>        <span class="n">converged</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">episode_counter</span> <span class="o">&lt;</span> <span class="n">N_episodes</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">converged</span><span class="p">:</span> 
+            <span class="bp">self</span><span class="o">.</span><span class="n">episode_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">episode_cache</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1"> Episode: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">episode_counter</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">observer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_observers_in_execution_order</span><span class="p">():</span>
+</pre></div>
+</div>
+<p>The output of a run will include a description of what is actually going on in this loop that looks something like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">=========================</span> <span class="n">Observers</span> <span class="o">=========================</span>
+<span class="n">Order</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">Name</span><span class="p">:</span> <span class="n">TimeDependantCollector_make_candidates</span>
+<span class="n">Order</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">Name</span><span class="p">:</span> <span class="n">LCBAcquisitor</span><span class="o">.</span><span class="n">acquire_next_candidate</span>
+<span class="o">=============================================================</span>
+</pre></div>
+</div>
+<p>This lets us know that what the function really does is to sequentially call the ‘make_candidates’ function of the collector
+module and the ‘acquire_next_candidate’ function of the acquisitor. We can thus change the behaviour of the program by
+adding other observers, as an example consider:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">timeit</span> <span class="kn">import</span> <span class="n">default_timer</span> <span class="k">as</span> <span class="n">dt</span>
+
+<span class="k">class</span> <span class="nc">EpisodeTimer</span><span class="p">:</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timings</span> <span class="o">=</span> <span class="p">[]</span>        
+
+    <span class="k">def</span> <span class="nf">start_timer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t0</span> <span class="o">=</span> <span class="n">dt</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">finish_timer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t1</span> <span class="o">=</span> <span class="n">dt</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t1</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">t0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Episode time: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timings</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+
+    <span class="k">def</span> <span class="nf">easy_attach</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agox</span><span class="p">,</span> <span class="n">start_order</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">finish_order</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+        <span class="n">agox</span><span class="o">.</span><span class="n">attach_observer</span><span class="p">(</span><span class="s1">&#39;start_timer&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_timer</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">start_order</span><span class="p">)</span>   
+        <span class="n">agox</span><span class="o">.</span><span class="n">attach_observer</span><span class="p">(</span><span class="s1">&#39;finish_timer&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">finish_timer</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">finish_order</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">save_timings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="o">=</span><span class="s1">&#39;episode_timings.npy&#39;</span><span class="p">):</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">timings</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This defines a very small class that has three methods that are interesting for us, namely the ‘start_timer’, ‘end_timer’
+and ‘easy_attach’ functions. We can use this class like this</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">agox</span> <span class="o">=</span> <span class="n">AGOX</span><span class="p">(</span><span class="n">environment</span><span class="o">=</span><span class="n">environment</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="n">database</span><span class="p">,</span> <span class="n">collector</span><span class="o">=</span><span class="n">collector</span><span class="p">,</span> <span class="n">sampler</span><span class="o">=</span><span class="n">sampler</span><span class="p">,</span>
+        <span class="n">acquisitor</span><span class="o">=</span><span class="n">acquisitor</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">run_idx</span><span class="p">)</span>
+
+<span class="n">et</span> <span class="o">=</span> <span class="n">EpisodeTimer</span><span class="p">()</span>
+<span class="n">et</span><span class="o">.</span><span class="n">easy_attach</span><span class="p">(</span><span class="n">agox</span><span class="p">)</span>
+
+<span class="n">agox</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">N_episodes</span><span class="o">=</span><span class="n">NUM_EPISODES</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The description that the program outputs will now look like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">=========================</span> <span class="n">Observers</span> <span class="o">=========================</span>
+<span class="n">Order</span> <span class="o">-</span><span class="mi">1</span> <span class="o">-</span> <span class="n">Name</span><span class="p">:</span> <span class="n">start_timer</span>
+<span class="n">Order</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">Name</span><span class="p">:</span> <span class="n">TimeDependantCollector_make_candidates</span>
+<span class="n">Order</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">Name</span><span class="p">:</span> <span class="n">LCBAcquisitor</span><span class="o">.</span><span class="n">acquire_next_candidate</span>
+<span class="n">Order</span> <span class="mi">5</span> <span class="o">-</span> <span class="n">Name</span><span class="p">:</span> <span class="n">finish_timer</span>
+<span class="o">=============================================================</span>
+</pre></div>
+</div>
+<p>And at the end of each episode it will print something like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Episode</span> <span class="n">time</span><span class="p">:</span> <span class="mf">64.62845606356859</span>
+</pre></div>
+</div>
+<p>So we have added functionality without making any changes to any of the already defined modules of the code, in this case
+it is a somewhat trivial addition, but the underlying principle is very powerful!</p>
+</section>
+<section id="observers-to-the-database">
+<h2>Observers to the Database<a class="headerlink" href="#observers-to-the-database" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction to AGOX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pt14_example/example_pt14.html">Pt14-Au (EMT): Runscript</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pt14_example/example_pt14_slurm.html">Pt14-Au (EMT): Submission</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pt14_example/example_pt14_analysis.html">Pt14-Au (EMT): Analysis</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Observers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#observers-in-general">Observers in general</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#observers-to-agox">Observers to AGOX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#observers-to-the-database">Observers to the Database</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="abstract_base_classes.html">Abstract Base Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inheritance_generator/example.html">Inheritance: An example</a></li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="pt14_example/example_pt14_analysis.html"
+                          title="previous chapter">Pt14-Au (EMT): Analysis</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="abstract_base_classes.html"
+                          title="next chapter">Abstract Base Classes</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/observers.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="abstract_base_classes.html" title="Abstract Base Classes"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="pt14_example/example_pt14_analysis.html" title="Pt14-Au (EMT): Analysis"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">AGOX 1.0.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Observers</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Mads-Peter.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.4.0.
+    </div>
+  </body>
+</html>
