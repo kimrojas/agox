@@ -24,7 +24,7 @@ are
 
 .. literalinclude:: Pt14_kappa2.py 
     :language: python
-    :lines: 44-45
+    :lines: 42-43
 
 Here the template gold surface is defined and the environment module of AGOX is setup using this 
 template with the specification that the search places 14 Pt atoms. 
@@ -33,13 +33,13 @@ Next the GPR model and lower-confidence-bound acquisitor are defined
 
 .. literalinclude:: Pt14_kappa2.py 
     :language: python
-    :lines: 60-66
+    :lines: 58-64
 
 Before the generators are defined a confinement cell is defined 
 
 .. literalinclude:: Pt14_kappa2.py 
     :language: python
-    :lines: 72-78
+    :lines: 70-76
 
 This is used by generators to confine the volume in which the atoms will be placed, in this case 
 the atoms are confined to the center area of the cell in the XY-plane and can only be placed 
@@ -49,7 +49,7 @@ Next the generators are defined
 
 .. literalinclude:: Pt14_kappa2.py 
     :language: python
-    :lines: 80-85
+    :lines: 78-83
 
 Here three types of generators are initiated and gathered in a list that will later be given to the 
 collector module alongside the num_samples dictionary that controls how many candidates are generated 
@@ -59,7 +59,7 @@ To apply model relaxation a postprocessor is defined:
 
 .. literalinclude:: Pt14_kappa2.py 
     :language: python
-    :lines: 109-112
+    :lines: 89-93
 
 The BoxConstraint ensures the relaxation obeys the same confinement as the generators. Next the relaxer 
 is defined, note that it does not use the bare GPR model but rather it obtains a calculator from the acquisitor. 
@@ -70,7 +70,7 @@ Finally the main AGOX object is initialized using the defined modules and the se
 
 .. literalinclude:: Pt14_kappa2.py 
     :language: python
-    :lines: 97-100
+    :lines: 109-112
 
 The script produces a number of files, some of which are plots of the confinement limits such as this one 
 generated for the StartGenerator

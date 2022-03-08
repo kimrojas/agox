@@ -18,9 +18,6 @@ from agox.modules.postprocessors.postprocess_io_relax import PrimaryPostProcessI
 from agox.modules.samplers.sampler_kmeans import SamplerKMeans
 from agox.modules.postprocessors.constraints.box_constraint import BoxConstraint
 
-KAPPA = 2
-NUM_EPISODES = 100
-
 ################################################################################################
 # Input arguments
 ################################################################################################
@@ -63,7 +60,7 @@ model_calculator = ModelGPR(model, update_interval=1, optimize_frequency=25,
                             optimize_loglikelyhood=True, use_saved_features=True)
 model_calculator.add_as_observer_to_database(database)
 
-acquisitor = LowerConfidenceBoundAcquisitor(model_calculator, kappa=KAPPA, verbose=True)
+acquisitor = LowerConfidenceBoundAcquisitor(model_calculator, kappa=2, verbose=True)
 
 ################################################################################################
 # Generator settings:
@@ -101,6 +98,7 @@ sampler = SamplerKMeans(feature_calc, database=database, sample_size=10, max_ene
 
 collector = TimeDependentCollector(generators=generators, sampler=sampler, environment=environment, 
                                     num_samples=num_samples, report_timing=True)
+collector.plot_confinement()
 
 ################################################################################################
 # Let get the show running! 
@@ -109,5 +107,5 @@ collector = TimeDependentCollector(generators=generators, sampler=sampler, envir
 agox = AGOX(environment=environment, database=database, collector=collector, sampler=sampler, 
             acquisitor=acquisitor, seed=run_idx, postprocessors=postprocessors, evalulator=evaluator)
 
-agox.run(N_episodes=NUM_EPISODES)
+agox.run(N_episodes=10)
 
