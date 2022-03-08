@@ -14,7 +14,7 @@ The runscript for this looks like this:
     :linenos:
 
 
-So about 120 lines of code to setup the search. 
+So about 110 lines of code to setup the search. 
 
 Walkthrough 
 ___________
@@ -24,7 +24,7 @@ are
 
 .. literalinclude:: Pt14_kappa2.py 
     :language: python
-    :lines: 38-39
+    :lines: 44-45
 
 Here the template gold surface is defined and the environment module of AGOX is setup using this 
 template with the specification that the search places 14 Pt atoms. 
@@ -33,17 +33,13 @@ Next the GPR model and lower-confidence-bound acquisitor are defined
 
 .. literalinclude:: Pt14_kappa2.py 
     :language: python
-    :lines: 57-62
-
-The acquisitor is given both the model and a list of guages, which here only contains an EnergyGauge that 
-uses the EMT calculator from ASE. The acquisitor uses the given model to decide on which candidate to 
-evaluate with the given guages. 
+    :lines: 60-66
 
 Before the generators are defined a confinement cell is defined 
 
 .. literalinclude:: Pt14_kappa2.py 
     :language: python
-    :lines: 68-72
+    :lines: 72-78
 
 This is used by generators to confine the volume in which the atoms will be placed, in this case 
 the atoms are confined to the center area of the cell in the XY-plane and can only be placed 
@@ -53,7 +49,7 @@ Next the generators are defined
 
 .. literalinclude:: Pt14_kappa2.py 
     :language: python
-    :lines: 74-79
+    :lines: 80-85
 
 Here three types of generators are initiated and gathered in a list that will later be given to the 
 collector module alongside the num_samples dictionary that controls how many candidates are generated 
@@ -63,7 +59,7 @@ To apply model relaxation a postprocessor is defined:
 
 .. literalinclude:: Pt14_kappa2.py 
     :language: python
-    :lines: 81-87
+    :lines: 109-112
 
 The BoxConstraint ensures the relaxation obeys the same confinement as the generators. Next the relaxer 
 is defined, note that it does not use the bare GPR model but rather it obtains a calculator from the acquisitor. 
