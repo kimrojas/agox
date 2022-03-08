@@ -27,16 +27,13 @@ NUM_EPISODES = 100
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--index', type=int, default=0)
-parser.add_argument('-t', '--task_per_node', type=int, default=1)
 args = parser.parse_args()    
 run_idx = args.index
 
 ################################################################################################
 # Calculator
 ################################################################################################
-
 from ase.calculators.emt import EMT
-
 calc = EMT()
 evaluator = EnergyEvaluator(calc)
 
@@ -60,8 +57,10 @@ hyperparams = {'lambda1min':lambda1min, 'lambda1max':lambda1max, 'lambda1ini':la
                'lambda2min':lambda2min, 'lambda2max':lambda2max, 'lambda2ini':lambda2ini, 
                'theta0min':theta0min, 'theta0max':theta0max, 'theta0ini':theta0ini}
             
-model, feature_calc = get_default_GPR_model(environment=environment, use_delta_func=True, return_feature_calc=True, **hyperparams)
-model_calculator = ModelGPR(model, update_interval=1, optimize_frequency=25, optimize_loglikelyhood=True, use_saved_features=True)
+model, feature_calc = get_default_GPR_model(environment=environment, use_delta_func=True, 
+                                            return_feature_calc=True, **hyperparams)
+model_calculator = ModelGPR(model, update_interval=1, optimize_frequency=25, 
+                            optimize_loglikelyhood=True, use_saved_features=True)
 model_calculator.add_as_observer_to_database(database)
 
 acquisitor = LowerConfidenceBoundAcquisitor(model_calculator, kappa=KAPPA, verbose=True)
@@ -89,9 +88,10 @@ num_samples = {0:[10, 15, 5]}
 # # Ensemble / Sampler / Acquisitor
 # ################################################################################################
 
-relaxer = PrimaryPostProcessIORelax(model=acquisitor.get_acquisition_calculator(), database=database, start_relax=10, sleep_timing=0.2, 
+relaxer = PrimaryPostProcessIORelax(model=acquisitor.get_acquisition_calculator(), database=database, 
+                                        start_relax=10, sleep_timing=0.2, 
                                         optimizer_run_kwargs={'fmax':0.2, 'steps':50}, model_training_mode='primary', 
-                                        optimizer_kwargs={'logfile':None}, 
+                                        optimizer_kwargs ={'logfile':None}, 
                                         optimizer='BFGS', constraints=[BC])
                                         
 postprocessors = [relaxer]
@@ -99,7 +99,8 @@ postprocessors = [relaxer]
 # Ensemble 
 sampler = SamplerKMeans(feature_calc, database=database, sample_size=10, max_energy=25, use_saved_features=True)
 
-collector = TimeDependentCollector(generators=generators, sampler=sampler, environment=environment, num_samples=num_samples, report_timing=True)
+collector = TimeDependentCollector(generators=generators, sampler=sampler, environment=environment, 
+                                    num_samples=num_samples, report_timing=True)
 
 ################################################################################################
 # Let get the show running! 
