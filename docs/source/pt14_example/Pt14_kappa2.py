@@ -56,9 +56,9 @@ hyperparams = {'lambda1min':lambda1min, 'lambda1max':lambda1max, 'lambda1ini':la
             
 model, feature_calc = get_default_GPR_model(environment=environment, use_delta_func=True, 
                                             return_feature_calc=True, **hyperparams)
-model_calculator = ModelGPR(model, update_interval=1, optimize_frequency=25, 
+model_calculator = ModelGPR(model, database=database, update_interval=1, optimize_frequency=25, 
                             optimize_loglikelyhood=True, use_saved_features=True)
-model_calculator.add_as_observer_to_database(database)
+
 
 acquisitor = LowerConfidenceBoundAcquisitor(model_calculator, kappa=2, verbose=True)
 
