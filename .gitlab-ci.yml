@@ -4,6 +4,7 @@ pages:
   stage: deploy
   script:
   - pip install -U sphinx
+  - pip install -U furo
   - pip install -U sphinxcontrib-fulltoc
   - sphinx-build -b html docs/source/. public
   artifacts:
