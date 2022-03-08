@@ -59,7 +59,7 @@ To apply model relaxation a postprocessor is defined:
 
 .. literalinclude:: Pt14_kappa2.py 
     :language: python
-    :lines: 87-92
+    :lines: 88-92
 
 The BoxConstraint ensures the relaxation obeys the same confinement as the generators. Next the relaxer 
 is defined, note that it does not use the bare GPR model but rather it obtains a calculator from the acquisitor. 
@@ -70,7 +70,7 @@ Finally the main AGOX object is initialized using the defined modules and the se
 
 .. literalinclude:: Pt14_kappa2.py 
     :language: python
-    :lines: 108-111
+    :lines: 107-110
 
 The script produces a number of files, some of which are plots of the confinement limits such as this one 
 generated for the StartGenerator
