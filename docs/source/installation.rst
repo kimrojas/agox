@@ -12,9 +12,17 @@ To gain full functionality the installation requires
 Installation
 ____________
 
-To install AGOX clone the repository from and install using pip 
+To install AGOX clone the repository and install using pip 
 
 .. code-block:: console
 
    pip install agox
+
+For development installing in development mode is beneficial
+
+.. code-block:: console
+
+   pip install -e agox
+
+
 
