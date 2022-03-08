@@ -1,5 +1,9 @@
 #+TITLE:AGOX
 
+Check out the documentation at 
+
+https://agox.gitlab.io/agox/
+
 * Installation:
 Make sure you have a clean python environment. Eg. by:
 #+begin_src bash
