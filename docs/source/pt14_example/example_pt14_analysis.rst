@@ -6,7 +6,7 @@ the performance of the search and the results can be obtained using the batch_an
 
 .. code-block:: console
 
-   (user) $ python $AGOX_DIR/utils/batch_analysis.py -d databases/ -DE 0.25
+   python $AGOX_DIR/utils/batch_analysis.py -d databases/ -DE 0.25
 
 Where databases/ is a folder that contains all of the database (.db) files produced by a particular restart of the search. 
 With the files produced by the previous example the output looks lke so: 
