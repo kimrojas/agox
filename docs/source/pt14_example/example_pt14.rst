@@ -11,6 +11,7 @@ The runscript for this looks like this:
 
 .. literalinclude:: Pt14_kappa2.py 
     :language: python
+    :lineson:
 
 So about 120 lines of code to setup the search. 
 
