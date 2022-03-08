@@ -59,7 +59,7 @@ To apply model relaxation a postprocessor is defined:
 
 .. literalinclude:: Pt14_kappa2.py 
     :language: python
-    :lines: 88-92
+    :lines: 87-92
 
 The BoxConstraint ensures the relaxation obeys the same confinement as the generators. Next the relaxer 
 is defined, note that it does not use the bare GPR model but rather it obtains a calculator from the acquisitor. 
