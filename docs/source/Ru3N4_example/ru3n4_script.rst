@@ -35,5 +35,7 @@ with the 'mpi_command' argument:
 
      calc = GPAW_IO(..., mpi_command='mpiexec')
 
+Which may be changed to whatever is appropriate on your system, e.g. 'srun' on Slurm clusters.
 
-
+Note that the calculator uses IO operations (ase.read/write) to communicate with the secondary process which adds a slight overhead, however 
+it is rather minor unless the DFT calculation is very fast!
