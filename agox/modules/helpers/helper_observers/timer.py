@@ -8,8 +8,8 @@ class Timer(Observer):
         super().__init__()
         self.verbose = verbose
         self.timings = []
-        self.start_order = 0
-        self.finish_order = 10
+        self.start_order = start_order
+        self.finish_order = finish_order
 
     def start_timer(self):
         self.t0 = dt()

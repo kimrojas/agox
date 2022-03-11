@@ -49,36 +49,57 @@ an additional observer
     :language: python
 
 This defines a very small class that has three methods that are interesting for us, namely the 'start_timer', 'end_timer' 
-and 'easy_attach' functions. We can use this class like this 
+and 'attach' functions (attach being a required function!). We can use this class like this 
 
 .. code-block:: python 
 
-    agox = AGOX(environment=environment, db=database, collector=collector, sampler=sampler, 
-            acquisitor=acquisitor, seed=run_idx)
+    timer = Timer()
 
-    et = EpisodeTimer()
-    et.easy_attach(agox)
+    agox = AGOX(environment=environment, db=database, collector=collector, sampler=sampler, 
+            acquisitor=acquisitor, seed=run_idx, timer=timer)
 
     agox.run(N_episodes=NUM_EPISODES)
 
+Note that we just pass the 'timer'-object to the AGOX class, and in fact we can parse using arbitary keyword argument! 
+The AGOX class will interpret all kwargs as observers and attempt to attach them using their 'attach'-functions. 
+The base-classes of most modules have this function defined already, e.g. it is not necessary to rewrite it to 
+try a new postprocessor! 
+
 The description that the program outputs will now look like this::
 
-    ========================= Observers =========================
-    Order -1 - Name: start_timer
-    Order 1 - Name: TimeDependantCollector_make_candidates
-    Order 2 - Name: LCBAcquisitor.acquire_next_candidate
-    Order 5 - Name: finish_timer
-    =============================================================
+    |=================================== Observers ===================================|
+    |  Order 0 - Name: start_timer                                                    |
+    |  Order 1 - Name: SamplerKMeans.setup                                            |
+    |  Order 2 - Name: TimeDependantCollector.generate_candidates                     |
+    |  Order 3.0 - Name: IO_relax.postprocess_candidates                              |
+    |  Order 4 - Name: LCBAcquisitor.prioritize_candidates                            |
+    |  Order 5 - Name: EnergyEvaluator.evaluate_candidates                            |
+    |  Order 6 - Name: Database.store_in_database                                     |
+    |  Order 10 - Name: finish_timer                                                  |
+    |=================================================================================|
 
 And at the end of each episode it will print something like this:: 
 
-    Episode time: 64.62845606356859
+    Time: 64.62845606356859
+
+We can change the order of the 'finish_timer' method to time different parts of the program, e.g. if we set it to 2.5 it will 
+time the setup of the sampler and the generation of candidates and the output will change to::
+
+    |=================================== Observers ===================================|
+    |  Order 0 - Name: start_timer                                                    |
+    |  Order 1 - Name: SamplerKMeans.setup                                            |
+    |  Order 2 - Name: TimeDependantCollector.generate_candidates                     |
+    |  Order 2.5 - Name: finish_timer                                                 |
+    |  Order 3.0 - Name: IO_relax.postprocess_candidates                              |
+    |  Order 4 - Name: LCBAcquisitor.prioritize_candidates                            |
+    |  Order 5 - Name: EnergyEvaluator.evaluate_candidates                            |
+    |  Order 6 - Name: Database.store_in_database                                     |
+    |=================================================================================|
 
 So we have added functionality without making any changes to any of the already defined modules of the code, in this case 
 it is a somewhat trivial addition, but the underlying principle is very powerful!
 
-
-Observers to the Database
--------------------------
+Sharing data between observers
+-------------------------------
 
 
