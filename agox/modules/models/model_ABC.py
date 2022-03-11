@@ -7,11 +7,14 @@ import numpy as np
 
 class ModelBaseClass(Calculator, ABC, Observer):
 
-    def __init__(self, verbose=True, **kwargs):
+    def __init__(self, verbose=True, database=None, **kwargs):
         super().__init__(**kwargs)
         self.verbose = verbose
         self._ready_state = False
         self.part_of_delta_model = False
+
+        if database is not None:
+            self.add_as_observer_to_database(database)
 
     @property
     @abstractmethod

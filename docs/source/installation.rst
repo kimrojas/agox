@@ -25,4 +25,3 @@ For development installing in development mode is beneficial
    pip install -e agox
 
 
-

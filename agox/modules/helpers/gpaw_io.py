@@ -81,7 +81,7 @@ class GPAW_IO(Calculator):
 
     implemented_properties = ['energy', 'forces']
 
-    def __init__(self, parexe=True, script_name='gpaw_calc.py', settings_name='gpaw_settings.pckl', par_command='mpiexec', modules=[], **kwargs):
+    def __init__(self, parexe=True, par_command='mpiexec', script_name='gpaw_calc.py', settings_name='gpaw_settings.pckl', modules=[], **kwargs):
         Calculator.__init__(self)
         
         self.parexe = parexe
@@ -97,7 +97,7 @@ class GPAW_IO(Calculator):
         self.input_file = 'gpaw_io_input.traj'
         self.output_file = 'gpaw_io_output.traj'
 
-        #self.prepare()
+        self.prepare()
 
     def calculate(self, atoms, properties, system_changes):
         Calculator.calculate(self, atoms, properties, system_changes)
