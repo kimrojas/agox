@@ -1,0 +1,291 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Abstract Base Classes &#8212; AGOX 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/pyramid.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Inheritance: An example" href="inheritance_generator/example.html" />
+    <link rel="prev" title="Observers" href="observers.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="inheritance_generator/example.html" title="Inheritance: An example"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="observers.html" title="Observers"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">AGOX 1.0.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Abstract Base Classes</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="abstract-base-classes">
+<h1>Abstract Base Classes<a class="headerlink" href="#abstract-base-classes" title="Permalink to this headline">¶</a></h1>
+<p>In AGOX all of the main elements have an abstract base class that details that must be inherited from when implementing
+a specific version. This is to ensure compatibility and consistent naming of methods that may be used by other modules.</p>
+<p>As an example we can look at the generator base class</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">ase.data</span> <span class="kn">import</span> <span class="n">covalent_radii</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+
+<span class="kn">from</span> <span class="nn">agox.modules.candidates</span> <span class="kn">import</span> <span class="n">StandardCandidate</span>
+
+<span class="n">dimensionality_angles</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="mi">3</span><span class="p">:{</span><span class="s1">&#39;theta&#39;</span><span class="p">:[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">],</span> <span class="s1">&#39;phi&#39;</span><span class="p">:[</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">]},</span>
+                        <span class="mi">2</span><span class="p">:{</span><span class="s1">&#39;theta&#39;</span><span class="p">:[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">],</span> <span class="s1">&#39;phi&#39;</span><span class="p">:[</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">]},</span>
+                        <span class="mi">1</span><span class="p">:{</span><span class="s1">&#39;theta&#39;</span><span class="p">:[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;phi&#39;</span><span class="p">:[</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">]}</span>
+                        <span class="p">}</span>
+
+<span class="k">class</span> <span class="nc">GeneratorBaseClass</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">confinement_cell</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cell_corner</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">c1</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">c2</span><span class="o">=</span><span class="mf">1.25</span><span class="p">,</span> <span class="n">dimensionality</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        B: Matrix that defines that defines the cell atoms can be placed in. </span>
+<span class="sd">        c: Lower left corner of cell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">confinement_cell</span> <span class="o">=</span> <span class="n">confinement_cell</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cell_corner</span> <span class="o">=</span> <span class="n">cell_corner</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">confined</span> <span class="o">=</span> <span class="n">confinement_cell</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">cell_corner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">c1</span> <span class="o">=</span> <span class="n">c1</span> <span class="c1"># Lower limit on bond lengths. </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">c2</span> <span class="o">=</span> <span class="n">c2</span> <span class="c1"># Upper limit on bond lengths. </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dimensionality</span> <span class="o">=</span> <span class="n">dimensionality</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">candidate_instantiator</span> <span class="o">=</span> <span class="n">StandardCandidate</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">confined</span><span class="p">:</span>
+            <span class="c1"># Checks if the confinement cell matches the given dimensionality, this assumes </span>
+            <span class="c1"># that a 2D search happens in the XY plane and a 1D search happens on the X axis.</span>
+            <span class="c1"># Thus the z-column of confinement_cell needs to be zero for 2D and z/y columns for 1D. </span>
+            <span class="c1"># Ensures that default methods will generate vectors that obey the dimensionality. </span>
+            <span class="k">if</span> <span class="n">dimensionality</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">confinement_cell</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)),</span> <span class="s1">&#39;Confinement cell does not match dimensionality (Not 3D)&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">effective_confinement_cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">confinement_cell</span>
+            <span class="k">if</span> <span class="n">dimensionality</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">confinement_cell</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">),</span> <span class="s1">&#39;Confinemnt cell does not match dimensionality (Not 2D)&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">effective_confinement_cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">confinement_cell</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">dimensionality</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">confinement_cell</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">confinement_cell</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">),</span> <span class="s1">&#39;Confinemnt cell does not match dimensionality (Not 1D)&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">effective_confinement_cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">confinement_cell</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_candidates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sampler</span><span class="p">,</span> <span class="n">environment</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sampler</span><span class="p">,</span> <span class="n">environment</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_candidates</span><span class="p">(</span><span class="n">sampler</span><span class="p">,</span> <span class="n">environment</span><span class="p">)</span>
+    
+    <span class="c1">####################################################################################################################</span>
+    <span class="c1"># Convenience methods:</span>
+    <span class="c1">####################################################################################################################</span>
+
+    <span class="k">def</span> <span class="nf">convert_to_candidate_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms_type_object</span><span class="p">,</span> <span class="n">template</span><span class="p">):</span>
+        <span class="n">candidate</span> <span class="o">=</span>  <span class="bp">self</span><span class="o">.</span><span class="n">candidate_instantiator</span><span class="p">(</span><span class="n">template</span><span class="o">=</span><span class="n">template</span><span class="p">,</span> <span class="n">positions</span><span class="o">=</span><span class="n">atoms_type_object</span><span class="o">.</span><span class="n">positions</span><span class="p">,</span> <span class="n">numbers</span><span class="o">=</span><span class="n">atoms_type_object</span><span class="o">.</span><span class="n">numbers</span><span class="p">,</span> 
+                                          <span class="n">cell</span><span class="o">=</span><span class="n">atoms_type_object</span><span class="o">.</span><span class="n">cell</span><span class="p">)</span>
+
+        <span class="n">candidate</span><span class="o">.</span><span class="n">add_meta_information</span><span class="p">(</span><span class="s1">&#39;generator&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">candidate</span>
+
+    <span class="k">def</span> <span class="nf">check_confinement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">positions</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks that all of the given positions are within the confinement cell. </span>
+<span class="sd">        If B and c have not been specified it always returns True. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">confined</span><span class="p">:</span>             
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_positions_within_confinement</span><span class="p">(</span><span class="n">positions</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">check_positions_within_confinement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">positions</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns boolean array indicating which atoms are within the confinement limits. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">confined</span><span class="p">:</span>
+            <span class="n">positions</span> <span class="o">=</span> <span class="n">positions</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+            <span class="n">C</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">effective_confinement_cell</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="p">(</span><span class="n">positions</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">cell_corner</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">((</span><span class="n">C</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">C</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">positions</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">check_new_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">candidate</span><span class="p">,</span> <span class="n">new_position</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">skipped_indices</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if new positions is not too close or too far to any other atom. </span>
+
+<span class="sd">        Probably not be the fastest implementation, so may be worth it to optimize at some point. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">succesful</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">candidate</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">skipped_indices</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">covalent_dist_ij</span> <span class="o">=</span> <span class="n">covalent_radii</span><span class="p">[</span><span class="n">candidate</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">number</span><span class="p">]</span> <span class="o">+</span> <span class="n">covalent_radii</span><span class="p">[</span><span class="n">number</span><span class="p">]</span>
+            <span class="n">rmin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">c1</span> <span class="o">*</span> <span class="n">covalent_dist_ij</span>
+            <span class="n">rmax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">c2</span> <span class="o">*</span> <span class="n">covalent_dist_ij</span>
+
+            <span class="n">distance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">new_position</span><span class="o">-</span><span class="n">candidate</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">distance</span> <span class="o">&lt;</span> <span class="n">rmin</span><span class="p">:</span> <span class="c1"># If a position is too close we should just give up. </span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="n">distance</span> <span class="o">&gt;</span> <span class="n">rmax</span><span class="p">:</span> <span class="c1"># If at least a single position is not too far we have a bond.</span>
+                <span class="n">succesful</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">succesful</span> <span class="o">*</span> <span class="n">state</span>
+
+    <span class="k">def</span> <span class="nf">get_sphere_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atomic_number_i</span><span class="p">,</span> <span class="n">atomic_number_j</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a random vector on the sphere of appropriate radii. </span>
+
+<span class="sd">        Behaviour changes based on self.dimensionality: </span>
+<span class="sd">        3: Vector on sphere. </span>
+<span class="sd">        2: Vector on circle (in xy)</span>
+<span class="sd">        1: Vector on line (x)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">covalent_dist_ij</span> <span class="o">=</span> <span class="n">covalent_radii</span><span class="p">[</span><span class="n">atomic_number_i</span><span class="p">]</span> <span class="o">+</span> <span class="n">covalent_radii</span><span class="p">[</span><span class="n">atomic_number_j</span><span class="p">]</span>
+        <span class="n">rmin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">c1</span> <span class="o">*</span> <span class="n">covalent_dist_ij</span>
+        <span class="n">rmax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">c2</span> <span class="o">*</span> <span class="n">covalent_dist_ij</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">rmin</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">,</span> <span class="n">rmax</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_displacement_vector</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_displacement_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">radius</span><span class="p">):</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">*</span><span class="n">dimensionality_angles</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">][</span><span class="s1">&#39;theta&#39;</span><span class="p">])</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">*</span><span class="n">dimensionality_angles</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dimensionality</span><span class="p">][</span><span class="s1">&#39;phi&#39;</span><span class="p">])</span>
+        <span class="n">displacement</span> <span class="o">=</span> <span class="n">radius</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span>
+                                          <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span>
+                                          <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)])</span>
+        <span class="k">return</span> <span class="n">displacement</span>
+
+    <span class="k">def</span> <span class="nf">get_box_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">confinement_cell</span> <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell_corner</span>
+
+    <span class="k">def</span> <span class="nf">assign_from_main</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">main</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">candidate_instantiator</span> <span class="o">=</span> <span class="n">main</span><span class="o">.</span><span class="n">candidate_instantiator</span>
+
+    <span class="c1">####################################################################################################################</span>
+    <span class="c1"># Convenience methods:</span>
+    <span class="c1">####################################################################################################################</span>
+
+    <span class="k">def</span> <span class="nf">set_confinement_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cell</span><span class="p">,</span> <span class="n">cell_corner</span><span class="p">):</span>        
+        <span class="bp">self</span><span class="o">.</span><span class="n">confinement_cell</span> <span class="o">=</span> <span class="n">cell</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cell_corner</span> <span class="o">=</span> <span class="n">cell_corner</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">confined</span> <span class="o">=</span> <span class="kc">True</span>        
+
+    <span class="k">def</span> <span class="nf">set_dimensionality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimensionality</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dimensionality</span> <span class="o">=</span> <span class="n">dimensionality</span>
+</pre></div>
+</div>
+<p>We see that the base class imposes that the ‘get_candidates’-method must be defined, that it must take as arguments
+a sampler and an environment and that we must define the attribute ‘self.name’ of any class that inherits from this one.
+The remaining methods are methods that may be convenient for a wide range of generators, such as checking bond lengths
+or generating vectors. There are also methods for checking that the solutions obey the confinement cell.</p>
+<p>Looking at the base-class and understanding which methods have the &#64;abstractmethod decorator should always be the first
+step when implementing a version of that element. Furthermore you should not rely on methods that are not stated (abstract or default) in the
+ABC when interacting an instance of a class in another module, as other functions are not guaranteed to exists for all versions of that
+class so doing so will potentially cause crashes. Note, this does not mean that you should update the ABC with new methods unless
+you have very good reason to do so, changes to the ABC’s are the least likely to be accepted!</p>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction to AGOX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pt14_example/example_pt14.html">Pt14-Au (EMT): Runscript</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pt14_example/example_pt14_slurm.html">Pt14-Au (EMT): Submission</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pt14_example/example_pt14_analysis.html">Pt14-Au (EMT): Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="observers.html">Observers</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Abstract Base Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inheritance_generator/example.html">Inheritance: An example</a></li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="observers.html"
+                          title="previous chapter">Observers</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="inheritance_generator/example.html"
+                          title="next chapter">Inheritance: An example</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/abstract_base_classes.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="inheritance_generator/example.html" title="Inheritance: An example"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="observers.html" title="Observers"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">AGOX 1.0.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Abstract Base Classes</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Mads-Peter.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.4.0.
+    </div>
+  </body>
+</html>

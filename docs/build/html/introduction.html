@@ -1,0 +1,153 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Introduction to AGOX &#8212; AGOX 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/pyramid.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Pt14-Au (EMT): Runscript" href="pt14_example/example_pt14.html" />
+    <link rel="prev" title="Installation" href="installation.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="pt14_example/example_pt14.html" title="Pt14-Au (EMT): Runscript"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">AGOX 1.0.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Introduction to AGOX</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="introduction-to-agox">
+<h1>Introduction to AGOX<a class="headerlink" href="#introduction-to-agox" title="Permalink to this headline">¶</a></h1>
+<p>The behaviour of an AGOX search is controlled through several modules, with a search generally requiring
+the choice of</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Environment</p></li>
+<li><p>Generators</p></li>
+<li><p>Collector</p></li>
+<li><p>Postprocessors</p></li>
+<li><p>Acquisitor</p></li>
+<li><p>Model</p></li>
+<li><p>Sampler</p></li>
+<li><p>Database</p></li>
+</ul>
+</div></blockquote>
+<p>The <strong>environment</strong> defines the physical setup of the search problem including how many atoms and of which kind,
+the shape, the template, and the shape and size of the simulation cell.</p>
+<p><strong>Generators</strong> are responsible for proposing new candidate structures, i.e. by randomly placing atoms the
+atoms that participate in the search in the simulation cell or in more guided ways. The generation
+procedure may be influenced by previously generated Candidates managed by a <strong>sampler</strong>. These candidates
+are collected by the <strong>collector</strong> which can apply <strong>postprocessors</strong> such as relaxation in a surrogate
+model to each proposed candidate. Before the <strong>acquisitor</strong> chooses a candidate for which to do an
+energy calculation. This may then be used to update any <strong>models</strong> use by e.g. the acquisitor or the postprocessors.
+The results are stored in a <strong>database</strong>.</p>
+<figure class="align-default">
+<img alt="_images/agox_flowchart_paper.pdf" src="_images/agox_flowchart_paper.pdf" />
+</figure>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction to AGOX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pt14_example/example_pt14.html">Pt14-Au (EMT): Runscript</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pt14_example/example_pt14_slurm.html">Pt14-Au (EMT): Submission</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pt14_example/example_pt14_analysis.html">Pt14-Au (EMT): Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="observers.html">Observers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="abstract_base_classes.html">Abstract Base Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inheritance_generator/example.html">Inheritance: An example</a></li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="installation.html"
+                          title="previous chapter">Installation</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="pt14_example/example_pt14.html"
+                          title="next chapter">Pt14-Au (EMT): Runscript</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/introduction.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="pt14_example/example_pt14.html" title="Pt14-Au (EMT): Runscript"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">AGOX 1.0.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Introduction to AGOX</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Mads-Peter.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.4.0.
+    </div>
+  </body>
+</html>
