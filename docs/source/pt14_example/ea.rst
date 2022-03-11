@@ -1,8 +1,8 @@
-Random structure search
+Evolutionary algorithm
 ========================
 
 Runscript
 
-.. literalinclude:: rss_script.py
+.. literalinclude:: ea_script.py
     :language: python
 

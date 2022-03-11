@@ -1,8 +1,8 @@
-Random structure search
+Basin-hopping
 ========================
 
 Runscript
 
-.. literalinclude:: rss_script.py
+.. literalinclude:: bh_script.py
     :language: python
 
