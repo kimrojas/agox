@@ -175,9 +175,10 @@ The
 
 .. note:: 
 
-   While looking for the command for this I forgot why I wanted it... 
-
-
+    The 'main_add_to_cache' function expects a list-object! The items in the list can be of any type, but 
+    what is passed has to be a list! If in append mode (mode='a') the passed list will be appended 
+    to the existing list if it exists and if not a new list will be created. In write mode (mode='w') the 
+    entry is always overwritten!
 
 
 
