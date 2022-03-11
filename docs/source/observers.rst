@@ -102,4 +102,103 @@ it is a somewhat trivial addition, but the underlying principle is very powerful
 Sharing data between observers
 -------------------------------
 
+The previous example is simple enough that data is not shared between the Timer-observer and any of the other observers, 
+but that is not generally the case. The AGOX class holds a dict that the observers can communicate through, using designated
+methods. 
+
+.. literalinclude:: ../../agox/observer_handler.py
+    :language: python
+    :lines: 238-244
+
+These functions are somewhat opague, and as is evident much of it is handled by 'main_add_to_cache' and 'main_get_from_cache'
+which are methods defined on the AGOX class. However this ensures that we can keep track of what each observers wants to 
+read or write from the cache. To understand how it works we can look at an example 
+
+.. literalinclude:: ../../agox/modules/helpers/helper_observers/test_io_observer.py 
+    :language: python
+    :lines: 3-20
+
+The initialization function just passes some arguments to its parent-class Observer, 'gets' and 'sets' are dictionaries 
+that control how the observers access the cache. The keys become the names of attributes of the class-object with values 
+becoming the values of the attribute. We can attach this observer in the same way as with the Timer and we will now get a 
+report that looks like this:: 
+
+    |=================================== Observers ===================================|
+    |  Order 1 - Name: SamplerKMeans.setup                                            |
+    |  Order 2 - Name: TimeDependantCollector.generate_candidates                     |
+    |  Order 2.5 - Name: ObserverWithIOio_method                                      |
+    |  Order 3.0 - Name: IO_relax.postprocess_candidates                              |
+    |  Order 4 - Name: LCBAcquisitor.prioritize_candidates                            |
+    |  Order 5 - Name: EnergyEvaluator.evaluate_candidates                            |
+    |  Order 6 - Name: Database.store_in_database                                     |
+    |=================================================================================|
+
+To clarify, the 'method_that_looks_candidates'-method calls 'main_get_from_cache' using 'self.key_name' which resolves 
+to 'candidates'. Something has been added with that key by the collector, if the key did not match anything in the episode 
+cache the program would fail. The program also prints a report about which observers get/set what, in this case it looks like 
+so::
+
+    |=========================== Observers set/get reports ===========================|
+    |  SamplerKMeans                                                                  |
+    |      Doesnt set/get anything                                                    |
+    |  TimeDependantCollector                                                         |
+    |      Sets 'candidates'                                                          |
+    |  ObserverWithIO                                                                 |
+    |      Gets 'candidates'                                                          |
+    |      Sets 'seen_candidates'                                                     |
+    |  IO_relax                                                                       |
+    |      Gets 'candidates'                                                          |
+    |      Sets 'candidates'                                                          |
+    |  LCBAcquisitor                                                                  |
+    |      Gets 'candidates'                                                          |
+    |      Sets 'prioritized_candidates'                                              |
+    |  EnergyEvaluator                                                                |
+    |      Gets 'prioritized_candidates'                                              |
+    |      Sets 'evaluated_candidates'                                                |
+    |  Database                                                                       |
+    |      Gets 'evaluated_candidates'                                                |
+    |                                                                                 |
+    |  Overall:                                                                       |
+    |  Get keys: {'candidates', 'prioritized_candidates', 'evaluated_candidates'}     |
+    |  Set keys: {'candidates', 'seen_candidates', 'prioritized_candidates', 'evaluated_candidates'}|
+    |  Key match: False                                                               |
+    |  Sets do not match, this can be problematic!                                    |
+    |  Automatic check shows observers set value that is unused!                      |
+    |  May cause unintended behaviour!                                                |
+    |  Umatched keys ['seen_candidates']                                              |
+    |=================================================================================|
+
+We can see that the collector sets 'candidates', our new module reads them and sets 'seen_candidates' but no other 
+modules access these! This will not generally break the program, but is probably unintended! 
+
+The 
+
+.. note:: 
+
+   While looking for the command for this I forgot why I wanted it... 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
