@@ -23,18 +23,27 @@ as such
 
 .. literalinclude:: ../../agox/main.py
     :language: python
-    :lines: 82-87
+    :lines: 91-99
 
 The output of a run will include a description of what is actually going on in this loop that looks something like this::
 
-    ========================= Observers =========================
-    Order 1 - Name: TimeDependantCollector_make_candidates
-    Order 2 - Name: LCBAcquisitor.acquire_next_candidate
-    =============================================================
+    |=================================== Observers ===================================|
+    |  Order 1 - Name: SamplerKMeans.setup                                            |
+    |  Order 2 - Name: TimeDependantCollector.generate_candidates                     |
+    |  Order 3.0 - Name: IO_relax.postprocess_candidates                              |
+    |  Order 4 - Name: LCBAcquisitor.prioritize_candidates                            |
+    |  Order 5 - Name: EnergyEvaluator.evaluate_candidates                            |
+    |  Order 6 - Name: Database.store_in_database                                     |
+    |=================================================================================|
 
-This lets us know that what the function really does is to sequentially call the 'make_candidates' function of the collector 
-module and the 'acquire_next_candidate' function of the acquisitor. We can thus change the behaviour of the program by 
-adding other observers, as an example consider: 
+This tells us about the order in which the observers are called, and we can understand the overall behaviour of the algorithm 
+in each iteration. First the sampler is updated, then the collector calls the generators to make new candidates. 
+These candidates are relaxed using a postprocessor before a lower-confidence-bound acquisitor picks the most promising one. 
+The selected candidate is passed on to the energy evaluator and finally the evaluated the candidate is added to the database. 
+
+
+We may alter this behaviour from the runscript without any changes to the existing code, as an example we can attach 
+an additional observer
 
 .. literalinclude:: ../../agox/modules/helpers/helper_observers/episode_timer.py
     :language: python

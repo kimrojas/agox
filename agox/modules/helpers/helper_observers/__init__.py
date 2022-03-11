@@ -1,2 +1,2 @@
-from .episode_timer import EpisodeTimer
+from .timer import Timer
 from .grid_printer import GridPrinter

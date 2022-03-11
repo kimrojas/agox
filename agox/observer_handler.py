@@ -253,6 +253,9 @@ class Observer:
         self.assign_from_main(main)
         main.attach_observer(name, func, order=self.order)
 
+    def attach(self, main):
+        pass
+
 if __name__ == '__main__':
 
     # class TestObserverObject:
