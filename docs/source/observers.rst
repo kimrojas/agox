@@ -133,9 +133,16 @@ report that looks like this::
     |  Order 6 - Name: Database.store_in_database                                     |
     |=================================================================================|
 
+.. note:: 
+
+    The 'main_add_to_cache' function expects a list-object! The items in the list can be of any type, but 
+    what is passed has to be a list! If in append mode (mode='a') the passed list will be appended 
+    to the existing list if it exists and if not a new list will be created. In write mode (mode='w') the 
+    entry is always overwritten!
+
 To clarify, the 'method_that_looks_candidates'-method calls 'main_get_from_cache' using 'self.key_name' which resolves 
 to 'candidates'. Something has been added with that key by the collector, if the key did not match anything in the episode 
-cache the program would fail. The program also prints a report about which observers get/set what, in this case it looks like 
+cache the program would fail. The program also prints a report about which observers get/set, in this case it looks like 
 so::
 
     |=========================== Observers set/get reports ===========================|
@@ -171,16 +178,28 @@ so::
 We can see that the collector sets 'candidates', our new module reads them and sets 'seen_candidates' but no other 
 modules access these! This will not generally break the program, but is probably unintended! 
 
-The 
+If we want to change which modules are parsing data to each other we can do so without, see e.g. the basin-hopping script 
+for an example. In general it requires the 'gets' and 'sets' dictionaries, this requires the use of the proper attribute names, to 
+see the attribute names that the modules are using we can get a more detailed report: 
+
+.. code-block:: python 
+
+    agox = AGOX(...)
+
+    agox.observer_reports(report_key=True)
+
+In which case the report will also print the attribute name, as for example:: 
+
+    |  ObserverWithIO                                                                 |
+    |      Gets 'candidates' using key attribute 'key_name'                           |
+    |      Sets 'seen_candidates' using key attribute 'set_name'                      |
+
+Thus data can be redirected through modules in any chronological way, that is any way that the order 
+of execution, by setting these appropriately!
 
 .. note:: 
 
-    The 'main_add_to_cache' function expects a list-object! The items in the list can be of any type, but 
-    what is passed has to be a list! If in append mode (mode='a') the passed list will be appended 
-    to the existing list if it exists and if not a new list will be created. In write mode (mode='w') the 
-    entry is always overwritten!
-
-
+    The dictionary that underpins the data sharing is reset in each episode! 
 
 
 
