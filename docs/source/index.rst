@@ -37,6 +37,10 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+If you found AGOX useful in your work, please cite 
+
+.. literalinclude:: references/agox_citation.txt
+
 This work has been supported by funding from the Villum foundation 
 
 .. figure:: villum_foundation.png
