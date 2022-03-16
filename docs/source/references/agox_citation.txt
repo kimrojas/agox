@@ -7,4 +7,3 @@
             atomistic structures},
 	volume = {TBD},
 	year = {2022}}
-
