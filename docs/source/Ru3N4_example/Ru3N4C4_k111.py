@@ -107,8 +107,6 @@ relaxer = PrimaryPostProcessIORelax(model=acquisitor.get_acquisition_calculator(
                                         optimizer_kwargs={'logfile':None}, 
                                         optimizer='BFGS', constraints=[BC])
 
-postprocessors = [relaxer]
-
 # Ensemble 
 sampler = SamplerKMeans(feature_calc, database=database, sample_size=10, max_energy=25, use_saved_features=True)
 
@@ -120,7 +118,7 @@ collector = TimeDependentCollector(generators=generators, sampler=sampler, envir
 ################################################################################################
 
 agox = AGOX(environment=environment, database=database, collector=collector, sampler=sampler, 
-            acquisitor=acquisitor, evalulator=evalulator, seed=run_idx)
+            acquisitor=acquisitor, evalulator=evalulator, relaxer=relaxer, seed=run_idx)
 
-agox.run(N_episodes=10)
+agox.run(N_episodes=1000)
 
