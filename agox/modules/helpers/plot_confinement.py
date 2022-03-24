@@ -1,4 +1,3 @@
-from cv2 import repeat
 import numpy as np
 from ase.io.utils import cell_to_lines
 import matplotlib.pyplot as plt
