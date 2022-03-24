@@ -1,0 +1,259 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Inheritance: An example &#8212; AGOX 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/pyramid.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Abstract Base Classes" href="../abstract_base_classes.html" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Neuton&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nobile:regular,italic,bold,bolditalic&amp;subset=latin" type="text/css" media="screen" charset="utf-8" />
+<!--[if lte IE 6]>
+<link rel="stylesheet" href="../_static/ie6.css" type="text/css" media="screen" charset="utf-8" />
+<![endif]-->
+
+  </head><body>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../abstract_base_classes.html" title="Abstract Base Classes"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">AGOX 1.0.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Inheritance: An example</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="inheritance-an-example">
+<h1>Inheritance: An example<a class="headerlink" href="#inheritance-an-example" title="Permalink to this headline">¶</a></h1>
+<p>As an example of the OOP framework that AGOX employs a closer look at one of the elements is helpful, specifically the
+generator. As with all modules all generators are based on an ABC that implements a number of methods. Generally the global
+search problem is a configurational problem, that is the difficulty comes from determining bonding patterns which we do not
+wish to encode preconceived ideas about, however for bond lengths an appropriate range can be determined from the covalent radii
+of the involved atoms. Therefore the generator ABC implements a common method to check that all atoms are within such a range, e.g
+from 3/4 to 5/4 of the sum of covalent radii. Additionally the ABC implements methods for checking that atoms are within a
+specified cell, and various methods for generating positions. The ABC has one abstract method ‘get_candidates’
+which is what must be implemented for any specific generator, which we would want by looking at the base-class:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>                        <span class="p">}</span>
+
+<span class="k">class</span> <span class="nc">GeneratorBaseClass</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">confinement_cell</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cell_corner</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">c1</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">c2</span><span class="o">=</span><span class="mf">1.25</span><span class="p">,</span> <span class="n">dimensionality</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        B: Matrix that defines that defines the cell atoms can be placed in. </span>
+<span class="sd">        c: Lower left corner of cell</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">confinement_cell</span> <span class="o">=</span> <span class="n">confinement_cell</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cell_corner</span> <span class="o">=</span> <span class="n">cell_corner</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">confined</span> <span class="o">=</span> <span class="n">confinement_cell</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">cell_corner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">c1</span> <span class="o">=</span> <span class="n">c1</span> <span class="c1"># Lower limit on bond lengths. </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">c2</span> <span class="o">=</span> <span class="n">c2</span> <span class="c1"># Upper limit on bond lengths. </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dimensionality</span> <span class="o">=</span> <span class="n">dimensionality</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">candidate_instantiator</span> <span class="o">=</span> <span class="n">StandardCandidate</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">confined</span><span class="p">:</span>
+            <span class="c1"># Checks if the confinement cell matches the given dimensionality, this assumes </span>
+            <span class="c1"># that a 2D search happens in the XY plane and a 1D search happens on the X axis.</span>
+            <span class="c1"># Thus the z-column of confinement_cell needs to be zero for 2D and z/y columns for 1D. </span>
+            <span class="c1"># Ensures that default methods will generate vectors that obey the dimensionality. </span>
+            <span class="k">if</span> <span class="n">dimensionality</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">confinement_cell</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)),</span> <span class="s1">&#39;Confinement cell does not match dimensionality (Not 3D)&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">effective_confinement_cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">confinement_cell</span>
+            <span class="k">if</span> <span class="n">dimensionality</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">confinement_cell</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">),</span> <span class="s1">&#39;Confinemnt cell does not match dimensionality (Not 2D)&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">effective_confinement_cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">confinement_cell</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">dimensionality</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">confinement_cell</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">confinement_cell</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">),</span> <span class="s1">&#39;Confinemnt cell does not match dimensionality (Not 1D)&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">effective_confinement_cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">confinement_cell</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_candidates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sampler</span><span class="p">,</span> <span class="n">environment</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+</pre></div>
+</div>
+<p>Where the decorator &#64;abstrathmethod tells us that this is a method that has to be implemeneted.</p>
+<p>One such specific generator is what we call a ‘Replace Generator’
+where the ‘get_candidates’ method is implemented as such:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">ReplaceGenerator</span><span class="p">(</span><span class="n">GeneratorBaseClass</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;ReplaceGenerator&#39;</span>    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">acquisitor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_replace</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">amplitude</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_replace</span> <span class="o">=</span> <span class="n">n_replace</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amplitude</span> <span class="o">=</span> <span class="n">amplitude</span>
+
+    <span class="k">def</span> <span class="nf">get_candidates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sampler</span><span class="p">,</span> <span class="n">environment</span><span class="p">):</span>
+
+        <span class="n">candidate</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">get_random_member</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">candidate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span>
+        
+        <span class="n">indices_to_move</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_indices_to_move</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">indices_to_move</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+                <span class="n">radius</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_radius</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+                <span class="n">displacement</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_displacement_vector</span><span class="p">(</span><span class="n">radius</span><span class="p">)</span>
+                <span class="n">new_position</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_new_position_center</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">indices_to_move</span><span class="p">)</span> <span class="o">+</span> <span class="n">displacement</span>
+
+                <span class="c1"># Check confinement limits:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_confinement</span><span class="p">(</span><span class="n">new_position</span><span class="p">):</span>
+                    <span class="k">continue</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_new_position</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="n">new_position</span><span class="p">,</span> <span class="n">candidate</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">number</span><span class="p">,</span> <span class="n">skipped_indices</span><span class="o">=</span><span class="n">indices_to_move</span><span class="p">):</span>
+                    <span class="n">candidate</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="n">new_position</span>
+                    <span class="n">indices_to_move</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+                    <span class="k">break</span>
+
+
+        <span class="n">candidate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_to_candidate_object</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="n">candidate</span><span class="o">.</span><span class="n">get_template</span><span class="p">())</span>
+        <span class="n">candidate</span><span class="o">.</span><span class="n">add_meta_information</span><span class="p">(</span><span class="s1">&#39;description&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">candidate</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The behaviour of the generator is controlled by four methods that are invoked by the ‘get_candidates method’,
+namely ‘get_indices_to_move’, ‘get_radius’, ‘get_displacement_vector’ and ‘get_new_position_center’.
+Where ‘get_displacement_vector’ is default method of the generator ABC. The intended behaviour of the generator is
+also very clear from these four functions, first a set of atoms to be moved are chosen, then they are moved one after
+the other by choosing a radius, getting a vector of that radius and choosing the center around where that displacement
+is made.</p>
+<p>% Note OOP still requires good coding practices, this method would not be nearly as versatile if it had not been using
+% sub-methods calls!</p>
+<p>In the straightforward implementation of the ‘Replace Generator’ both ‘get_indices_to_move’ and ‘get_radius’
+are implemented to choose the properties they control in a uniformly random way and ‘get_new_position_center’
+always chooses the current position of the atom in question. We can easily implement a version of this generator, that is
+beneficial for surface clusters, by inherting from the ReplaceGenerator but changing these few methods, like so:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">agox.modules.generators</span> <span class="kn">import</span> <span class="n">ReplaceGenerator</span>
+<span class="kn">from</span> <span class="nn">scipy.spatial.distance</span> <span class="kn">import</span> <span class="n">cdist</span>
+
+<span class="k">class</span> <span class="nc">CenterOfGeometryGenerator</span><span class="p">(</span><span class="n">ReplaceGenerator</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">selection_percentages</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;low&#39;</span><span class="p">:</span><span class="mf">0.25</span><span class="p">,</span> <span class="s1">&#39;high&#39;</span><span class="p">:</span><span class="mf">0.5</span><span class="p">},</span> <span class="n">extra_radius_amplitude</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">extra_radius_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;low&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="s1">&#39;high&#39;</span><span class="p">:</span><span class="mi">3</span><span class="p">},</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">selection_percentages</span> <span class="o">=</span> <span class="n">selection_percentages</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extra_radius_amplitude</span> <span class="o">=</span> <span class="n">extra_radius_amplitude</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extra_radius_params</span> <span class="o">=</span> <span class="n">extra_radius_params</span>
+
+    <span class="k">def</span> <span class="nf">get_indices_to_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">candidate</span><span class="p">):</span>
+        <span class="c1"># Calculate the distance to the COG: </span>
+        <span class="n">cog</span> <span class="o">=</span> <span class="n">candidate</span><span class="o">.</span><span class="n">get_center_of_geometry</span><span class="p">()</span>        
+        <span class="n">cluster_indices</span> <span class="o">=</span> <span class="n">candidate</span><span class="o">.</span><span class="n">get_optimize_indices</span><span class="p">()</span>
+        <span class="n">cog_distances</span> <span class="o">=</span> <span class="n">cdist</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="n">cluster_indices</span><span class="p">],</span> <span class="n">cog</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+        <span class="c1"># Determine how many atoms to move:</span>
+        <span class="n">cluster_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cluster_indices</span><span class="p">)</span>
+        <span class="n">atoms_picked</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">selection_percentages</span><span class="p">)</span> <span class="o">*</span> <span class="n">cluster_size</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+        <span class="c1"># Pick the &#39;atoms_picked&#39; number of atoms with the furthest distance to the COG. </span>
+        <span class="n">picked_cluster_indices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">cluster_indices</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">cog_distances</span><span class="p">))[</span><span class="mi">0</span><span class="p">:</span><span class="n">atoms_picked</span><span class="p">]])</span>
+
+        <span class="k">return</span> <span class="n">picked_cluster_indices</span>
+
+    <span class="k">def</span> <span class="nf">get_new_position_center</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">candidate</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">indices_to_move</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">candidate</span><span class="o">.</span><span class="n">get_center_of_geometry</span><span class="p">()</span>
+            
+    <span class="k">def</span> <span class="nf">get_radius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">candidate</span><span class="p">):</span>
+        <span class="n">cluster_indices</span> <span class="o">=</span> <span class="n">candidate</span><span class="o">.</span><span class="n">get_optimize_indices</span><span class="p">()</span>
+        <span class="n">cog</span> <span class="o">=</span> <span class="n">candidate</span><span class="o">.</span><span class="n">get_center_of_geometry</span><span class="p">()</span>        
+        <span class="n">cog_distances</span> <span class="o">=</span> <span class="n">cdist</span><span class="p">(</span><span class="n">candidate</span><span class="o">.</span><span class="n">positions</span><span class="p">[</span><span class="n">cluster_indices</span><span class="p">],</span> <span class="n">cog</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cog_distances</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_radius_amplitude</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">extra_radius_params</span><span class="p">)</span>
+
+    
+
+</pre></div>
+</div>
+<p>What should be noted here is that code written in this is very adaptable due to the usage of inheritance. Furthermore,
+experiments such as the one documented here posses no risk of introducing bugs in established parts of the code-base, as
+the interaction with established methods happens through inheritance.</p>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction to AGOX</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pt14_example/example_pt14.html">Pt14-Au (EMT): Runscript</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pt14_example/example_pt14_slurm.html">Pt14-Au (EMT): Submission</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pt14_example/example_pt14_analysis.html">Pt14-Au (EMT): Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../observers.html">Observers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../abstract_base_classes.html">Abstract Base Classes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Inheritance: An example</a></li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../abstract_base_classes.html"
+                          title="previous chapter">Abstract Base Classes</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/inheritance_generator/example.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../abstract_base_classes.html" title="Abstract Base Classes"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">AGOX 1.0.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Inheritance: An example</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Mads-Peter.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.4.0.
+    </div>
+  </body>
+</html>

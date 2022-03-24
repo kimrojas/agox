@@ -1,0 +1,1 @@
+from .candidate_standard import StandardCandidate
