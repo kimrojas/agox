@@ -47,7 +47,7 @@ calc = GPAW_IO(mode='PW(300)',
             txt='dft_log_PW.txt', 
             modules=['from gpaw.utilities import h2gpts', 'from gpaw import FermiDirac'])
 
-evalulator = EnergyEvaluator(calc, verbose=True)
+evaluator = EnergyEvaluator(calc, verbose=True)
 
 ################################################################################################
 # General settings:
@@ -118,7 +118,7 @@ collector = TimeDependentCollector(generators=generators, sampler=sampler, envir
 ################################################################################################
 
 agox = AGOX(environment=environment, database=database, collector=collector, sampler=sampler, 
-            acquisitor=acquisitor, evalulator=evalulator, relaxer=relaxer, seed=run_idx)
+            acquisitor=acquisitor, evaluator=evaluator, relaxer=relaxer, seed=run_idx)
 
 agox.run(N_episodes=1000)
 
