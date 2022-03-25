@@ -1,4 +1,4 @@
-.. _observers:
+.. _My target:
 Observers
 ================================
 

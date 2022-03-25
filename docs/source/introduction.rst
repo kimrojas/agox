@@ -31,4 +31,4 @@ these class instances/objects with each other.
 
 In general the class instances can be connected in two ways. Some classes use other classes and store instances of them as their 
 own properties, e.g. the collector takes and stores instances of generators. The second way involves being observers of the 
-main AGOX iterative loop. This is covered in the section about `observers`_.
+main AGOX iterative loop. This is covered in the section about `My target`_.
