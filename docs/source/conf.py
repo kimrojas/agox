@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'AGOX'
-copyright = '2022, Mads-Peter'
-author = 'Mads-Peter'
+copyright = '2022, AGOX Developers'
+author = 'Mads-Peter V. Christiansen'
 
 # The full version, including alpha/beta/rc tags
 release = '1.0.0'
