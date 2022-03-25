@@ -81,7 +81,7 @@ class PrimaryPostProcessIORelax(PostprocessBaseClass):
     def __init__(self, model, database, optimizer='BFGS', start_relax=5, sleep_timing=1, output_file='output_candidates.traj', 
                 input_file='input_candidates.traj', training_file='training_data.traj', 
                 optimizer_run_kwargs={'fmax':0.5, 'steps':200}, optimizer_kwargs={'logfile':None}, fix_template=True, constraints=[], 
-                model_training_mode='primary', mpi_command='srun', **kwargs):
+                model_training_mode='primary', mpi_command='mpiexec', **kwargs):
         super().__init__(**kwargs)
 
         assert type(optimizer) == str, 'Give optimizer as a string of the name, not an instance of the class'
