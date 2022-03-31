@@ -1,0 +1,2 @@
+from agox.modules.environments.environment_singular import EnvironmentSingular
+
