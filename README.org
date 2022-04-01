@@ -4,36 +4,12 @@ Check out the documentation at
 
 https://agox.gitlab.io/agox/
 
-* Installation:
-Make sure you have a clean python environment. Eg. by:
-#+begin_src bash
-python3 -m venv DIR
-#+end_src
+## Authors: 
 
-Make sure you have an MPI installation. Eg. by:
-#+begin_src bash
-intel/2018.1.163
-ml openmpi/4.0.3
-#+end_src
+AGOX has been written by Mads-Peter Verner Christiansen, Nikolaj Rønne and Bjørk Hammer
+with inspiration and help from current and previous members of the Hammer group at Aarhus University, Denmark.
 
-Then clone the git page:
-#+begin_src bash
-mkdir agox0.1.0
-cd agox0.1.0
-git clone git@gitlab.au.dk:au143309/agox.git .
-#+end_src
+## License: 
 
-Make sure pip is upgraded:
-#+begin_src bash
-pip install --upgrade pip
-#+end_src
+AGOX is released under the GPLv3 license. 
 
-Now install in editable mode with pip:
-#+begin_src bash
-pip install -e .
-#+end_src
-
-Finally testing can be done with:
-#+begin_src bash
-python -m unittest 
-#+end_src

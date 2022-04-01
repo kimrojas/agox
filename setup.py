@@ -18,9 +18,9 @@ extensions = [
 
 setup(
     name="agox",
-    version="0.1.0",
-    url="agox.au.dk...",
-    description="MPs pet project of a global atomistic optimizer",
+    version="1.0.0",
+    url="https://gitlab.com/agox/agox",
+    description="Atomistic Global Optimziation X is a framework structure optimization in materials science.",
     install_requires=[
         "numpy>=1.22.0",
         "ase",
