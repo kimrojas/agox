@@ -1,5 +1,3 @@
-from operator import pos
-from turtle import position
 import numpy as np 
 from time import time
 from ase import Atoms
