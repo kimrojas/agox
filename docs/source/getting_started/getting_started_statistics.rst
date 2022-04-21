@@ -46,13 +46,13 @@ algorithm!
 .. note:: 
 
    The search runs can be made completely reproducible by using the 'seed' argument in the initialization of the 
-   AGOX object. 
+   AGOX object::
 
-   ``agox = AGOX(environment=environment, db=database, collector=collector, gauges=gauges, seed=1)``
+   agox = AGOX(environment=environment, db=database, collector=collector, gauges=gauges, seed=1)``
 
-   If we want to make a set of runs reproducible we can set the seed to the iteration variable
+   If we want to make a set of runs reproducible we can set the seed to the iteration variable::
 
-   ``agox = AGOX(environment=environment, db=database, collector=collector, gauges=gauges, seed=run_idx)``
+   agox = AGOX(environment=environment, db=database, collector=collector, gauges=gauges, seed=run_idx)
 
 
 
