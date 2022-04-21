@@ -18,6 +18,7 @@ Contents
 --------
 .. toctree::
    installation
+   getting_started/getting_started_running_agox
    pt14_example/example_pt14
    pt14_example/example_pt14_slurm
    pt14_example/example_pt14_analysis
