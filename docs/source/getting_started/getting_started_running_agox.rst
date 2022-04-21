@@ -10,7 +10,9 @@ An example of a script is given below.
 This script runs a random-structure-search run for a easy system consisting of just 5 gold atoms and a single nickel atom 
 described by the EMT potential included in ASE. 
 
-Copy the script and save it as rss_script_single.py in a seperate folder, such as example_single (Name is not important, but this is the filename we have used).
+Copy or :donwload:`download rss_script_single.py` the script and save it. 
+
+Run the script
 
 .. code-block:: console
 
@@ -22,6 +24,7 @@ with AGOX.
 
 Assuming that $AGOX_DIR points towards your AGOX installation (otherwise just replace that with the full-path), in the same 
 folder that you did the run, use the command
+
 .. code-block:: console
 
    python $AGOX_DIR/utils/batch_analysis.py -d . -e -hg -c
