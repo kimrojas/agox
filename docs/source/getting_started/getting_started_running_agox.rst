@@ -10,9 +10,7 @@ An example of a script is given below.
 This script runs a random-structure-search run for a easy system consisting of just 5 gold atoms and a single nickel atom 
 described by the EMT potential included in ASE. 
 
-Copy or :donwload:`download <../rss_script_single.py>` the script and save it. 
-
-Run the script
+Copy the script and save it, then run the script
 
 .. code-block:: console
 
