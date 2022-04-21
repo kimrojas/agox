@@ -30,7 +30,7 @@ class Analysis:
         self.delta_energy = delta_energy
         self.threshold = 0
         self.labels = []
-        self.zero_offset = 0 # Some energy expressions have realistic structures in the positive range, having 0 being the 'failed' energy causes problems for these
+        self.zero_offset = 10000 # Some energy expressions have realistic structures in the positive range, having 0 being the 'failed' energy causes problems for these
 
         # Plotting settings:
         self.label_fontsize = 12
@@ -558,7 +558,7 @@ class Analysis:
             print(f'Finished: {finished}'.format(finished))
             print(f'Number of restarts: {self.restarts[num]}')
             print(f'Number of episodes: {np.max(self.episodes[num])}')
-            print(f'Success rate: {self.CDF[num][1][-1] * 100:6.3f} %')
+            print(f'Success rate: {np.nanmax(self.CDF[num][1]) * 100:6.3f} %')
             print(f'Best energy: {np.nanmin(self.best_energies[num, :, :]):.5f}')
 
             if print_all:
