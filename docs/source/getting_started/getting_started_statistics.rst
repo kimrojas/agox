@@ -46,12 +46,7 @@ algorithm!
 .. note:: 
 
    The search runs can be made completely reproducible by using the 'seed' argument in the initialization of the 
-   AGOX object
-   
-   .. code-block:: python
-      agox = AGOX(environment=environment, db=database, collector=collector, gauges=gauges, seed=1)
-
-   If we want to make a set of runs reproducible we can set the seed to the iteration variable::
+   AGOX object. If we want to make a set of runs reproducible we can set the seed to the iteration variable::
 
    agox = AGOX(environment=environment, db=database, collector=collector, gauges=gauges, seed=run_idx)
 
