@@ -6,9 +6,9 @@ pages:
   - pip install -U sphinx
   - pip install -U sphinx-book-theme
   - pip install -U sphinxcontrib-fulltoc
-  - sphinx-build -b html docs/source/. public
+  - sphinx-build -b html docs/source/. main
   artifacts:
     paths:
-    - public
+    - main
   only:
-  - public
+  - main
