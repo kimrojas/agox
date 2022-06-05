@@ -9,6 +9,6 @@ pages:
   - sphinx-build -b html docs/source/. public
   artifacts:
     paths:
-    - main
+    - public
   only:
   - main
