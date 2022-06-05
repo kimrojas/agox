@@ -18,7 +18,7 @@ extensions = [
 
 setup(
     name="agox",
-    version="1.0.0",
+    version="1.1.0",
     url="https://gitlab.com/agox/agox",
     description="Atomistic Global Optimziation X is a framework structure optimization in materials science.",
     install_requires=[

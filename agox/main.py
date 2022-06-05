@@ -14,7 +14,7 @@ from agox.modules.helpers.helper_observers.logger import Logger
 
 from agox.modules.helpers.writer import header_footer, Writer, ICON, header_print
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 class AGOX(ObserverHandler, FinalizationHandler, Writer):
     """
