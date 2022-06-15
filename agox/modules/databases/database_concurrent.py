@@ -79,8 +79,8 @@ class ConcurrentDatabase(Database):
         super().store_information(candidate=candidate)
         self.storage_dict['worker_number'].append(self.worker_number)
 
-    def db_to_candidate(self, structure):
-        candidate = super().db_to_candidate(structure)
+    def db_to_candidate(self, structure, meta_dict=None):
+        candidate = super().db_to_candidate(structure, meta_dict=meta_dict)
 
         candidate.add_meta_information('worker_number', structure['worker_number'])
         candidate.add_meta_information('iteration', structure['iteration'])
@@ -101,7 +101,7 @@ class ConcurrentDatabase(Database):
             
             # Restore the database to memory. 
             # This will change the order of candidates in the Database, so be careful if another module relies on that!
-            self.restore_to_memory()
+            self.fast_restore_to_memory()
             self.writer('Succesfully synced database')
 
             self.writer('Number of candidates in database {}'.format(len(self)))

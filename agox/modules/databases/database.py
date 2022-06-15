@@ -101,6 +101,7 @@ class Database(DatabaseBaseClass):
 
     def store_candidate(self, candidate, accepted=True, write=True, dispatch=True):
         # Needs some way of handling a dummy candidate, probably boolean argument.
+        
         if accepted:
             self.candidates.append(candidate)
             self.candidate_energies.append(candidate.get_potential_energy())
@@ -255,7 +256,7 @@ class Database(DatabaseBaseClass):
         atoms.set_calculator(calc)
         return atoms
 
-    def db_to_candidate(self, structure):
+    def db_to_candidate(self, structure, meta_dict=None):
         e = structure['energy']
         f = structure.get('forces', 0)
         pos = structure['positions']
@@ -274,9 +275,12 @@ class Database(DatabaseBaseClass):
         candidate.set_calculator(calc)
 
         if self.store_meta_information:
-            restored_dict = self.read_key_value_pairs(id=structure['id'])
-            for key, value in restored_dict.items():
-                candidate.add_meta_information(key, value)        
+            if meta_dict is None:
+                restored_dict = self.read_key_value_pairs(id=structure['id'])
+                for key, value in restored_dict.items():
+                    candidate.add_meta_information(key, value)
+            else:
+                candidate.meta_information.update(meta_dict)
 
         candidate.add_meta_information('iteration', structure.get('iteration', 0))
 
@@ -335,8 +339,18 @@ class Database(DatabaseBaseClass):
         strucs = self.get_all_structures_data()
         candidates = []
         for struc in strucs:
-            candidates.append(self.db_to_candidate(struc))
+            candidates.append(self.db_to_candidate(struc, meta_dict=None))
         self.candidates = candidates
+
+    def fast_restore_to_memory(self):
+        strucs = self.get_all_structures_data()
+        all_meta_info = self.read_all_key_value_pairs()
+
+        candidates = []
+        for struc in strucs:            
+            candidates.append(self.db_to_candidate(struc, all_meta_info[struc['id']]))
+        self.candidates = candidates
+
 
     def restore_to_trajectory(self):
         strucs = self.get_all_structures_data()
@@ -387,6 +401,26 @@ class Database(DatabaseBaseClass):
                 dict_recreation[key] = func(value)
 
         return dict_recreation
+
+    def read_all_key_value_pairs(self):
+        cursor = self.con.cursor()
+
+        tables = ['text_key_values', 'float_key_values', 'int_key_values', 'boolean_key_values', 'other_key_values']
+        functions = [nothing, nothing, nothing, bool, deblob]
+
+        dict_of_dicts = {} # Uses the id as the key to the meta information dict for each candidate. (Id from structures table).
+
+        for table, func in zip(tables, functions):
+            cursor.execute(f'SELECT * FROM {table}')
+            rows = cursor.fetchall()
+
+            for key, value, id in rows:
+                if id in dict_of_dicts.keys():
+                    dict_of_dicts[id][key] = func(value)
+                else:
+                    dict_of_dicts[id] = {key:func(value)}
+
+        return dict_of_dicts
 
     ####################################################################################################################
     # Misc methods:
