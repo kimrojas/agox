@@ -101,7 +101,6 @@ class Database(DatabaseBaseClass):
 
     def store_candidate(self, candidate, accepted=True, write=True, dispatch=True):
         # Needs some way of handling a dummy candidate, probably boolean argument.
-        
         if accepted:
             self.candidates.append(candidate)
             self.candidate_energies.append(candidate.get_potential_energy())
@@ -337,20 +336,15 @@ class Database(DatabaseBaseClass):
 
     def restore_to_memory(self):
         strucs = self.get_all_structures_data()
-        candidates = []
-        for struc in strucs:
-            candidates.append(self.db_to_candidate(struc, meta_dict=None))
-        self.candidates = candidates
-
-    def fast_restore_to_memory(self):
-        strucs = self.get_all_structures_data()
-        all_meta_info = self.read_all_key_value_pairs()
+        if self.store_meta_information:
+            all_meta_info = self.read_all_key_value_pairs()
+        else:
+            all_meta_info = {}
 
         candidates = []
         for struc in strucs:            
-            candidates.append(self.db_to_candidate(struc, all_meta_info[struc['id']]))
+            candidates.append(self.db_to_candidate(struc, meta_dict=all_meta_info.get(struc['id'], None)))
         self.candidates = candidates
-
 
     def restore_to_trajectory(self):
         strucs = self.get_all_structures_data()
