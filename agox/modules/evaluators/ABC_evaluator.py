@@ -37,9 +37,13 @@ class EvaluatorBaseClass(ABC, Observer, Writer):
 
         self.evaluated_candidates = []
         passed_evaluation_count = 0
-        while candidates and not done:            
+        while candidates and not done:
 
-            candidate = candidates.pop(0)            
+            candidate = candidates.pop(0) 
+
+            if candidate is None:
+                continue           
+
             state = self.evaluate_candidate(candidate)
 
             if state:
