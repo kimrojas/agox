@@ -41,7 +41,7 @@ trajectory file.
 
         candidates = database.get_all_candidates()
 
-        for candidate in candidate:
+        for candidate in candidates:
             candidate.set_constraints([])
 
         write('database.traj', candidates)
