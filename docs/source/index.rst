@@ -17,18 +17,14 @@ new ideas in the area global optimization
 Contents
 --------
 .. toctree::
+   :maxdepth: 2
+
    installation
-   getting_started/getting_started_running_agox
-   getting_started/getting_started_statistics
-   getting_started/getting_started_slurm
-   getting_started/getting_started_understanding_the_script
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   getting_started/getting_started
+   agox_framework/agox_framework
+   algorithms/algorithms
+   bonus_topics/bonus_topics
+   references/references
 
 This work has been supported by funding from the Villum foundation 
 

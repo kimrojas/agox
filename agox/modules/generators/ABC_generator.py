@@ -17,7 +17,7 @@ dimensionality_angles = {
 class GeneratorBaseClass(ABC, Observer, Writer):
 
     def __init__(self, confinement_cell=None, confinement_corner=None, c1=0.75, c2=1.25, dimensionality=3, 
-                use_mic=True, environment=None, sampler=None, gets={}, sets={'get_key':'candidates'}, order=2, 
+                use_mic=True, environment=None, sampler=None, gets={}, sets={'set_key':'candidates'}, order=2, 
                 verbose=True, use_counter=True, prefix=''):
         """
         use_mic: Whether to use minimum image convention when checking distances. 
@@ -57,7 +57,8 @@ class GeneratorBaseClass(ABC, Observer, Writer):
         if self.environment is not None:
             self.plot_confinement(environment)
 
-        self.add_observer_method(self.generate, sets=self.sets[0], gets=self.gets[0], order=self.order[0])
+        self.add_observer_method(self.generate, sets=self.sets[0], 
+            gets=self.gets[0], order=self.order[0])
 
     @abstractmethod
     def get_candidates(self, sampler, environment):
@@ -192,7 +193,7 @@ class GeneratorBaseClass(ABC, Observer, Writer):
         if candidates[0] is None and self.sampler is not None and len(self.sampler) == 0:
             candidates = self.start_candidate()
             self.writer('Fall-back to start generator, generated {} candidate '.format(len(candidates)))
-        self.add_to_cache(self.get_key, candidates, mode='a')
+        self.add_to_cache(self.set_key, candidates, mode='a')
 
     def plot_confinement(self, environment):
         from agox.modules.helpers.plot_confinement import plot_confinement
