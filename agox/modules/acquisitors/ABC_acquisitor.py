@@ -27,7 +27,6 @@ class AcquisitorBaseClass(ABC, Observer, Writer):
                 use_counter=True, prefix=''):   
         Observer.__init__(self, gets=gets, sets=sets, order=order)
         Writer.__init__(self, verbose=verbose, use_counter=use_counter, prefix=prefix)
-        self.candidate_list = []
 
         self.add_observer_method(self.prioritize_candidates, sets=self.sets[0], gets=self.gets[0], order=self.order[0])
 
@@ -47,8 +46,18 @@ class AcquisitorBaseClass(ABC, Observer, Writer):
     @abstractmethod
     def calculate_acquisition_function(self, candidates):
         """
-        Implements the fitness criterion and sorts the candidates stored in self.candidate_list 
-        according to this measure. 
+        Implements the acquisition function. 
+
+        Parameters
+        -----------
+        candidates: list
+            List of candidates that the acquisition function will be evaluated for. 
+        
+        Returns
+        --------
+        np.array
+            Numpy array of acquisition function values. 
+
         """
         return acquisition_values
 
@@ -56,6 +65,13 @@ class AcquisitorBaseClass(ABC, Observer, Writer):
     def prioritize_candidates(self):
         """
         Method that is attached to the AGOX iteration loop as an observer - not intended for use outside of that loop. 
+
+        The method does the following: 
+        1. Gets candidates from the cache using 'get_key'.
+        2. Removes 'None' from the candidate list. 
+        3. Calculates and sorts according to acquisition function. 
+        4. Adds the sorted candidates to cache with 'set_key'
+        5. Prints information.         
         """
 
         # Get data from the iteration data dict. 
@@ -79,6 +95,19 @@ class AcquisitorBaseClass(ABC, Observer, Writer):
         Calculates acquisiton-function based on the implemeneted version calculate_acquisition_function. 
 
         Note: Sorted so that the candidate with the LOWEST acquisition function value is first. 
+
+        Parameters
+        ------------
+        candidates: list
+            List of candidate objects. 
+        
+        Returns: 
+        -----------
+        list
+            List of candidates sorted according to increasing acquisition value (lowest first).
+        np.array
+            Array of acquisition function values in the same order as the sorted list, i.e. increasing. 
+
         """
         acquisition_values = self.calculate_acquisition_function(candidates)
         sort_idx = np.argsort(acquisition_values)
@@ -95,9 +124,28 @@ class AcquisitorBaseClass(ABC, Observer, Writer):
         super().assign_from_main(main)
 
     def print_information(self, candidates, acquisition_values):
-        pass
+        """
+        Printing function for analysis/debugging/sanity checking. 
+
+        Parameters
+        -----------
+        candidates: list
+            List of candidate objects. 
+        acquisition_values: np.array
+            Acquisition function value for each candidate in 'candidates'. 
+
+        """
 
     def get_acquisition_calculator(self):
+        """
+        Creates a calculator for the acquisiton function that can be used for e.g. relaxation. 
+
+        Returns
+        --------
+        ASE Calculator
+            ASE calculator where the energy is the acquisition function and forces are the forces of the acquisition forces. 
+        """
+
         raise NotImplementedError("'get_acqusition_calculator' is not implemented for this acquisitor")
 
 from ase.calculators.calculator import Calculator, all_changes
