@@ -53,7 +53,11 @@ class ParallelTemperingSampler(MetropolisSampler):
             if self.verbose:
                 energies = [self.most_recently_accepted[c].get_potential_energy() \
                             if self.most_recently_accepted[c] is not None else 0 for c in self.most_recently_accepted]
-                self.writer(f'PARALLEL TEMPERING: {self.temperature:8.3f}, ' + ','.join([f'{e:8.3f}' for e in energies]))
+                if self.database.worker_number == 0:
+                    text = 'PARALLEL TEMPERING:'  + f'{self.temperature:8.3f}, ' + ','.join([f'{e:8.3f}' for e in energies])
+                else:
+                    text = 'PARALLEL TEMPERING (not main worker):'
+                self.writer(text)
 
             self.swap_func()
 
@@ -135,14 +139,6 @@ class ParallelTemperingSampler(MetropolisSampler):
 
     def decide_to_swap(self):
         return (self.get_iteration_counter() % self.swap_frequency == 0) * (self.database.total_workers > 1)
-
-    def get_candidate_to_consider(self):        
-        candidates = self.get_from_cache(self.get_key)
-
-        if candidates is None or not len(candidates) > 0:
-            return None
-        return candidates[-1]   # take the latest evaluated candidate
-
 
     def assign_from_main(self, main):
         self.candidate_instantiator = main.candidate_instantiator

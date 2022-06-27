@@ -56,6 +56,9 @@ class DatabaseBaseClass(ABC, ObserverHandler, Observer, Writer):
     def store_in_database(self):
         
         evaluated_candidates = self.get_from_cache(self.get_key)
+        if evaluated_candidates is None:
+            return
+        
         anything_accepted = False
         for j, candidate in enumerate(evaluated_candidates):
 
@@ -67,12 +70,6 @@ class DatabaseBaseClass(ABC, ObserverHandler, Observer, Writer):
                 self.store_candidate(candidate, accepted=True, write=True, dispatch=dispatch)
                 anything_accepted = True
 
-            elif candidate is None:
-                dummy_candidate = self.candidate_instantiator(template=Atoms())
-                dummy_candidate.set_calculator(SinglePointCalculator(dummy_candidate, energy=float('nan')))
-
-                # This will dispatch to observers if valid data has been added but the last candidate is None. 
-                self.store_candidate(candidate, accepted=False, write=True, dispatch=bool(anything_accepted*dispatch))
 
     def assign_from_main(self, main):
         super().assign_from_main(main)
