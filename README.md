@@ -6,8 +6,8 @@ https://agox.gitlab.io/agox/
 
 # Contributions
 
-To contribute, [request access](https://gitlab.com/groups/agox-contributors/-/group_members/request_access)
- to the agox-contributors group and make a merge request 
+To contribute request access to the [agox-contributors](https://gitlab.com/groups/agox-contributors/-/group_members/request_access)
+group and make a merge request 
 
 # Authors 
 
