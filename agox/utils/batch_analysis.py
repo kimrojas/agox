@@ -725,8 +725,11 @@ class KeyBoardEvent:
             self.hist_line, = self.hist_ax.plot([self.energies[0], self.energies[0]], [0, limits[1]], color='black')
 
     def update_scatter(self, index):
-        positions = self.structures[index].get_positions()
-        atomic_numbers = self.structures[index].get_atomic_numbers()
+        cell = self.structures[index].get_cell()
+        structure = self.structures[index].repeat((3,3,1))
+        structure.translate(-cell[0]-cell[1])
+        positions = structure.get_positions()
+        atomic_numbers = structure.get_atomic_numbers()
 
         # Sort according to z-coordiantes   
         sort_idx = np.argsort(positions[:, 2])
