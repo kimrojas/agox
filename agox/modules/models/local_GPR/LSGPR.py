@@ -22,17 +22,17 @@ from agox.modules.helpers.writer import header_footer
 
 class LSGPRModel(ModelBaseClass):
     name = 'LSGPRModel'
-    implemented_properties = ['energy', 'forces', 'uncertainty']
+    implemented_properties = ['energy', 'forces']
 
     """
     Implements a sparse local Gaussian Process Model
 
     """
-    def __init__(self, kernel=None, descriptor=None, noise=0.05, noise_bounds=(0.001, 0.05), iteration_start_training=1,
+    def __init__(self, kernel=None, descriptor=None, noise=0.05, iteration_start_training=1,
                  update_interval=1, single_atom_energies=np.zeros(100), m_points=1000, adaptive_noise=False,
-                 adaptive_noise_kwargs={'iterations': 5, 'factor':0.9, 'dE': 5., 'iteration_start_updating': 5}, jitter=1e-8, force_method='central',
-                 transfer_data=[], sparsifier=None, method='lstsq', weights=None, prior=None, trainable_prior=False, use_prior_in_training=False,
-                 uncertainty_method='SR', verbose=False, full_update=False, **kwargs):
+                 jitter=1e-8, force_method='central', transfer_data=[], sparsifier=None, method='lstsq',
+                 weights=None, prior=None, trainable_prior=False, use_prior_in_training=False,
+                 verbose=False, full_update=False, **kwargs):
         
         super().__init__(**kwargs)
 
@@ -41,11 +41,6 @@ class LSGPRModel(ModelBaseClass):
         self.descriptor = descriptor         
         self._noise = noise      # this is in eV/atom
         self.single_atom_energies = single_atom_energies
-        
-        self.noise_bounds = noise_bounds
-        self.adaptive_noise = adaptive_noise
-        self.adaptive_noise_kwargs = adaptive_noise_kwargs
-        self.latest_model_errors = []
         
         self.force_method = force_method
 
@@ -57,7 +52,6 @@ class LSGPRModel(ModelBaseClass):
         self.sparsifier = sparsifier
         self.weights = weights
 
-        self.uncertainty_method = uncertainty_method
         self.prior = prior
         self.trainable_prior = trainable_prior
         self.use_prior_in_training = use_prior_in_training
@@ -93,10 +87,7 @@ class LSGPRModel(ModelBaseClass):
 
     @noise.setter
     def noise(self, s):
-        if self.noise_bounds[0] <= s <= self.noise_bounds[1]:
-            self._noise = s
-        else:
-            self.writer('Trying to change noise above/below noise_bounds.')
+        self._noise = s
         
 
     ####################################################################################################################
@@ -109,10 +100,6 @@ class LSGPRModel(ModelBaseClass):
             e = self.predict_energy(atoms=atoms)
             self.results['energy'] = e
         
-        if 'uncertainty' in properties:
-            e_unc = self.predict_uncertainty(atoms=atoms)
-            self.results['uncertainty'] = e_unc
-            
         if 'forces' in properties:
             self.results['forces'] = self.predict_forces(atoms=atoms, method=self.force_method)
 
@@ -143,23 +130,7 @@ class LSGPRModel(ModelBaseClass):
             
 
     def predict_uncertainty(self, atoms=None, X=None, k=None):
-
-        if k is None:
-            if X is None:
-                X = self.descriptor.get_local_environments(atoms)
-            k = self.kernel(self.Xm, X)
-
-        if self.uncertainty_method == 'SR':
-            unc = np.sqrt(np.sum(self.noise**2 * k.T @ self.K_inv @ k)) # sum variances then take square root
-        elif self.uncertainty_method == 'PP':
-            k0 = self.kernel(X,X)
-            unc = np.sqrt(np.sum(k0) - np.sum(k.T@self.Kmm_inv@k) + np.sum(self.noise**2 * k.T @ self.K_inv @ k))
-        else:
-            self.writer('Uncertainty method unknown! Will return 0 uncertainty.')
-            unc = 0
-
-
-        return unc
+        self.writer('Uncertainty not implemented. Will break soon!')
 
         
     def predict_local_energy(self, atoms=None, X=None):
@@ -438,9 +409,6 @@ class LSGPRModel(ModelBaseClass):
         all_data = database.get_all_candidates()
         self.writer(f'lenght all data: {len(all_data)}')
         
-        if self.adaptive_noise:
-            self._update_noise(all_data, **self.adaptive_noise_kwargs)
-
         if self.sparsifier is not None:
             full_update, data_for_training = self.sparsifier(all_data)
         elif self.ready_state and not self.full_update:
@@ -464,31 +432,6 @@ class LSGPRModel(ModelBaseClass):
     # Helpers
     ####################################################################################################################
 
-    def _update_noise(self, all_data, iterations=5, factor=0.9, dE=5, iteration_start_updating=5):
-        if not self.ready_state:
-            return
-        e = all_data[-1].get_potential_energy()
-        p = self.predict_energy(all_data[-1])
-        self.latest_model_errors.append(e-p)
-        self.latest_model_errors[-iterations:]
-        
-        if self.get_iteration_counter() < iteration_start_updating:
-            return
-        
-        mae = np.mean(np.absolute(self.latest_model_errors))
-        
-        self.writer(5*'-', 'ADAPTIVE NOISE', 5*'-')
-        self.writer(f'Noise before: {self.noise}')
-        
-        if mae > dE:
-            self.noise = self.noise_bounds[1] + (self.noise - self.noise_bounds[1]) * factor
-        else:
-            self.noise = self.noise_bounds[0] + (self.noise - self.noise_bounds[0]) * factor
-            
-        self.writer(f'Noise after: {self.noise}')
-        self.writer(30*'-')
-
-            
 
     def _get_X_y(self, atoms_list):
 
