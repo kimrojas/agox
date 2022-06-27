@@ -4,6 +4,7 @@ import numpy as np
 from copy import deepcopy
 from ase.calculators.singlepoint import SinglePointCalculator
 from timeit import default_timer as dt
+from agox.modules.helpers.writer import header_footer
 
 from ase.optimize.bfgs import BFGS
 from ase.constraints import FixAtoms
@@ -13,74 +14,78 @@ class LocalOptimizationEvaluator(EvaluatorBaseClass):
 
     name = 'LocalOptimizationEvaluator'
 
-    def __init__(self, calculator, optimizer=BFGS, optimizer_run_kwargs={'fmax':0.25, 'steps':200}, optimizer_kwargs={'logfile':None}, verbose=False, 
-        fix_template=True, constraints=[], dummy_mode=False, use_all_traj_info=True, **kwargs): 
+    def __init__(self, calculator, optimizer=BFGS, optimizer_run_kwargs={'fmax':0.25, 'steps':200},
+                 optimizer_kwargs={'logfile':None}, verbose=False, fix_template=True, constraints=[],
+                 store_trajectory=True, **kwargs): 
         super().__init__(**kwargs)
         self.calculator = calculator
         self.verbose = verbose
-        self.dummy_mode = dummy_mode
-
+        self.store_trajectory = store_trajectory
+        
         # Optimizer stuff:
         self.optimizer = optimizer
         self.optimizer_kwargs = optimizer_kwargs
         self.optimizer_run_kwargs = optimizer_run_kwargs
-        self.use_all_traj_info = use_all_traj_info
-        if use_all_traj_info and not 'trajectory' in optimizer_kwargs:
-            self.optimizer_kwargs['trajectory'] = 'tmp.traj'
 
         # Constraints:
         self.constraints = constraints
         self.fix_template = fix_template
 
-    def evaluated_candidates_append(self, candidate):
-        if self.use_all_traj_info:
-            try:
-                # read the DFT calculations along the trajectory and add them
-                traj = read(self.optimizer_kwargs['trajectory'],index=':-1')
-                for t in traj:
-                    E = t.get_potential_energy()
-                    F = t.get_forces()
-                    candidate_along_trajectory = candidate.copy()
-                    candidate_along_trajectory.set_positions(t.get_positions())
-                    calc = SinglePointCalculator(candidate_along_trajectory, energy=E, forces=F)
-                    candidate_along_trajectory.set_calculator(calc)
 
-                    candidate.add_meta_information('final', False)
-                    self.evaluated_candidates.append(candidate_along_trajectory)
-            except:
-                pass
+    @header_footer
+    def evaluate_candidates(self):
+        if not self.store_trajectory:
+            super().evaluate_candidates()
+        else:
+            candidates = self.get_from_cache(self.get_key)
+            done = False
 
-        # add the final candidate
-        candidate.add_meta_information('final', True)
-        self.evaluated_candidates.append(candidate)
-        
+            self.evaluated_candidates = []
+            while candidates and not done:            
+
+                candidate = candidates.pop(0)
+                state = self.evaluate_candidate(candidate)
+
+                if state:
+                    self.evaluated_candidates.append(candidate)
+                    if len(self.evaluated_candidates) == self.number_to_evaluate:
+                        done = True
 
     def evaluate_candidate(self, candidate):
-        t0 = dt()
         candidate.set_calculator(self.calculator)
+        self.apply_constraints(candidate)
+        optimizer = self.optimizer(candidate, **self.optimizer_kwargs)
+        if self.store_trajectory:
+            optimizer.attach(self._observer, interval=1, candidate=candidate, steps=optimizer.get_number_of_steps)
         
-        if not self.dummy_mode: 
-            try:
-                
-                self.apply_constraints(candidate)
-
-                optimizer = self.optimizer(candidate, **self.optimizer_kwargs)
-                optimizer.run(**self.optimizer_run_kwargs)                
-                candidate.add_meta_information('SPC', optimizer.get_number_of_steps()+1)
-
-                E = candidate.get_potential_energy()
-                F = candidate.get_forces()
-            except Exception as e:
-                self.writer('Energy calculation failed with exception: {}'.format(e))
-                return False
-        else:
-            E = 0
-            F = np.zeros((len(candidate), 2))
+        try:            
+            optimizer.run(**self.optimizer_run_kwargs)                
+            candidate.add_meta_information('relax_index', optimizer.get_number_of_steps())
             
+        except Exception as e:
+            self.writer('Energy calculation failed with exception: {}'.format(e))
+            return False
+
+        E = candidate.get_potential_energy()
+        F = candidate.get_forces()
+        self.writer(f'e={E}')
         calc = SinglePointCalculator(candidate, energy=E, forces=F)
         candidate.set_calculator(calc)
 
         return True
+
+
+    def _observer(self, candidate, steps):
+        E = candidate.get_potential_energy()
+        F = candidate.get_forces()
+        
+        traj_candidate = candidate.copy()
+        calc = SinglePointCalculator(traj_candidate, energy=E, forces=F)
+        traj_candidate.set_calculator(calc)
+        traj_candidate.add_meta_information('relax_index', steps())
+        self.writer(f'energy: {E:.3f}, steps {steps()}')
+        self.add_to_cache(self.set_key, [traj_candidate], mode='a')
+    
 
     def apply_constraints(self, candidate):
         constraints = [] + self.constraints

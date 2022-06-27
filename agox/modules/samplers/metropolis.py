@@ -44,6 +44,11 @@ class MetropolisSampler(SamplerBaseClass):
                     self.chosen_candidate = potential_step
                 else:
                     accepted = False
+            if self.verbose:
+                if Enew < Eold:
+                    P = 1
+                    r = 0
+                self.writer(f'METROPOLIS: Eold:{Eold:8.3f} Enew:{Enew:8.3f} T:{self.temperature:8.3f} P:{P:8.3f} r:{r:8.3f}')
             potential_step.add_meta_information('accepted', accepted)
 
         return potential_step
@@ -54,5 +59,11 @@ class MetropolisSampler(SamplerBaseClass):
     def assign_from_main(self, main):
         super().assign_from_main(main)
 
-    def get_candidate_to_consider(self):
-        return self.database.get_most_recent_candidate()
+
+    def get_candidate_to_consider(self):        
+        candidates = self.get_from_cache(self.get_key)
+
+        if candidates is None or not len(candidates) > 0:
+            return None
+        return candidates[-1]   # take the latest evaluated candidate
+
