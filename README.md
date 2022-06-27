@@ -9,6 +9,10 @@ https://agox.gitlab.io/agox/
 To contribute request access to the [agox-contributors](https://gitlab.com/agox-contributors)
 group and make a merge request 
 
+# Issues
+
+If you have an issue or a question please post it on the issue board! 
+
 # Authors 
 
 AGOX has been written by Mads-Peter Verner Christiansen, Nikolaj Rønne and Bjørk Hammer
