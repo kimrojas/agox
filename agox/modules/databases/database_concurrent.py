@@ -56,7 +56,8 @@ class ConcurrentDatabase(Database):
     pack_functions = [blob, nothing, blob, blob, blob, blob, blob, nothing, nothing]
     unpack_functions = [nothing, nothing, deblob, nothing, deblob, deblob, deblob, deblob, deblob, nothing, nothing]
 
-    def __init__(self, worker_number=0, total_workers=1, sleep_timing=1, sync_frequency=50, sync_order=None, **kwargs):
+    def __init__(self, worker_number=0, total_workers=1, sleep_timing=1, 
+        sync_frequency=50, sync_order=None, synchronous=True, **kwargs):
         super().__init__(**kwargs)
 
         self.storage_keys.append('worker_number')
@@ -64,6 +65,7 @@ class ConcurrentDatabase(Database):
         self.total_workers = total_workers
         self.sleep_timing = sleep_timing
         self.sync_frequency = sync_frequency
+        self.synchronous = synchronous 
 
         self.filename_ready = self.filename[:-3] + '_WORKER{}_READY{}'                
         self.filename_done = self.filename[:-3] + '_WORKER{}_DONE{}'
@@ -97,39 +99,49 @@ class ConcurrentDatabase(Database):
 
     @header_footer
     def sync_database(self):
-        if self.decide_to_sync():
-            # write file
-            iteration = self.get_iteration_counter()
-            with open(self.filename_ready.format(self.worker_number, iteration), mode='w'): pass
-            
-            self.writer('Attempting to sync database')
-            # Make sure the database contains all the expected information from all workers.
+        if self.decide_to_sync():            
+            if self.synchronous:
+                self.synchronous_update()
+            else:
+                self.asynchronous_update()
+
+    def synchronous_update(self):
+        # write file
+        iteration = self.get_iteration_counter()
+        with open(self.filename_ready.format(self.worker_number, iteration), mode='w'): pass
+        
+        self.writer('Attempting to sync database')
+        # Make sure the database contains all the expected information from all workers.
+        state = self.check_status()
+        print_string  = ''
+        while not state:
+            sleep(self.sleep_timing)
             state = self.check_status()
-            print_string  = ''
+            print_string += '.'
+        if len(print_string) > 0:
+            self.writer(print_string)
+        
+        # Restore the database to memory. 
+        # This will change the order of candidates in the Database, so be careful if another module relies on that!
+        self.restore_to_memory()
+        self.writer('Succesfully synced database')
+
+        # write success file
+        with open(self.filename_done.format(self.worker_number, iteration), mode='w'): pass
+
+        if self.worker_number == 0: # i.e. i'm the master!
+            state = self.cleanup()                    
             while not state:
                 sleep(self.sleep_timing)
-                state = self.check_status()
-                print_string += '.'
-            if len(print_string) > 0:
-                self.writer(print_string)
-            
-            # Restore the database to memory. 
-            # This will change the order of candidates in the Database, so be careful if another module relies on that!
-            self.restore_to_memory()
-            self.writer('Succesfully synced database')
-
-            # write success file
-            with open(self.filename_done.format(self.worker_number, iteration), mode='w'): pass
-
-            if self.worker_number == 0: # i.e. i'm the master!
                 state = self.cleanup()                    
-                while not state:
-                    sleep(self.sleep_timing)
-                    state = self.cleanup()                    
 
-            
-            self.writer('Number of candidates synced from database {}'.format(len(self)))
+        
+        self.writer('Number of candidates synced from database {}'.format(len(self)))
 
+    def asynchronous_update(self):
+        self.writer('Before asynchronous update: {}'.format(len(self)))
+        self.restore_to_memory()
+        self.writer('After asynchronous update: {}'.format(len(self)))
 
     def check_status(self):
         expected_iteration = self.get_iteration_counter()
