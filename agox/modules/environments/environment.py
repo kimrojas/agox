@@ -1,6 +1,7 @@
 import numpy as np
 from agox.modules.environments.ABC_environment import EnvironmentBaseClass
 from ase.atoms import symbols2numbers
+from ase.symbols import Symbols
 
 class Environment(EnvironmentBaseClass):
 
@@ -44,6 +45,9 @@ class Environment(EnvironmentBaseClass):
     def get_all_numbers(self):
         all_numbers = np.append(self.get_numbers(), self._template.get_atomic_numbers())
         return all_numbers
+
+    def get_all_species(self):
+        return list(Symbols(self.get_all_types()).species())
 
     def match(self, candidate):
         cand_numbers = candidate.get_atomic_numbers()
