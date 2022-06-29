@@ -224,6 +224,8 @@ class ModelGPR(ModelBaseClass):
         if self.sparsifier != None:
             _, all_data = self.sparsifier(all_data)
         energies = np.array([x.get_potential_energy() for x in all_data])
+
+        self.writer('Training GPR on {} structures'.format(len(all_data)))
         self.train_model(all_data, energies)
 
         self.writer('GPR model k1:',self.model.kernel_.get_params().get('k1','NA'))
