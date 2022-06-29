@@ -277,9 +277,9 @@ class LSGPRModel(ModelBaseClass):
         LK_nm = self.L @ self.K_nm # This part actually also takes a long time to calculate - change in future
         K = self.K_mm + LK_nm.T @ self.sigma_inv @ LK_nm + self.jitter*np.eye(self.K_mm.shape[0])
 
-        if self.uncertainty_method != 'SR':
-            cho_Kmm = cholesky(self.K_mm+self.jitter*np.eye(self.K_mm.shape[0]), lower=True)
-            self.Kmm_inv = cho_solve((cho_Kmm, True), np.eye(self.K_mm.shape[0]))
+        # if self.uncertainty_method != 'SR':
+        #     cho_Kmm = cholesky(self.K_mm+self.jitter*np.eye(self.K_mm.shape[0]), lower=True)
+        #     self.Kmm_inv = cho_solve((cho_Kmm, True), np.eye(self.K_mm.shape[0]))
 
         if self.method == 'cholesky':
             t1 = time()
