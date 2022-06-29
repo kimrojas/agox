@@ -11,7 +11,6 @@ class MemoryDatabase(DatabaseBaseClass):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
 
     ####################################################################################################################
     # Memory-based methods:
@@ -55,3 +54,7 @@ class MemoryDatabase(DatabaseBaseClass):
 
     def write(self, *args, **kwargs):
         pass
+
+    def reset(self):
+        self.candidates = []
+        self.candidate_energies = []
