@@ -44,6 +44,10 @@ class ObserverHandler:
         for observer_method in self.get_observers_in_execution_order():
             observer_method(*args, **kwargs)
 
+    def reset_observers(self):
+        self.observers = {}
+        self.execution_sort_idx = []
+
     ####################################################################################################################
     # Printing / Reporting 
     ####################################################################################################################
