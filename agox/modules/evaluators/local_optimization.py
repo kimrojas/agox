@@ -64,9 +64,13 @@ class LocalOptimizationEvaluator(EvaluatorBaseClass):
                 
                 self.apply_constraints(candidate)
 
-                optimizer = self.optimizer(candidate, **self.optimizer_kwargs)
-                optimizer.run(**self.optimizer_run_kwargs)                
-                candidate.add_meta_information('SPC', optimizer.get_number_of_steps()+1)
+                if 'steps' in self.optimizer_kwargs and self.optimizer_kwargs['steps'] > 0:
+                    optimizer = self.optimizer(candidate, **self.optimizer_kwargs)
+                    optimizer.run(**self.optimizer_run_kwargs)
+                    candidate.add_meta_information('SPC', optimizer.get_number_of_steps()+1)
+                else:
+                    # single-point calculation if steps = 0
+                    candidate.add_meta_information('SPC', 1)
 
                 E = candidate.get_potential_energy()
                 F = candidate.get_forces()
