@@ -15,33 +15,29 @@ class AGOXGenerator(GeneratorBaseClass):
         self.database = database
         self.main_database = main_database
 
+        self.first_call = True
+
     def get_candidates(self, sample, environment):
         self.database.reset()
+
         # Add the data from the main database, such that it can be used for sampling/training. 
         [self.database.store_candidate(candidate, dispatch=False) for candidate in self.main_database.get_all_candidates()]
 
-        for module in self.modules:
-            if issubclass(module.__class__, ObserverHandler):
-                #module.reset_observers()
-                print(module.print_observers())
+        print('#'*79); print('STARTING AGOX GENERATOR'); print('#'*79)
 
-        self.agox = AGOX(*self.modules)
-
-        print('#'*79)
-        print('AGOX GENERATOR STARTING')
-        print('#'*79)
+        self.agox = AGOX(*self.modules, use_log=self.first_call)
         self.agox.run(N_iterations=self.iterations, verbose=True)
-        print('#'*79)
-        print('AGOX GENERATOR FINISHED')
-        print('#'*79)
+
+        print('#'*79); print('FINISHED AGOX GENERATOR'); print('#'*79)
 
         # Return only the candidates that we have produced
         candidates = self.database.get_all_candidates()[len(self.main_database):]
+        self.first_call = False
         return candidates
 
     @classmethod
     def get_gofee_generator(cls, environment, database, calculator, iterations=25, 
-        prefix='INNER AGOX',  c1=0.7, c2=1.3):
+        number_of_candidates=[1, 0, 0], prefix='INNER AGOX',  c1=0.7, c2=1.3):
         from agox.modules.generators import RandomGenerator, PermutationGenerator, RattleGenerator
         from agox.modules.samplers import KMeansSampler
         from agox.modules.databases.memory import MemoryDatabase
@@ -72,7 +68,7 @@ class AGOXGenerator(GeneratorBaseClass):
             c1=c1, c2=c2, prefix=prefix, verbose=verbose)
 
         model_collector = StandardCollector(generators=[model_random_generator, model_permutation_generator, model_rattle_generator], 
-            sampler=model_sampler, environment=environment, num_candidates={0:[5, 8, 15]}, order=2, verbose=verbose)
+            sampler=model_sampler, environment=environment, num_candidates={0:number_of_candidates}, order=2, verbose=verbose)
 
         model_acquisitor = LowerConfidenceBoundAcquisitor(model_model, kappa=2, order=4, verbose=verbose)
 
