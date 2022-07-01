@@ -21,6 +21,7 @@ class LocalOptimizationEvaluator(EvaluatorBaseClass):
         self.calculator = calculator
         self.verbose = verbose
         self.store_trajectory = store_trajectory
+
         
         # Optimizer stuff:
         self.optimizer = optimizer
@@ -30,6 +31,9 @@ class LocalOptimizationEvaluator(EvaluatorBaseClass):
         # Constraints:
         self.constraints = constraints
         self.fix_template = fix_template
+
+        if optimizer_run_kwargs['steps'] == 0:
+            self.store_trajectory = False
 
 
     @header_footer
@@ -52,15 +56,19 @@ class LocalOptimizationEvaluator(EvaluatorBaseClass):
                         done = True
 
     def evaluate_candidate(self, candidate):
-        candidate.set_calculator(self.calculator)
-        self.apply_constraints(candidate)
-        optimizer = self.optimizer(candidate, **self.optimizer_kwargs)
-        if self.store_trajectory:
-            optimizer.attach(self._observer, interval=1, candidate=candidate, steps=optimizer.get_number_of_steps)
+        candidate.set_calculator(self.calculator)      
+        try:
+            if self.optimizer_run_kwargs['steps'] > 0:
+                self.apply_constraints(candidate)
+                optimizer = self.optimizer(candidate, **self.optimizer_kwargs)
+                if self.store_trajectory:
+                    optimizer.attach(self._observer, interval=1, candidate=candidate, steps=optimizer.get_number_of_steps)
         
-        try:            
-            optimizer.run(**self.optimizer_run_kwargs)                
-            candidate.add_meta_information('relax_index', optimizer.get_number_of_steps())
+                optimizer.run(**self.optimizer_run_kwargs)                
+                candidate.add_meta_information('relax_index', optimizer.get_number_of_steps())
+            else:
+                E = candidate.get_potential_energy()
+                F = candidate.get_forces()
             
         except Exception as e:
             self.writer('Energy calculation failed with exception: {}'.format(e))
