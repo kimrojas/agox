@@ -20,10 +20,11 @@ class AGOXGenerator(GeneratorBaseClass):
     def get_candidates(self, sample, environment):
         self.database.reset()
 
-        # Add the data from the main database, such that it can be used for sampling/training. 
+        # Add the data from the main database, such that it can be used for sampling/training/etc.
         [self.database.store_candidate(candidate, dispatch=False) for candidate in self.main_database.get_all_candidates()]
 
         print('#'*79); print('STARTING AGOX GENERATOR'); print('#'*79)
+        print(f'LENGTH OF INTERNAL DATABASE: {len(self.database)}')
 
         self.agox = AGOX(*self.modules, use_log=self.first_call)
         self.agox.run(N_iterations=self.iterations, verbose=True)
@@ -50,7 +51,7 @@ class AGOXGenerator(GeneratorBaseClass):
 
         verbose=False
 
-        model_database = MemoryDatabase(order=6, prefix=prefix, verbose=verbose)
+        model_database = MemoryDatabase(order=6, prefix=prefix, verbose=False)
 
         model_model = ModelGPR.default(environment, model_database)
         model_model.iteration_start_training = 1
