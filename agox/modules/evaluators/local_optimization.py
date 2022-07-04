@@ -16,7 +16,7 @@ class LocalOptimizationEvaluator(EvaluatorBaseClass):
 
     def __init__(self, calculator, optimizer=BFGS, optimizer_run_kwargs={'fmax':0.25, 'steps':200},
                  optimizer_kwargs={'logfile':None}, verbose=False, fix_template=True, constraints=[],
-                 store_trajectory=True, **kwargs): 
+                 store_trajectory=True, use_all_traj_info=True, **kwargs): 
         super().__init__(**kwargs)
         self.calculator = calculator
         self.verbose = verbose
@@ -35,6 +35,11 @@ class LocalOptimizationEvaluator(EvaluatorBaseClass):
         if optimizer_run_kwargs['steps'] == 0:
             self.store_trajectory = False
 
+        if use_all_traj_info is False:
+            self.store_trajectory = False
+            self.writer('store_trajectory being set to False')
+            self.writer('use_all_traj_info argument will be removed soon.')
+            self.writer('Use store_trajectory instead.')
 
     @header_footer
     def evaluate_candidates(self):
