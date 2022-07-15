@@ -49,9 +49,9 @@ class AGOXGenerator(GeneratorBaseClass):
         from agox.modules.postprocessors import WrapperPostprocess
         from agox.modules.evaluators import LocalOptimizationEvaluator
 
-        verbose=False
+        verbose=True
 
-        model_database = MemoryDatabase(order=6, prefix=prefix, verbose=False)
+        model_database = MemoryDatabase(order=6, prefix=prefix, verbose=True)
 
         model_model = ModelGPR.default(environment, model_database)
         model_model.iteration_start_training = 1
