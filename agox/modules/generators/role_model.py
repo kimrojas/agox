@@ -59,7 +59,9 @@ class RolemodelGenerator(GeneratorBaseClass):
             if len(self.possible_attractors) == 0:
                 n_attractors = self.possible_attractors[0]
             else:
-                n_attractors = np.random.randint(self.possible_attractors[0], self.possible_attractors[1] + 1)
+                min_number_of_attractors = self.possible_attractors[0]
+                max_number_of_attractors = np.min([environment.get_total_number_of_atoms(), self.possible_attractors[1]])
+                n_attractors = np.random.randint(min_number_of_attractors, max_number_of_attractors)
             
             if self.rolemodels_from_template:
                 indices = random.sample(range(len(features)), k=n_attractors)

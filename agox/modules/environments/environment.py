@@ -46,6 +46,9 @@ class Environment(EnvironmentBaseClass):
         all_numbers = np.append(self.get_numbers(), self._template.get_atomic_numbers())
         return all_numbers
 
+    def get_total_number_of_atoms(self):
+        return len(self.get_numbers()) + len(self._template)
+
     def get_all_species(self):
         return list(Symbols(self.get_all_types()).species())
 
