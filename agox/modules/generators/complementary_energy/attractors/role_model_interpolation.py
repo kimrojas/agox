@@ -52,19 +52,35 @@ class RolemodelGenerator(GeneratorBaseClass):
         features = self.calculate_features(candidate)
 
         # Set role models
-        if len(self.rm) != 0:
-            role_models = self.rm
-        else:
-            if len(self.possible_attractors) == 0:
-                n_attractors = self.possible_attractors[0]
-            else:
-                n_attractors = np.random.randint(self.possible_attractors[0], self.possible_attractors[1] + 1)
-            
-            if self.rolemodels_from_template:
-                indices = np.random.choice(range(len(features)), size = n_attractors, replace = False)
-            else:
-                indices = np.random.choice(range(n_template, len(features)), size = n_attractors, replace = False)
-            role_models = features[indices]
+        atomic_numbers = candidate.get_atomic_numbers()
+        types = list(set(atomic_numbers))
+        index = np.array(range(len(candidate)))
+        
+#        if len(self.rm) != 0:
+#            role_models = self.rm
+#        else:
+#            if len(self.possible_attractors) == 0:
+#                n_attractors = self.possible_attractors[0]
+#            else:
+#                n_attractors = np.random.randint(self.possible_attractors[0], self.possible_attractors[1] + 1)
+#            
+#            if self.rolemodels_from_template:
+#                indices = np.random.choice(range(len(features)), size = n_attractors, replace = False)
+#            else:
+#                indices = np.random.choice(range(n_template, len(features)), size = n_attractors, replace = False)
+#            role_models = features[indices]
+
+        n_attractors = len(types)
+        attractors = np.zeros((n_attractors, len(self.lambs) * len(types) + 1))
+        for i in range(n_attractors):
+            filter = atomic_numbers == types[i]
+            possible_indices = index[filter]
+            indices = np.random.choice(possible_indices, size = 2, replace = False)
+            att = 0.5 * (features[indices[0]] - features[indices[1]])
+            att[-1] = types[i]
+            attractors[i, :] = att
+
+        role_models = attractors
 
         # Determine which atoms to move
         if self.move_all == 1:

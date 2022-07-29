@@ -58,6 +58,24 @@ class ComplementaryEnergyCalculator(Calculator):
                 F[a, d] = -(ef-em)/(2*self.dx)
         return F
 
+class ComplementaryEnergyKernelMethod(Calculator):
+    def __init__(self, descriptor, attractors, sigma = 10):
+        super().__init__()
+        self.descriptor = descriptor
+        self.attractors = attractors
+        self.sigma = sigma
+
+    def get_ce_energy(self, atoms):
+        feature = self.descriptor.get_feature(atoms)
+
+        CE = 0
+        for a in range(len(atoms)):           
+            # Assumes that the last entry in each attractor is its atomic number
+            e = -np.exp(-cdist(feature[a].reshape(1, -1), self.attractors)**2/(2*self.sigma**2))
+            CE += np.sum(e)
+
+        return CE
+
 class ComplementaryEnergyDistanceCalculator(ComplementaryEnergyCalculator):
 
     def __init__(self, descriptor, attractors, sigma=10):

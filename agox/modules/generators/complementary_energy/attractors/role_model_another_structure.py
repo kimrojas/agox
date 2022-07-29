@@ -29,12 +29,20 @@ class RolemodelGenerator(GeneratorBaseClass):
         self.rolemodels_from_template = rolemodels_from_template
 
     def get_candidates(self, sampler, environment):
-        candidate = sampler.get_random_member()
+        candidate = sampler.get_random_member_with_calculator()
 
         # Happens if no candidates are part of the sample yet. 
         if candidate is None:
             return [None]
-        
+
+        for i in range(100):
+            candidate2 = sampler.get_random_member_with_calculator()
+            if candidate2 != None and candidate.get_potential_energy() != candidate2.get_potential_energy():
+                break
+
+        if candidate.get_potential_energy() == candidate2.get_potential_energy():
+            return [None]
+
         template = candidate.get_template()
         n_template = len(template)
 
@@ -50,6 +58,7 @@ class RolemodelGenerator(GeneratorBaseClass):
 
         # Calculate features
         features = self.calculate_features(candidate)
+        features2 = self.calculate_features(candidate2)
 
         # Set role models
         if len(self.rm) != 0:
@@ -64,7 +73,7 @@ class RolemodelGenerator(GeneratorBaseClass):
                 indices = np.random.choice(range(len(features)), size = n_attractors, replace = False)
             else:
                 indices = np.random.choice(range(n_template, len(features)), size = n_attractors, replace = False)
-            role_models = features[indices]
+            role_models = features2[indices]
 
         # Determine which atoms to move
         if self.move_all == 1:

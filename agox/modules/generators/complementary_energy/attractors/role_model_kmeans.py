@@ -4,6 +4,7 @@ from scipy.spatial.distance import cdist
 from ase.neighborlist import NeighborList
 from scipy.optimize import minimize
 from ase import Atoms
+from sklearn.cluster import KMeans
 
 class RolemodelGenerator(GeneratorBaseClass):
 
@@ -29,12 +30,26 @@ class RolemodelGenerator(GeneratorBaseClass):
         self.rolemodels_from_template = rolemodels_from_template
 
     def get_candidates(self, sampler, environment):
-        candidate = sampler.get_random_member()
+        candidate = sampler.get_random_member_with_calculator()
 
         # Happens if no candidates are part of the sample yet. 
         if candidate is None:
             return [None]
         
+        candidates = [candidate]
+        energies = [candidate.get_potential_energy()]
+
+        for i in range(100):
+            candidate = sampler.get_random_member_with_calculator()
+            if candidate != None and candidate.get_potential_energy() not in energies:
+                candidates.append(candidate)
+                energies.append(candidate)
+                if len(candidates) == 3:
+                    break
+        
+        if len(candidates) < 3:
+            return [None]
+
         template = candidate.get_template()
         n_template = len(template)
 
@@ -49,22 +64,32 @@ class RolemodelGenerator(GeneratorBaseClass):
             return ce, grad.flatten()
 
         # Calculate features
-        features = self.calculate_features(candidate)
+#        features = self.calculate_features(candidate)
+        types = list(set(candidates[0].get_atomic_numbers()))
+        n_atoms = len(candidates[0])
+        features = np.zeros((len(candidates) * n_atoms, len(self.lambs) * len(types) + 1))
+        for i in range(len(candidates)):
+            f = self.calculate_features(candidates[i])
+            features[i * n_atoms : (i+1) * n_atoms, :] = f
 
         # Set role models
-        if len(self.rm) != 0:
-            role_models = self.rm
-        else:
-            if len(self.possible_attractors) == 0:
-                n_attractors = self.possible_attractors[0]
-            else:
-                n_attractors = np.random.randint(self.possible_attractors[0], self.possible_attractors[1] + 1)
-            
-            if self.rolemodels_from_template:
-                indices = np.random.choice(range(len(features)), size = n_attractors, replace = False)
-            else:
-                indices = np.random.choice(range(n_template, len(features)), size = n_attractors, replace = False)
-            role_models = features[indices]
+#        if len(self.rm) != 0:
+#            role_models = self.rm
+#        else:
+#            if len(self.possible_attractors) == 0:
+#                n_attractors = self.possible_attractors[0]
+#            else:
+#                n_attractors = np.random.randint(self.possible_attractors[0], self.possible_attractors[1] + 1)
+#            
+#            if self.rolemodels_from_template:
+#                indices = np.random.choice(range(len(features)), size = n_attractors, replace = False)
+#            else:
+#                indices = np.random.choice(range(n_template, len(features)), size = n_attractors, replace = False)
+#            role_models = features[indices]
+
+        n_attractors = 5
+        kmeans = KMeans(n_clusters = n_attractors).fit(features)
+        role_models = kmeans.cluster_centers_
 
         # Determine which atoms to move
         if self.move_all == 1:

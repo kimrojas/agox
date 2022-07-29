@@ -5,4 +5,5 @@ from agox.modules.generators.reuse import ReuseGenerator
 from agox.modules.generators.permutation import PermutationGenerator
 from agox.modules.generators.steepest_descent import SteepestDescentGenerator
 from agox.modules.generators.cog import CenterOfGeometryGenerator
-
+from agox.modules.generators.role_model import RolemodelGenerator
+from agox.modules.generators.role_model_feature_calculator import RolemodelGeneratorFC

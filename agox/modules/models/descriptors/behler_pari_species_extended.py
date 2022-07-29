@@ -53,7 +53,8 @@ class BehlerParanello(DescriptorBaseClass):
         """
         # Matrix to save output:
         num_atoms = len(atoms)
-        F = np.zeros((num_atoms, self.dimension + 1))
+#        F = np.zeros((num_atoms, self.dimension + 1))
+        F = np.zeros((num_atoms, self.dimension))
         symbols = atoms.get_chemical_symbols()
 
         # Calculate distances:
@@ -67,8 +68,8 @@ class BehlerParanello(DescriptorBaseClass):
 #            F[i, 0:self.num_radial] += np.exp(-self.eta*(d-self.rs)**2/rc2)*self.cutoff(d)
             F[i, self.species_dict[sym] * self.num_radial:(self.species_dict[sym] + 1) * self.num_radial] += np.exp(-self.eta*(d-self.rs)**2)*self.cutoff(d)
 
-        atomic_numbers = atoms.get_atomic_numbers()
-        F[:, -1] = atomic_numbers
+#        atomic_numbers = atoms.get_atomic_numbers()
+#        F[:, -1] = atomic_numbers
         return F
         
         for i in range(num_atoms):
