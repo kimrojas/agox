@@ -315,5 +315,48 @@ class ModelGPR(ModelBaseClass):
 
         return cls(gpr, database=database, update_interval=1, optimize_loglikelyhood=True, use_saved_features=True)
 
+    @classmethod
+    def gofee_like(cls, environment, database, feature_calculator=None):
+
+        from ase import Atoms
+        from agox.modules.models.gaussian_process.featureCalculators_multi.angular_fingerprintFeature_cy import Angular_Fingerprint
+        from agox.modules.models.gaussian_process.delta_functions_multi.delta import delta as deltaFunc
+        from agox.modules.models.gaussian_process.kernels import RBF, ConstantKernel as C, WhiteKernel
+        from agox.modules.models.gaussian_process.GPR import GPR
+
+
+        temp_atoms = environment.get_template()
+        temp_atoms += Atoms(environment.get_numbers())  
+
+        if feature_calculator is None:
+            feature_calculator = Angular_Fingerprint(temp_atoms, Rc1=6.0, Rc2=4.0, binwidth1=0.1332, Nbins2=30,
+                                                    sigma1=0.2, sigma2=0.2, gamma=2, eta=20, use_angular=True)
+
+        length_scale1=10.0; length_scale1_bounds=(1e-1, 1e3)
+        length_scale2=10.0; length_scale2_bounds=(1e-1, 1e3)
+        amplitude=100.0; amplitude_bounds=(1e0,1e5)
+        weight = 0.01
+        noise=1e-5; noise_bounds=(1e-5, 1e-3)
+
+
+        kernel = C(amplitude, amplitude_bounds) * \
+        ( \
+        C((1-weight), ((1-weight), (1-weight))) * RBF(length_scale1, length_scale1_bounds) + \
+        C(weight, (weight, weight)) * RBF(length_scale2, length_scale2_bounds)
+        ) + \
+        WhiteKernel(noise, noise_bounds)
+      
+        delta = deltaFunc(atoms=temp_atoms, rcut=6)
+        
+        gpr = GPR(kernel=kernel,
+                featureCalculator=feature_calculator,
+                delta_function=delta,   
+                bias_func=np.mean,
+                optimize=True,
+                n_restarts_optimizer=1,
+                use_delta_in_training=False)
+
+        return cls(gpr, database=database, update_interval=1, optimize_loglikelyhood=True, use_saved_features=True)
+
     def get_feature_calculator(self):
         return self.model.featureCalculator
