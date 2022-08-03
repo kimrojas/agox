@@ -77,7 +77,8 @@ class LogEntry(Observer, Writer):
         self.timings.append(-dt())
 
     def end_timer(self, *args, **kwargs):
-        self.timings[-1] += dt()
+        if len(self.timings):
+            self.timings[-1] += dt()
 
     def get_current_timing(self):
 
