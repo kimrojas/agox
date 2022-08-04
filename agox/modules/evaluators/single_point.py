@@ -24,7 +24,7 @@ class SinglePointEvaluator(EvaluatorBaseClass):
                 F = candidate.get_forces()
                 candidate.add_meta_information('SPC', 1)
             except Exception as e:
-                self.write('Energy calculation failed with exception: {}'.format(e))
+                self.writer('Energy calculation failed with exception: {}'.format(e))
                 return False
         else:
             E = 0

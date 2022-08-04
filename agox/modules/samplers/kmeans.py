@@ -61,6 +61,8 @@ class KMeansSampler(SamplerBaseClass):
         for n in range(n_clusters):
             filt_cluster = labels == n
             cluster_indices = indices[filt_cluster]
+            if len(cluster_indices) == 0:
+                continue
             min_e_index = np.argmin(e[filt_cluster])
             index_best_in_cluster = cluster_indices[min_e_index]
             sample.append(structures[index_best_in_cluster])

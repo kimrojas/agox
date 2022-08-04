@@ -1,19 +1,6 @@
-grain_boundary/results/
-training_investigation/
-old_ymir/
-TiO2/
-Ag111/
-tests/CH4_relax/test*
-tests/CH4_relax/rep_timing
-tests/CH4_relax/model_checkpoint
-tests/benzene_relax/test*
-tests/benzene_relax/model_checkpoint
-tests/graphene_C23_on_master
 **/__pycache__
 .vscode/
-modules/gaussian_process/gp_calc_tests/
 local_files/
-*~
 .ipynb_checkpoints/
 docs/build/
 agox.egg-info
@@ -22,3 +9,5 @@ build
 trash
 *.c
 *.so
+agox/local/
+*~
