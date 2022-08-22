@@ -38,7 +38,8 @@ class AGOXGenerator(GeneratorBaseClass):
 
     @classmethod
     def get_gofee_generator(cls, environment, database, calculator, iterations=25, 
-        number_of_candidates=[1, 0, 0], prefix='INNER AGOX',  c1=0.7, c2=1.3):
+        number_of_candidates=[1, 0, 0], prefix='INNER AGOX',  c1=0.7, c2=1.3, model_kwargs={}, 
+        additional_modules=None):
         from agox.modules.generators import RandomGenerator, PermutationGenerator, RattleGenerator
         from agox.modules.samplers import KMeansSampler
         from agox.modules.databases.memory import MemoryDatabase
@@ -53,7 +54,7 @@ class AGOXGenerator(GeneratorBaseClass):
 
         model_database = MemoryDatabase(order=6, prefix=prefix, verbose=True)
 
-        model_model = ModelGPR.default(environment, model_database)
+        model_model = ModelGPR.default(environment, model_database, **model_kwargs)
         model_model.iteration_start_training = 1
 
         model_sampler = KMeansSampler(feature_calculator=model_model.get_feature_calculator(), 
@@ -86,6 +87,9 @@ class AGOXGenerator(GeneratorBaseClass):
 
         model_agox_modules = [model_database, model_collector, model_relaxer, 
             model_evaluator, model_sampler, model_acquisitor, wrapper]
+
+        if additional_modules is not None:
+            model_agox_modules += additional_modules
 
         return cls(modules=model_agox_modules, database=model_database, 
             main_database=database, iterations=iterations)
