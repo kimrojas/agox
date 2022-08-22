@@ -274,7 +274,7 @@ class ModelGPR(ModelBaseClass):
     @classmethod
     def default(cls, environment, database, lambda1min=1e-1, lambda1max=1e3, lambda2min=1e-1, lambda2max=1e3, 
                 theta0min=1, theta0max=1e5, beta=0.01, use_delta_func=True, sigma_noise = 1e-2,
-                feature_calculator=None):
+                feature_calculator=None, use_delta_in_training=False):
 
         from ase import Atoms
         from agox.modules.models.gaussian_process.featureCalculators_multi.angular_fingerprintFeature_cy import Angular_Fingerprint
@@ -309,11 +309,10 @@ class ModelGPR(ModelBaseClass):
         gpr = GPR(kernel=kernel,
                 featureCalculator=feature_calculator,
                 delta_function=delta,
-                # delta_function=None,          
                 bias_func=None,
                 optimize=True,
                 n_restarts_optimizer=1,
-                use_delta_in_training=False)
+                use_delta_in_training=use_delta_in_training)
 
         return cls(gpr, database=database, update_interval=1, optimize_loglikelyhood=True, use_saved_features=True)
 
