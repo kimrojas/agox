@@ -272,17 +272,17 @@ class ModelGPR(ModelBaseClass):
     @classmethod
     def default(cls, environment, database, lambda1min=1e-1, lambda1max=1e3, lambda2min=1e-1, lambda2max=1e3, 
                 theta0min=1, theta0max=1e5, beta=0.01, use_delta_func=True, sigma_noise = 1e-2,
-                feature_calculator=None):
+                feature_calculator=None, kernel=None):
 
         from ase import Atoms
         from agox.modules.models.gaussian_process.featureCalculators_multi.angular_fingerprintFeature_cy import Angular_Fingerprint
         from agox.modules.models.gaussian_process.delta_functions_multi.delta import delta as deltaFunc
-        from agox.modules.models.gaussian_process.kernels import RBF, ConstantKernel as C, WhiteKernel
+        from agox.modules.models.gaussian_process.kernels import RBF, ConstantKernel as C, WhiteKernel, GeneralAnisotropicRBF
         from agox.modules.models.gaussian_process.GPR import GPR
 
 
         temp_atoms = environment.get_template()
-        temp_atoms += Atoms(environment.get_numbers())  
+        temp_atoms += Atoms(environment.get_numbers())
 
         if feature_calculator is None:
             feature_calculator = Angular_Fingerprint(temp_atoms, Rc1=6, Rc2=4, binwidth1=0.2, Nbins2=30,
@@ -292,12 +292,26 @@ class ModelGPR(ModelBaseClass):
         lambda2ini = (lambda2max - lambda2min)/2 + lambda2min
         theta0ini = 5000                         
         
-        kernel = C(theta0ini, (theta0min, theta0max)) * \
-        ( \
-        C((1-beta), ((1-beta), (1-beta))) * RBF(lambda1ini, (lambda1min,lambda1max)) + \
-        C(beta, (beta, beta)) * RBF(lambda2ini, (lambda2min,lambda2max)) 
-        ) + \
-        WhiteKernel(sigma_noise, (sigma_noise,sigma_noise))
+        if kernel is None:
+            kernel = C(theta0ini, (theta0min, theta0max)) * \
+            ( \
+            C((1-beta), ((1-beta), (1-beta))) * RBF(lambda1ini, (lambda1min,lambda1max)) + \
+            C(beta, (beta, beta)) * RBF(lambda2ini, (lambda2min,lambda2max)) 
+            ) + \
+            WhiteKernel(sigma_noise, (sigma_noise,sigma_noise))
+        if kernel == 'anisotropic':
+            
+            lambda1ini_aniso = np.array([lambda1ini, lambda1ini])
+            length_scale_indices = np.array([0 for _ in range(feature_calculator.Nelements_2body)] 
+                + [1 for _ in range(feature_calculator.Nelements_3body)])
+
+            kernel = C(theta0ini, (theta0min, theta0max)) * \
+            ( \
+            C((1-beta), ((1-beta), (1-beta))) * GeneralAnisotropicRBF(lambda1ini, (lambda1min,lambda1max)) + \
+            C(beta, (beta, beta)) * GeneralAnisotropicRBF(lambda2ini, (lambda2min,lambda2max)) 
+            ) + \
+            WhiteKernel(sigma_noise, (sigma_noise,sigma_noise))
+            
 
         if use_delta_func:
             delta = deltaFunc(atoms=temp_atoms, rcut=6)
