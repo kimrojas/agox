@@ -351,7 +351,7 @@ class GPR(Writer):
                     "Gradient can only be evaluated for theta!=None")
             return self.log_marginal_likelihood_value_
 
-        kernel = self.kernel_.clone_with_theta(theta)
+        kernel = self.kernel_.clone_with_theta(theta) # I think this dumb
 
         if eval_gradient:
             K, K_gradient = kernel(self.featureMat, eval_gradient=True)
