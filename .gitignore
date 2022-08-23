@@ -10,3 +10,4 @@ trash
 *.c
 *.so
 agox/local/
+*~

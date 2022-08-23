@@ -29,7 +29,7 @@ class GPR(Writer):
     Parameters for the compator. This could be the width for the gaussian kernel.
     """
     def __init__(self, kernel, featureCalculator, delta_function=None, bias_func=None, optimize=True, n_restarts_optimizer=0, constraint_small_kernel_width=False,use_delta_in_training=False, 
-    verbose=True):
+                 verbose=True, n_maxiter_optimizer=None):
         Writer.__init__(self, verbose=verbose)
 
         if use_delta_in_training:
@@ -46,6 +46,8 @@ class GPR(Writer):
         
         self.bias_func = bias_func
         self.delta_function = delta_function
+
+        self.n_maxiter_optimizer = n_maxiter_optimizer
 
         # Initialize data counter
         self.Ndata = 0
@@ -349,7 +351,7 @@ class GPR(Writer):
                     "Gradient can only be evaluated for theta!=None")
             return self.log_marginal_likelihood_value_
 
-        kernel = self.kernel_.clone_with_theta(theta)
+        kernel = self.kernel_.clone_with_theta(theta) # I think this dumb
 
         if eval_gradient:
             K, K_gradient = kernel(self.featureMat, eval_gradient=True)
@@ -391,8 +393,12 @@ class GPR(Writer):
             return log_likelihood
 
     def _constrained_optimization(self, obj_func, initial_theta, bounds):
-        theta_opt, func_min, convergence_dict = \
-            fmin_l_bfgs_b(obj_func, initial_theta, bounds=bounds)
+        if self.n_maxiter_optimizer is None:
+            theta_opt, func_min, convergence_dict = \
+                fmin_l_bfgs_b(obj_func, initial_theta, bounds=bounds)
+        else:
+            theta_opt, func_min, convergence_dict = \
+                fmin_l_bfgs_b(obj_func, initial_theta, bounds=bounds, maxiter=self.n_maxiter_optimizer)
         if convergence_dict["warnflag"] != 0:
             warnings.warn("fmin_l_bfgs_b terminated abnormally with the "
                           " state: %s" % convergence_dict)
