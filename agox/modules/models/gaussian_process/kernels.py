@@ -1131,37 +1131,33 @@ class RBF(StationaryKernelMixin, NormalizedKernelMixin, Kernel):
 
 
 class GeneralAnisotropicRBF(StationaryKernelMixin, NormalizedKernelMixin, Kernel):
-    """Radial-basis function kernel (aka squared-exponential kernel).
-
-    The RBF kernel is a stationary kernel. It is also known as the
-    "squared exponential" kernel. It is parameterized by a length-scale
-    parameter length_scale>0, which can either be a scalar (isotropic variant
-    of the kernel) or a vector with the same number of dimensions as the inputs
-    X (anisotropic variant of the kernel). The kernel is given by:
-
-    k(x_i, x_j) = exp(-1 / 2 d(x_i / length_scale, x_j / length_scale)^2)
-
-    This kernel is infinitely differentiable, which implies that GPs with this
-    kernel as covariance function have mean square derivatives of all orders,
-    and are thus very smooth.
-
-    .. versionadded:: 0.18
+    """Anisotropic radial-basis function kernel (aka squared-exponential kernel).
 
     Parameters
     -----------
-    length_scale : float or array with shape (n_features,), default: 1.0
-        The length scale of the kernel. If a float, an isotropic kernel is
-        used. If an array, an anisotropic kernel is used where each dimension
-        of l defines the length-scale of the respective feature dimension.
+    length_scale : float or array of floats. 
 
     length_scale_bounds : pair of floats >= 0, default: (1e-5, 1e5)
         The lower and upper bound on length_scale
 
+    length_scale_indices: np.array([]), 
+        Indices that index into the length_scale array to produce an array of 
+        the same dimensions as the feature vector, so if the vector has length N 
+        then length_scale_indices also has length N. 
+
+        E.g. if N = 10 and the number of length scales is 2 then a possible choice is
+            np.array([0, 0, 0, 0, 0, 1, 1, 1, 1, 1])
+        which results in the kernel applying the first length scale to the first 
+        five elements of the feature and the second length scale to the remaining 
+        five elements. 
+
+    If only a single length scale is chosen or both length scales are equal results 
+    match that of the standard RBF. 
+
+    Note: The kernel can be quite a lot slower for hyperparameter optimization with 
+    marginal loglikelihood. 
     """
-    def __init__(self, length_scale=1.0, length_scale_bounds=(1e-5, 1e5), length_scale_indices=1):
-        #if np.iterable(length_scale):
-        #    self.length_scale = np.array(length_scale)
-        #else:
+    def __init__(self, length_scale=1.0, length_scale_bounds=(1e-5, 1e5), length_scale_indices=None):
         self.length_scale = length_scale
         self.length_scale_bounds = length_scale_bounds
         self.length_scale_indices = length_scale_indices
@@ -1242,21 +1238,8 @@ class GeneralAnisotropicRBF(StationaryKernelMixin, NormalizedKernelMixin, Kernel
                 K_gradient = (X[:, np.newaxis, :] - X[np.newaxis, :, :]) ** 2 \
                     / (length_scale ** 2)
 
-                # # Need to sum away some stuff:
-                # # K_gradient_temp = []            
-                # # for unique_index in np.arange(len(self.length_scale)):
-                # #     K_gradient_temp.append(np.sum(K_gradient[:, :, np.argwhere(self.length_scale_indices == unique_index)], axis=2))
-                # # K_gradient = np.dstack(K_gradient_temp)
-                # # Other way:
-                # K_gradient_temp = np.zeros((K.shape[0], K.shape[1], len(self.length_scale)))
-                # for i in range(len(self.length_scale)):
-                #     K_gradient_temp[:, :, i] = np.sum(K_gradient[:, :, self.masks[i]], axis=2)
-                # K_gradient = K_gradient_temp
-
-                # Other other way:
+                # Sum over dimensions using the same length scale. 
                 K_gradient = np.dstack([K_gradient[:,:].sum(axis=2, where=self.masks[i]) for i in range(len(self.length_scale))])
-
-
                 K_gradient *= K[..., np.newaxis]
                 return K, K_gradient
         else:
