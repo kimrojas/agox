@@ -274,6 +274,35 @@ class ModelGPR(ModelBaseClass):
                 theta0min=1, theta0max=1e5, beta=0.01, use_delta_func=True, sigma_noise = 1e-2,
                 feature_calculator=None, kernel=None):
 
+        """
+        Creates a GPR model. 
+
+        Parameters
+        ------------
+        environment: AGOX environment. 
+            Used to create an atoms object to initialize e.g. the feature calculator. 
+        database: 
+            AGOX database that the model will be attached to. 
+        lambda1min/lambda1max: float
+            Length scale minimum and maximum. 
+        lambda2min/lambda2max: float
+            Length scale minimum and maximum. 
+        theta0min/theta0max: float
+            Amplitude minimum and maximum 
+        use_delta_func: bool
+            Whether to use the repulsive prior function. 
+        sigma_noise: float
+            Noise amplitude. 
+        feature_calculator: object
+            A feature calculator object, if None defaults to reasonable 
+            fingerprint settings. 
+        kernel: str or kernel object or None. 
+            If kernel='anisotropic' the anisotropic RBF kernel is used where
+            radial and angular componenets are treated at different length scales
+            If None the standard RBF is used. 
+            If a kernel object then that kernel is used. 
+        """
+
         from ase import Atoms
         from agox.modules.models.gaussian_process.featureCalculators_multi.angular_fingerprintFeature_cy import Angular_Fingerprint
         from agox.modules.models.gaussian_process.delta_functions_multi.delta import delta as deltaFunc
@@ -302,13 +331,15 @@ class ModelGPR(ModelBaseClass):
         if kernel == 'anisotropic':
             
             lambda1ini_aniso = np.array([lambda1ini, lambda1ini])
+            lambda2ini_aniso = np.array([lambda2ini, lambda2ini])
+
             length_scale_indices = np.array([0 for _ in range(feature_calculator.Nelements_2body)] 
                 + [1 for _ in range(feature_calculator.Nelements_3body)])
 
             kernel = C(theta0ini, (theta0min, theta0max)) * \
             ( \
-            C((1-beta), ((1-beta), (1-beta))) * GeneralAnisotropicRBF(lambda1ini, (lambda1min,lambda1max)) + \
-            C(beta, (beta, beta)) * GeneralAnisotropicRBF(lambda2ini, (lambda2min,lambda2max)) 
+            C((1-beta), ((1-beta), (1-beta))) * GeneralAnisotropicRBF(lambda1ini_aniso, (lambda1min,lambda1max), length_scale_indices=length_scale_indices) + \
+            C(beta, (beta, beta)) * GeneralAnisotropicRBF(lambda2ini_aniso, (lambda2min,lambda2max), length_scale_indices=length_scale_indices) 
             ) + \
             WhiteKernel(sigma_noise, (sigma_noise,sigma_noise))
             
