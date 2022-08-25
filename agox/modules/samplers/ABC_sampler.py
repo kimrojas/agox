@@ -29,7 +29,10 @@ class SamplerBaseClass(ABC, Observer, Writer):
     @abstractmethod
     def get_random_member(self):
         pass
-    
+        
+    def get_all_members(self):
+        return [candidate.copy() for candidate in self.sample]
+
     @abstractmethod
     def setup(self):
         pass
