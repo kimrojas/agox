@@ -11,6 +11,7 @@ class MemoryDatabase(DatabaseBaseClass):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.number_of_preset_candidates = 0
 
     ####################################################################################################################
     # Memory-based methods:
@@ -24,9 +25,10 @@ class MemoryDatabase(DatabaseBaseClass):
         if dispatch:
             self.dispatch_to_observers(self)
 
-    def get_all_candidates(self):
+    def get_all_candidates(self, return_preset=True):
+        min_index = self.get_minimum_index(return_preset)
         all_candidates = []
-        for candidate in self.candidates:
+        for candidate in self.candidates[min_index:]:
             all_candidates.append(candidate)
         return all_candidates
 
@@ -40,8 +42,12 @@ class MemoryDatabase(DatabaseBaseClass):
     def get_recent_candidates(self, number):
         return [candidate for candidate in self.candidates[-number:]]
 
-    def get_best_energy(self):
-        return np.min(self.candidate_energies)
+    def get_best_energy(self, return_preset=True):
+        min_index = self.get_minimum_index(return_preset)
+        try:
+            return np.min(self.candidate_energies[min_index:])
+        except:
+            return np.inf
         
     def assign_from_main(self, main):
         super().assign_from_main(main)
@@ -58,3 +64,13 @@ class MemoryDatabase(DatabaseBaseClass):
     def reset(self):
         self.candidates = []
         self.candidate_energies = []
+
+    def set_number_of_preset_candidates(self, number):
+        self.number_of_preset_candidates = number
+    
+    def get_minimum_index(self, return_preset):
+        if return_preset:
+            min_index = 0
+        else:
+            min_index = self.number_of_preset_candidates
+        return min_index
