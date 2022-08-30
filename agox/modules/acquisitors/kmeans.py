@@ -7,7 +7,7 @@ class KmeansAcquisitor(AcquisitorBaseClass):
 
     name = 'KmeansAcquisitor'
 
-    def __init__(self, descriptor, model, k=5, start_iteration=5, **kwargs):
+    def __init__(self, descriptor, model, k=5, start_iteration=0, **kwargs):
         super().__init__(**kwargs)
         self.descriptor = descriptor
         self.model = model
