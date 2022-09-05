@@ -21,7 +21,6 @@ class LocalOptimizationEvaluator(EvaluatorBaseClass):
         self.calculator = calculator
         self.verbose = verbose
         self.store_trajectory = store_trajectory
-
         
         # Optimizer stuff:
         self.optimizer = optimizer
