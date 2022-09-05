@@ -41,7 +41,7 @@ class AGOXGenerator(GeneratorBaseClass):
     @classmethod
     def get_gofee_generator(cls, environment, database, calculator, iterations=25, 
         number_of_candidates=[1, 0, 0, 0], prefix='INNER AGOX',  c1=0.7, c2=1.3, model_kwargs={}, 
-        additional_modules=None):
+        additional_modules=None, fix_template=True, constraints=None):
         from agox.modules.generators import RandomGenerator, PermutationGenerator, RattleGenerator, SamplingGenerator
         from agox.modules.samplers import KMeansSampler
         from agox.modules.databases.memory import MemoryDatabase
@@ -51,6 +51,9 @@ class AGOXGenerator(GeneratorBaseClass):
         from agox.modules.models import ModelGPR
         from agox.modules.postprocessors import WrapperPostprocess
         from agox.modules.evaluators import LocalOptimizationEvaluator
+
+        if constraints is None:
+            constraints = environment.get_constraints()
 
         verbose=True
 
@@ -83,14 +86,15 @@ class AGOXGenerator(GeneratorBaseClass):
 
         internal_relaxer = MPIRelaxPostprocess(internal_acquisitor.get_acquisition_calculator(internal_database), 
             internal_database, order=3, optimizer_run_kwargs={'fmax':0.1, 'steps':100}, 
-            constraints=environment.get_constraints(), verbose=verbose, start_relax=2)
+            verbose=verbose, start_relax=2, fix_template=fix_template, constraints=constraints)
 
         internal_wrapper = WrapperPostprocess(order=3.5)
 
         internal_evaluator = LocalOptimizationEvaluator(calculator,
             optimizer_kwargs={'logfile':None}, verbose=True, store_trajectory=True,
             optimizer_run_kwargs={'fmax':0.05, 'steps':1}, gets={'get_key':'prioritized_candidates'}, 
-            constraints=environment.get_constraints(), order=5,  prefix=prefix, number_to_evaluate=3)
+            order=5,  prefix=prefix, number_to_evaluate=3, 
+            fix_template=fix_template, constraints=constraints)
 
         internal_agox_modules = [internal_database, internal_collector, internal_relaxer, 
             internal_evaluator, internal_sampler, internal_acquisitor, internal_wrapper]
