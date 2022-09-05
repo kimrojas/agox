@@ -30,21 +30,33 @@ class KmeansAcquisitor(AcquisitorBaseClass):
             valid_data = np.argwhere(energies <= np.min(energies) + self.energy_threshold).flatten()
             candidates = [candidates[i] for i in valid_data]
 
+            # Determine the number of clusters.. This is mostly a fail safe.
+            if not len(candidates) >= self.k:
+                k = len(candidates)
+            else:
+                k = self.k
+
+            # Get features                
             X = np.array([self.descriptor.get_feature(candidate) for candidate in candidates])
             if X.ndim == 3: # (Structure, atoms, features) -- sum away the atoms dimension to get (structure, features)                
                 X = np.sum(X, axis=1)
-            k_means = KMeans(init="k-means++", n_clusters=self.k, n_init=10)
+
+            # Make clustering:
+            k_means = KMeans(init="k-means++", n_clusters=k, n_init=10)
             labels = k_means.fit_predict(X)
             centers = k_means.cluster_centers_
-            selected = self.select_from_clustering(candidates, labels, centers)
 
+            # Selected from clusters
+            selected = self.select_from_clustering(candidates, labels, centers)        
             selected_candidates = [candidates[i] for i in selected]
             selected_energies = [atoms.get_potential_energy() for atoms in selected_candidates]
             acquisition_values = [labels[i] for i in selected]
 
+            # Sort selection
             sort_index = np.argsort(selected_energies)
             selected_candidates = [selected_candidates[i] for i in sort_index]
 
+            # Print
             for cand, acq_value in zip(selected_candidates, acquisition_values):
                 self.writer(f'Model energy = {cand.get_potential_energy()} - Cluster label = {acq_value}')
 
