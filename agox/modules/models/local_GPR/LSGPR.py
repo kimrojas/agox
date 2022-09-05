@@ -444,11 +444,11 @@ class LSGPRModel(ModelBaseClass):
             except:
                 if self.verbose > 1:
                     self.writer('wrong prior method')
-            try:
-                y -= np.array([self.prior.predict_energy(atoms) for atoms in atoms_list])
-            except:
-                if self.verbose > 1:
-                    self.writer('wrong prior method')                
+            # try:
+            #     y -= np.array([self.prior.predict_energy(atoms) for atoms in atoms_list])
+            # except:
+            #     if self.verbose > 1:
+            #         self.writer('wrong prior method')                
             
         return X, y
 
@@ -481,7 +481,8 @@ class LSGPRModel(ModelBaseClass):
         new_L[0:self.L.shape[0], 0:self.L.shape[1]] = self.L
 
         for l in range(size):
-            new_L[l+self.L.shape[0], self.L.shape[1]+new_lengths[l]*l:self.L.shape[1]+new_lengths[l]*(l+1)] = 1
+            step = int(np.sum(new_lengths[:l]))
+            new_L[l+self.L.shape[0], (self.L.shape[1]+step):(self.L.shape[1]+step+new_lengths[l])] = 1            
         return new_L
 
     def _make_sigma(self, atoms_list):
