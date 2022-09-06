@@ -14,11 +14,6 @@ extensions = [
         "agox.modules.models.gaussian_process.delta_functions_multi.delta",
         ["agox/modules/models/gaussian_process/delta_functions_multi/delta.pyx"],
         include_dirs=[numpy.get_include()]
-    ),
-    Extension(
-        "agox.modules.models.priors.repulsive",
-        ["agox/modules/models/priors/repulsive.pyx"],
-        include_dirs=[numpy.get_include()]
     ),        
 ]
 
