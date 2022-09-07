@@ -773,8 +773,7 @@ class KeyBoardEvent:
 
             fig.canvas.draw_idle()
 
-
-if __name__ == '__main__':
+def command_line_analysis():
     # Input arguments:
     parser = ArgumentParser()
     parser.add_argument('-d', '--directories', nargs='+', type=str)  # List - Directories
@@ -906,3 +905,6 @@ if __name__ == '__main__':
             plt.savefig(os.path.join(save_name + strftime('%Y_%m_%d') + '.png'), bbox_inches='tight')
 
         plt.show()
+
+if __name__ == '__main__':
+    command_line_analysis()
