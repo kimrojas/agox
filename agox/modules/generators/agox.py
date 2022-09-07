@@ -22,7 +22,9 @@ class AGOXGenerator(GeneratorBaseClass):
         self.database.reset()
 
         # Add the data from the main database, such that it can be used for sampling/training/etc.
-        [self.database.store_candidate(candidate, dispatch=False) for candidate in self.main_database.get_all_candidates()]
+        [self.database.store_candidate(candidate, dispatch=False) for candidate
+         in self.main_database.get_all_candidates(respect_worker_number=True)]
+        
         self.database.set_number_of_preset_candidates(len(self.database))
 
         print('#'*79); print('STARTING AGOX GENERATOR'); print('#'*79)
