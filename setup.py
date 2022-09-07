@@ -19,7 +19,7 @@ extensions = [
 
 setup(
     name="agox",
-    version="1.2.0",
+    version="1.1.0",
     url="https://gitlab.com/agox/agox",
     description="Atomistic Global Optimziation X is a framework structure optimization in materials science.",
     install_requires=[
@@ -34,5 +34,5 @@ setup(
     packages=find_packages(),
     python_requires=">=3.5",
     ext_modules=cythonize(extensions),
-    entry_points={'console_scripts':['agox-convert=agox.utils.convert_database:convert']}
-)
+    entry_points={'console_scripts':['agox-convert=agox.utils.convert_database:convert', 
+                                     'agox-analysis=agox.utils.batch_analysis:command_line_analysis']})
