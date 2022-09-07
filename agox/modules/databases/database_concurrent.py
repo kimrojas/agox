@@ -173,5 +173,13 @@ class ConcurrentDatabase(Database):
         return 0
 
         
-
+    def get_all_candidates(self, respect_worker_number=False):
+        if respect_worker_number:
+            all_candidates = []
+            for candidate in self.candidates:
+                if candidate.get_meta_information('worker_number') == self.worker_number:
+                    all_candidates.append(candidate)
+            return all_candidates
+        else:
+            return super().get_all_candidates()
 

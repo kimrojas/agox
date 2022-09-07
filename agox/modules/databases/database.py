@@ -109,7 +109,7 @@ class Database(DatabaseBaseClass):
         if dispatch:
             self.dispatch_to_observers(self)
 
-    def get_all_candidates(self):
+    def get_all_candidates(self, **kwargs):
         all_candidates = []
         for candidate in self.candidates:
             all_candidates.append(candidate)
