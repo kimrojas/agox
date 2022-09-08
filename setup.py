@@ -1,3 +1,4 @@
+from importlib.metadata import entry_points
 from setuptools import setup, find_packages
 from setuptools.extension import Extension
 from Cython.Build import cythonize
@@ -38,4 +39,5 @@ setup(
     packages=find_packages(),
     python_requires=">=3.5",
     ext_modules=cythonize(extensions),
-)
+    entry_points={'console_scripts':['agox-convert=agox.utils.convert_database:convert', 
+                                     'agox-analysis=agox.utils.batch_analysis:command_line_analysis']})

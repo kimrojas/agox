@@ -18,8 +18,10 @@ class CollectorBaseClass(ABC, Observer, Writer):
 
         self.add_observer_method(self.generate_candidates, sets=self.sets[0], gets=self.gets[0], order=self.order[0])
 
-        for generator in self.generators:
-            generator.remove_observer_method(generator.generate)
+        for generator in self.generators:            
+            observer_methods = [observer_method for observer_method in generator.observer_methods.values()]
+            for observer_method in observer_methods:
+                generator.remove_observer_method(observer_method)
 
     @property
     @abstractmethod

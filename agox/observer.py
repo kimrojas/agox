@@ -7,6 +7,14 @@ from agox.modules.helpers.writer import header_print, pretty_print
 global A
 A = 0
 def get_next_key():
+    """
+    Generates a unique always increasing key for observer methods. 
+
+    Returns
+    --------
+    int: 
+        Unique key. 
+    """
     global A
     A += 1
     return A
@@ -25,22 +33,47 @@ class ObserverHandler:
     ####################################################################################################################
 
     def attach_observer(self, observer_method):
-        print('            ', observer_method.name, len(self.observers))
+        """
+        Attaches an observer, saving it to the internal dict and re-evaluating 
+        the execution order. 
+
+        Parameters
+        -----------
+        observer_method: object
+            An instance of the ObserverMethod class that will be attached. 
+        """
         self.observers[observer_method.key] = observer_method
         self.evaluate_execution_order()
-        print([(key, obs.name) for key, obs in self.observers.items()])
-        print('            ', observer_method.name, len(self.observers))
 
-    def delete_observer(self, method):
-        del self.observers[method.key]
+    def delete_observer(self, observer_method):
+        """
+        Removes an observer, deleting it from the internal dict and re-evaluating 
+        the execution order. 
+
+        Parameters
+        -----------
+        observer_method: object
+            An instance of the ObserverMethod class that will be attached. 
+        """
+        del self.observers[observer_method.key]
         self.evaluate_execution_order()
 
     def evaluate_execution_order(self):
+        """
+        Evaluates the execution order by sorting the orders of stored 
+        observers. 
+        """
         keys = self.observers.keys()
         orders = [self.observers[key]['order'] for key in keys]
         self.execution_sort_idx = np.argsort(orders)
 
     def get_observers_in_execution_order(self):
+        """
+        Returns
+        --------
+        List
+            Observers sorted in order of execution.
+        """
         observers = [obs for obs in self.observers.values()]
         sort_idx = self.execution_sort_idx
         return [observers[p]['method'] for p in sort_idx]
@@ -60,9 +93,17 @@ class ObserverHandler:
 
     def print_observers(self, include_observer=False, verbose=0, hide_log=True):
         """
-        include_observer flag might be useful to debug if something is not working as expected. 
+        Parameters
+        -----------
+        include_observer: bool (default: False)
+            Turns printing of observer name on. Might be useful to debug if 
+            something is not working as expected. 
+        verbose: int (default: 0)
+            If verbose > 1 then more information is printed. 
+        hide_log: bool (default: True)
+            If True then the LogEntry observers are not printed. Keeps the 
+            report more clean. 
         """
-
         order_indexs = self.execution_sort_idx
         keys = [key for key in self.observers.keys()]
         names = [obs['name'] for obs in self.observers.values()]
@@ -87,7 +128,16 @@ class ObserverHandler:
                 pretty_print('_'*50)
 
     def observer_reports(self, report_key=False, hide_log=True):
+        """
+        Generate observer report, which checks if the data flow is valid. 
 
+        Parameters
+        -----------
+        report_key: bool
+            Whether or not to print the keys used to get or set from the cache. 
+        hide_log: bool
+            Whether or not to print the LogEntry observers. 
+        """
         dicts_out_of_order = [value for value in  self.observers.values()]
 
         
@@ -128,6 +178,9 @@ class ObserverHandler:
             pretty_print(base_offset+f'Umatched keys {unmatched_keys}')
 
     def get_set_match(self):
+        """
+        Check if gets and sets match.
+        """
         dicts_out_of_order = [value for value in  self.observers.values()]
         all_sets = []
         all_gets = []
@@ -151,11 +204,27 @@ class FinalizationHandler:
         self.names = {}
 
     def attach_finalization(self, name, method):
-        key = method.__hash__()
+        """
+        Attaches finalization method.
+
+        Parameters
+        -----------
+        name: str
+            Human readable name of the attached method.
+        method: method
+            A method or function to attach. 
+        """
+        key = get_next_key()
         self.finalization_methods[key] = method
         self.names[key] = name
     
     def get_finalization_methods(self):
+        """
+        Returns
+        --------
+        List
+            List of finalization methods.
+        """
         return self.finalization_methods.values()
 
     def print_finalization(self, include_observer=False, verbose=0):
@@ -175,26 +244,31 @@ class FinalizationHandler:
         print('='*len('=' * 25 + ' Observers ' + '='*25))
     
 class Observer:
-
     """
-    Base-class for classes that act as observers. 
-    gets: dict
-        Dict where the keys will be set as the name of attributes with the value being the value of the attribute. 
-        Used to get something from the iteration_cache during a run. 
-
-    sets: dict
-        Dict where the keys will be set as the name of attributes with the value being the value of the attribute. 
-        Used to set something from the iteration_cache during a run. 
-
-    order: int/float
-        Specifies the (relative) order of when the observer will be executed, lower numbers are executed first. 
     """
-
     def __init__(self, gets=[dict()], sets=[dict()], order=[0], sur_name='', **kwargs):
         """
-        observer_dict: Dictionary where keys will become the name of attributes and values the value of said attribute. 
-        So {'get_key':'candidate'} means self.get_key = 'candidate' which will then be used to access the iteration_cache
-        dictionary during a run. 
+        Base-class for classes that act as observers. 
+
+        Parameters
+        -----------
+        gets: dict
+        Dict where the keys will be set as the name of attributes with the 
+        value being the value of the attribute. Used to get something from the 
+        iteration_cache during a run. 
+
+        sets: dict
+        Dict where the keys will be set as the name of attributes with the 
+        value being the value of the attribute. Used to set something from the 
+        iteration_cache during a run. 
+
+        order: int/float
+        Specifies the (relative) order of when the observer will be executed, 
+        lower numbers are executed first. 
+
+        sur_name: str
+            An additional name added to classes name, can be used to distinguish 
+            between instances of the same class. 
         """
 
         if type(gets) == dict:
@@ -235,42 +309,102 @@ class Observer:
 
     @property
     def __name__(self):
+        """
+        Defines the name.
+        """
         return self.name + self.sur_name
 
     def get_from_cache(self, key):
         """
-        This should check according to the method that calls it.
+        Attempts to get from the cache, but it is checked that the class instance 
+        that tries to get has registered that it will get something with the 
+        given key. 
+
+        Parameters:
+        -----------
+        key: str
+            The key used to index into the cache. 
         """
         assert key in self.get_values # Makes sure the module has said it wants to get with this key. 
         return self.main_get_from_cache(key)
 
     def add_to_cache(self, key, data, mode):
         """
-        This should check according to the method that calls it.
+        Attempts to add to the cache, but it is checked that the class instance 
+        that tries to add has registered that it will add something with the 
+        given key. 
+
+        Parameters:
+        -----------
+        key: str
+            The key used to index into the cache. 
         """
         assert key in self.set_values # Makes sure the module has said it wants to set with this key. 
         return self.main_add_to_cache(key, data, mode)
 
     def add_observer_method(self, method, sets, gets, order):        
+        """
+        Adds an observer method that will later be attached with 'self.attach'. 
+
+        Parameters
+        -----------
+        method: method
+            The function/method that will be called by the observer-loop.
+        sets: dict
+            Dict containing the keys that the method will set in the cache. 
+        gets: dict
+            Dict containing the keys that the method will get from the cache. 
+        """
         observer_method = ObserverMethod(self.__name__, method.__name__, method, gets, sets, order)
         self.observer_methods[observer_method.key] = observer_method
 
-    def remove_observer_method(self, method):
-        key = method.key
+    def remove_observer_method(self, observer_method):
+        """
+        Remove an observer_method from the internal dict of methods, if this is 
+        done before calling 'attach' it will not be added as an observer. 
+
+        Parameters
+        -----------
+        observer_method: object
+            An instance of ObserverMethod.
+        """
+        key = observer_method.key
         if key in self.observer_methods.keys():
             del self.observer_methods[key]
 
-    def update_order(self, method, order):
-        key = method.key
+    def update_order(self, observer_method, order):
+        """
+        Change the order of a method. Not really tested in practice. 
+
+        Parameters
+        -----------
+        observer_method: object
+            An instance of ObserverMethod.
+
+        order: float
+            New order to set.         
+        """
+        key = observer_method.key
         assert key in self.observer_methods.keys()
         self.observer_methods[key].order = order
 
     def attach(self, main):
+        """
+        Attaches all ObserverMethod's as to observer-loop of the ObserverHandler 
+        object 'main'
+        
+        Parameters
+        ----------
+        main: object
+            An instance of an ObserverHandler. 
+        """
         for observer_method in self.observer_methods.values():
-            print(f'        {self.name}: {observer_method.method_name}')
             main.attach_observer(observer_method)
 
     def reset_observer(self):
+        """
+        Reset the observer_methods dict, removing all observer methods.
+        """
         self.observer_methods = {}
 
     ####################################################################################################################
@@ -278,6 +412,12 @@ class Observer:
     ####################################################################################################################
 
     def assign_from_main(self, main):
+        """
+        Parameters
+        ----------
+        main: object
+            An instance of AGOX main (agox.main.AGOX).
+        """
         self.main_get_from_cache = main.get_from_cache
         self.main_add_to_cache = main.add_to_cache
         self.get_iteration_counter = main.get_iteration_counter
@@ -286,6 +426,25 @@ class Observer:
 class ObserverMethod:
 
     def __init__(self, class_name, method_name, method, gets, sets, order):
+        """
+        ObserverMethod class. Holds all information about the method that an 
+        observer class attaches to the observer-loop. 
+
+        Parameters
+        ----------
+        name: str
+            Name of the class
+        method_name: str
+            Name of the method.
+        method: method
+            The method that is called by the observer-loop.
+        sets: dict
+            Dict containing the keys that the method will set in the cache. 
+        gets: dict
+            Dict containing the keys that the method will get from the cache. 
+        order: float
+            Execution order
+        """
         self.class_name = class_name
         self.method_name = method_name
         self.method = method
@@ -302,6 +461,25 @@ class ObserverMethod:
         return self.__dict__[key]
 
     def report(self, offset='', report_key=False, return_report=False, print_report=True):
+        """
+        Generate report. Used by ObserverHandler.observer_reports
+
+        Parameters
+        ----------
+        offset: str
+        report_key: bool
+            Print the key or not. 
+        return_report: bool
+            Whether to return the report or not.
+        print_report: bool
+            Whether to print hte print or not. 
+
+        Returns
+        -------
+        str or None:
+            If report_key = True then it returns a string otherwise None is r
+            eturned. 
+        """
         report = []
 
         for key in self.gets.keys():
