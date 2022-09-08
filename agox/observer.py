@@ -4,6 +4,13 @@ from abc import ABC, abstractmethod
 
 from agox.modules.helpers.writer import header_print, pretty_print
 
+global A
+A = 0
+def get_next_key():
+    global A
+    A += 1
+    return A
+
 class ObserverHandler:
     """
     Base-class for classes that can have attached observers. 
@@ -18,11 +25,14 @@ class ObserverHandler:
     ####################################################################################################################
 
     def attach_observer(self, observer_method):
+        print('            ', observer_method.name, len(self.observers))
         self.observers[observer_method.key] = observer_method
         self.evaluate_execution_order()
+        print([(key, obs.name) for key, obs in self.observers.items()])
+        print('            ', observer_method.name, len(self.observers))
 
     def delete_observer(self, method):
-        del self.observers[method.__hash__()]
+        del self.observers[method.key]
         self.evaluate_execution_order()
 
     def evaluate_execution_order(self):
@@ -43,10 +53,6 @@ class ObserverHandler:
         """
         for observer_method in self.get_observers_in_execution_order():
             observer_method(*args, **kwargs)
-
-    def reset_observers(self):
-        self.observers = {}
-        self.execution_sort_idx = []
 
     ####################################################################################################################
     # Printing / Reporting 
@@ -250,18 +256,22 @@ class Observer:
         self.observer_methods[observer_method.key] = observer_method
 
     def remove_observer_method(self, method):
-        key = method.__hash__()
+        key = method.key
         if key in self.observer_methods.keys():
             del self.observer_methods[key]
 
     def update_order(self, method, order):
-        key = method.__hash__()
+        key = method.key
         assert key in self.observer_methods.keys()
         self.observer_methods[key].order = order
 
     def attach(self, main):
         for observer_method in self.observer_methods.values():
+            print(f'        {self.name}: {observer_method.method_name}')
             main.attach_observer(observer_method)
+
+    def reset_observer(self):
+        self.observer_methods = {}
 
     ####################################################################################################################
     # Misc. 
@@ -285,8 +295,8 @@ class ObserverMethod:
 
         self.name = self.class_name + '.' + self.method_name
         self.class_reference = method.__self__
-
-        self.key = method.__hash__()
+        #self.key = method.__hash__() # Old
+        self.key = get_next_key()
 
     def __getitem__(self, key):
         return self.__dict__[key]
