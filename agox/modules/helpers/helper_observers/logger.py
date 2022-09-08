@@ -151,8 +151,6 @@ class LogEntry(Observer, Writer):
         self.name = 'LogEntry.' + observer_method.name
         self.observer_name = observer_method.name
 
-        print(f'LogEntry created {self.name}')
-
         # Time sub-entries:
         self.sub_entries = {}
         self.recursive_attach(observer_method)
@@ -167,8 +165,6 @@ class LogEntry(Observer, Writer):
             The main AGOX class from agox/main.py
         """
 
-        print(f'    {self.name}: Attached')
-
         self.add_observer_method(self.start_timer, sets=self.sets[0], gets=self.gets[0], order=self.order[0]-0.01)
         self.add_observer_method(self.end_timer, sets=self.sets[0], gets=self.gets[0], order=self.order[0]+0.01)
         super().attach(main)
@@ -178,13 +174,11 @@ class LogEntry(Observer, Writer):
         Method attached as an observer to start the timing. 
         """
         self.timings.append(-dt())
-        print(self.name + 'start', len(self.timings))
 
     def end_timer(self, *args, **kwargs):
         """
         Method attached as an observer to end the timing.
         """
-        print(self.name + 'end')
         if len(self.timings):
             self.timings[-1] += dt()
 

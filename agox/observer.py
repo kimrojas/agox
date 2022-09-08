@@ -7,6 +7,14 @@ from agox.modules.helpers.writer import header_print, pretty_print
 global A
 A = 0
 def get_next_key():
+    """
+    Generates a unique always increasing key for observer methods. 
+
+    Returns
+    --------
+    int: 
+        Unique key. 
+    """
     global A
     A += 1
     return A
@@ -25,11 +33,8 @@ class ObserverHandler:
     ####################################################################################################################
 
     def attach_observer(self, observer_method):
-        print('            ', observer_method.name, len(self.observers))
         self.observers[observer_method.key] = observer_method
         self.evaluate_execution_order()
-        print([(key, obs.name) for key, obs in self.observers.items()])
-        print('            ', observer_method.name, len(self.observers))
 
     def delete_observer(self, method):
         del self.observers[method.key]
@@ -267,7 +272,6 @@ class Observer:
 
     def attach(self, main):
         for observer_method in self.observer_methods.values():
-            print(f'        {self.name}: {observer_method.method_name}')
             main.attach_observer(observer_method)
 
     def reset_observer(self):
