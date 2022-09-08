@@ -30,8 +30,8 @@ class AGOXGenerator(GeneratorBaseClass):
         print('#'*79); print('STARTING AGOX GENERATOR'); print('#'*79)
         print(f'LENGTH OF INTERNAL DATABASE: {len(self.database)}')
 
-        self.agox = AGOX(*self.modules, use_log=self.first_call)
-        self.agox.run(N_iterations=self.iterations, verbose=True)
+        self.agox = AGOX(*self.modules)
+        self.agox.run(N_iterations=self.iterations, verbose=True, hide_log=False)
 
         print('#'*79); print('FINISHED AGOX GENERATOR'); print('#'*79)
 
