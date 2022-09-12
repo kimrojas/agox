@@ -76,9 +76,10 @@ class KMeansSampler(SamplerBaseClass):
         
 
         sample_energies = [t.get_potential_energy() for t in self.sample]
-        self.writer('SAMPLE_DFT_ENERGY  ', '[',','.join(['{:8.3f}'.format(e) for e in sample_energies]),']')
+        #self.writer('SAMPLE_DFT_ENERGY  ', '[',','.join(['{:8.3f}'.format(e) for e in sample_energies]),']')
+        for i, sample_energy in enumerate(sample_energies):
+            self.writer(f'{i}: Sample DFT Energy {sample_energy:8.3f}')
         
-
         if self.model_calculator is not None and self.model_calculator.ready_state:
             for s in self.sample:
                 t = s.copy()
