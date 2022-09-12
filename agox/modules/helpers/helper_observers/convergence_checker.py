@@ -7,7 +7,7 @@ class ConvergenceChecker(Observer, Writer):
     name = 'ConvergenceChecker'
 
     def __init__(self, database=None, improvement_threshold=0.0, stagnation_threshold=5, gets={'get_key':'evaluated_candidates'}, sets={}, order=0, 
-                verbose=True, use_counter=True, prefix='', **kwargs):
+                verbose=True, use_counter=True, start_iteration=0, prefix='', **kwargs):
         Observer.__init__(self, sets=sets, gets=gets, order=order)
         Writer.__init__(self, verbose=verbose, use_counter=use_counter, prefix=prefix)
 
@@ -15,10 +15,13 @@ class ConvergenceChecker(Observer, Writer):
         self.improvement_threshold = improvement_threshold        
         self.stagnation_counter = 0
         self.stagnation_threshold = stagnation_threshold
+        self.start_iteration = start_iteration
 
         self.add_observer_method(self.check_for_convergence, sets=self.sets[0], gets=self.gets[0], order=self.order[0])
 
     def check_for_convergence(self):
+        if self.get_iteration_counter() < self.start_iteration:
+            return False
 
         # Get best energy from database: 
         best_energy = self.database.get_best_energy(return_preset=False)
@@ -90,6 +93,13 @@ class ConvergenceCheckerBjorkMode(ConvergenceChecker):
 
     @header_footer
     def check_for_convergence(self):
+
+        if self.get_iteration_counter() < self.start_iteration:
+            self.writer(f'Not starting yet: {self.get_iteration_counter()}/{self.start_iteration}')
+            return False
+
+        print(f'Running convergence checker {self.get_iteration_counter()}/{self.start_iteration}')
+
         # Step 1.
         energy = self.database.get_best_energy(return_preset=False)
 
@@ -107,15 +117,17 @@ class ConvergenceCheckerBjorkMode(ConvergenceChecker):
             self.best_energy = energy
             self.writer('Candidate marginally better than best previous!')
         # Step 6:
-        if delta_energy < -self.improvement_threshold:
+        if delta_energy <= -self.improvement_threshold:
             self.writer('Candidate better than improvement threshold!')
             self.stagnation_counter = 0
             return 
         # Step 7
         self.stagnation_counter += 1
 
+        self.writer(f'Stagnation counter = {self.stagnation_counter} out of {self.stagnation_threshold}')
+
         # Step 8:
-        if self.stagnation_counter >= self.stagnation_threshold - self.begin_change:
+        if self.stagnation_counter >= (self.stagnation_threshold - self.begin_change):
 
             # Step 9 Get candidates from sampler:
             sampled_candidates = self.sampler.get_all_members()
@@ -123,6 +135,7 @@ class ConvergenceCheckerBjorkMode(ConvergenceChecker):
             self.writer('Added {} candidates from the sampler!'.format(len(sampled_candidates)))
 
         return self.stagnation_counter >= self.stagnation_threshold
+        
 # Bjørk strategy:
 # 1. Get best energy from database --> energy
 # 2. Get candidates from cache
