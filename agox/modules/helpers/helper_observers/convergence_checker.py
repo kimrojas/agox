@@ -120,9 +120,10 @@ class ConvergenceCheckerBjorkMode(ConvergenceChecker):
         if delta_energy <= -self.improvement_threshold:
             self.writer('Candidate better than improvement threshold!')
             self.stagnation_counter = 0
-            return 
+            return False
         # Step 7
         self.stagnation_counter += 1
+        state = (self.stagnation_counter >= self.stagnation_threshold)
 
         self.writer(f'Stagnation counter = {self.stagnation_counter} out of {self.stagnation_threshold}')
 
@@ -134,7 +135,10 @@ class ConvergenceCheckerBjorkMode(ConvergenceChecker):
             self.add_to_cache(self.set_key, sampled_candidates, mode='w')
             self.writer('Added {} candidates from the sampler!'.format(len(sampled_candidates)))
 
-        return self.stagnation_counter >= self.stagnation_threshold
+        if state:
+            self.writer('Convergence detected AGOX should stop now!')
+
+        return state
         
 # Bjørk strategy:
 # 1. Get best energy from database --> energy
