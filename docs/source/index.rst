@@ -25,6 +25,7 @@ Contents
    algorithms/algorithms
    bonus_topics/bonus_topics
    references/references
+   command_line_tools/command_line
 
 This work has been supported by funding from the Villum foundation 
 
