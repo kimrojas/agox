@@ -16,3 +16,4 @@ as the database index, as for the Slurm example in the getting started section.
    par_temp
    ea
    gofee
+   search_generator
