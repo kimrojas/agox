@@ -125,7 +125,8 @@ class GPR(Writer):
             g = K0 - np.dot(K_vec.T, alpha_err)  # negative g can occur due to numerical errors.
             if g <= 0:
                 self.writer('negative g-value: g={}'.format(g))
-                error_force = 0
+                Ncoord = 3 * atoms.get_global_number_of_atoms()
+                error_force = np.zeros(Ncoord)
             else:
                 error_force = 1/np.sqrt(g) * (kernelDeriv.T).dot(alpha_err)
             return F, error_force
