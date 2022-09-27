@@ -65,7 +65,7 @@ class AGOXGenerator(GeneratorBaseClass):
         internal_model.iteration_start_training = 1
 
         internal_sampler = KMeansSampler(feature_calculator=internal_model.get_feature_calculator(), 
-            database=internal_database, order=1, verbose=verbose)
+            database=internal_database, use_saved_features=True, order=1, verbose=verbose)
 
         internal_random_generator = RandomGenerator(**environment.get_confinement(), 
             c1=c1, c2=c2, may_nucleate_at_several_places=True, prefix=prefix, verbose=verbose)
