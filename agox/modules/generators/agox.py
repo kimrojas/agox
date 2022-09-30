@@ -4,26 +4,52 @@ from agox.modules.generators.ABC_generator import GeneratorBaseClass
 from agox.modules.databases import Database
 from agox.main import AGOX
 from agox.observer import ObserverHandler
+from agox.modules.evaluators.ABC_evaluator import EvaluatorBaseClass
+from ase.calculators.singlepoint import SinglePointCalculator
 
 class AGOXGenerator(GeneratorBaseClass):
 
     name = 'AGOX generator'
 
-    def __init__(self, modules=[], database=None, main_database=None, iterations=50, **kwargs):
+    def __init__(self, modules=[], database=None, main_database=None, iterations=50, recalc=True, **kwargs):
         super().__init__(**kwargs)
         self.modules = modules
         self.iterations = iterations
         self.database = database
         self.main_database = main_database
+        self.recalc = recalc
+        if self.recalc:
+            # search for evaluator among modules
+            evaluator = None
+            for module in self.modules:
+                if issubclass(module.__class__,EvaluatorBaseClass):
+                    evaluator = module
+                    break
+            assert evaluator is not None, 'Cannot find the evaluator for the AGOX recalc generator'
 
+            # get the calculator from the evaluator module
+            self.calculator = evaluator.calculator
+            
         self.first_call = True
+
+    def _copy_candidates_from_main_database_to_database(self):
+        if self.recalc:
+            for i,outer_candidate in enumerate(self.main_database.get_all_candidates(respect_worker_number=True)):
+                inner_candidate = outer_candidate.copy()
+                inner_candidate.set_calculator(self.calculator)
+                E = inner_candidate.get_potential_energy()
+                single_point_calc = SinglePointCalculator(inner_candidate, energy=E)
+                inner_candidate.set_calculator(single_point_calc)
+                self.database.store_candidate(inner_candidate, dispatch=False)
+        else:
+            [self.database.store_candidate(candidate, dispatch=False) for candidate
+             in self.main_database.get_all_candidates(respect_worker_number=True)]
 
     def get_candidates(self, sample, environment):
         self.database.reset()
 
         # Add the data from the main database, such that it can be used for sampling/training/etc.
-        [self.database.store_candidate(candidate, dispatch=False) for candidate
-         in self.main_database.get_all_candidates(respect_worker_number=True)]
+        self._copy_candidates_from_main_database_to_database()
         
         self.database.set_number_of_preset_candidates(len(self.database))
 
