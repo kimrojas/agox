@@ -4,7 +4,7 @@ import numpy as np
 from datetime import date
 import os
 
-from agox.modules.helpers.plot_confinement import plot_atoms, plot_cell
+from agox.helpers.plot_confinement import plot_atoms, plot_cell
 
 FONTCOLOR = 'black'
 

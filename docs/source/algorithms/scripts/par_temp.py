@@ -4,11 +4,11 @@ matplotlib.use('Agg')
 
 import numpy as np
 from agox import AGOX
-from agox.modules.databases import ConcurrentDatabase
-from agox.modules.environments import Environment
-from agox.modules.evaluators import LocalOptimizationEvaluator
-from agox.modules.generators import RattleGenerator
-from agox.modules.samplers import ParallelTemperingSampler
+from agox.databases import ConcurrentDatabase
+from agox.environments import Environment
+from agox.evaluators import LocalOptimizationEvaluator
+from agox.generators import RattleGenerator
+from agox.samplers import ParallelTemperingSampler
 from ase import Atoms
 
 from argparse import ArgumentParser
@@ -67,6 +67,6 @@ evaluator = LocalOptimizationEvaluator(calc, gets={'get_key':'candidates'},
 # Let get the show running! 
 ##############################################################################
     
-agox = AGOX(rattle_generator, database, evaluator, sampler)
+agox = AGOX(rattle_generator, database, evaluator)
 
 agox.run(N_iterations=50)

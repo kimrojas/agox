@@ -5,7 +5,7 @@ import re
 
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
-from agox.modules.databases.database import Database, export_candidates
+from agox.databases.database import Database, export_candidates
 from ase.data.colors import jmol_colors
 from ase.data import covalent_radii
 from time import strftime
@@ -601,7 +601,7 @@ class Analysis:
         return structures, energies
 
     def animate_structure(self, ax):
-        from agox.modules.helpers.plot_confinement import plot_cell
+        from agox.helpers.plot_confinement import plot_cell
 
         structures, energies = self.get_best_structures()
 

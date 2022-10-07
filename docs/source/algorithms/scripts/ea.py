@@ -3,13 +3,13 @@ matplotlib.use('Agg')
 
 import numpy as np
 from agox import AGOX
-from agox.modules.databases import Database
-from agox.modules.environments import Environment
-from agox.modules.evaluators import LocalOptimizationEvaluator
-from agox.modules.generators import RattleGenerator, RandomGenerator
-from agox.modules.samplers import GeneticSampler, DistanceComparator
-from agox.modules.collectors import StandardCollector
-from agox.modules.models.descriptors.simple_fingerprint import SimpleFingerprint
+from agox.databases import Database
+from agox.environments import Environment
+from agox.evaluators import LocalOptimizationEvaluator
+from agox.generators import RattleGenerator, RandomGenerator
+from agox.samplers import GeneticSampler, DistanceComparator
+from agox.collectors import StandardCollector
+from agox.models.descriptors.simple_fingerprint import SimpleFingerprint
 from ase import Atoms
 
 from argparse import ArgumentParser
@@ -70,6 +70,6 @@ evaluator = LocalOptimizationEvaluator(calc, gets={'get_key':'candidates'},
 # Let get the show running! 
 ##############################################################################
     
-agox = AGOX(collector, database, evaluator, sampler)
+agox = AGOX(collector, database, evaluator)
 
 agox.run(N_iterations=50)
