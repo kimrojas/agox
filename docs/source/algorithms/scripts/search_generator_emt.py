@@ -5,19 +5,19 @@ import numpy as np
 
 # Common AGOXs
 from agox.main import AGOX
-from agox.modules.environments import Environment
-from agox.modules.evaluators import SinglePointEvaluator
-from agox.modules.databases import Database
+from agox.environments import Environment
+from agox.evaluators import SinglePointEvaluator
+from agox.databases import Database
 
 # AGOX GENERATOR
-from agox.modules.generators.agox import AGOXGenerator
-from agox.modules.collectors import StandardCollector
+from agox.generators.agox import AGOXGenerator
+from agox.collectors import StandardCollector
 
 # Local GPR model
-from agox.modules.models.descriptors.soap import SOAP
+from agox.models.descriptors.soap import SOAP
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
-from agox.modules.models.local_GPR.LSGPR_CUR import LSGPRModelCUR
-from agox.modules.models.priors.repulsive import Repulsive
+from agox.models.local_GPR.LSGPR_CUR import LSGPRModelCUR
+from agox.models.priors.repulsive import Repulsive
 from ase.io import read
 
 NUM_ITERATIONS = 50
@@ -89,9 +89,9 @@ agox_generator = AGOXGenerator.get_gofee_generator(environment, database,
 ################################################################################
 # 'Real' stuff:
 ################################################################################
-from agox.modules.acquisitors.kmeans import KmeansAcquisitor
-from agox.modules.models.descriptors.simple_fingerprint import SimpleFingerprint
-from agox.modules.postprocessors.relax import RelaxPostprocess
+from agox.acquisitors.kmeans import KmeansAcquisitor
+from agox.models.descriptors.simple_fingerprint import SimpleFingerprint
+from agox.postprocessors.relax import RelaxPostprocess
 
 K = 10
 descriptor = SimpleFingerprint(species=environment.get_all_species())

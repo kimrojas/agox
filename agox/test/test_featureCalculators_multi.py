@@ -5,7 +5,7 @@ class TestStringMethods(unittest.TestCase):
     def test_feature(self):
         import numpy as np
         from ase import Atoms
-        from agox.modules.models.gaussian_process.featureCalculators_multi.angular_fingerprintFeature_cy import Angular_Fingerprint
+        from agox.models.gaussian_process.featureCalculators_multi.angular_fingerprintFeature_cy import Angular_Fingerprint
 
         L = 2
         d = 1

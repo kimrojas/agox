@@ -9,7 +9,7 @@ structures from a database is generally the first step, this can be done as such
 
 .. code-block:: python 
 
-    from agox.modules.databases import Database
+    from agox.databases import Database
     from ase.io import write
 
     database = Database(filename=path_to_db)

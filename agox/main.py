@@ -7,20 +7,22 @@
 # have received a copy of the GNU General Public License along with AGOX. If not, see <https://www.gnu.org/licenses/>.
 
 import numpy as np
-import pickle
-from agox.modules.candidates.standard import StandardCandidate
+from agox.candidates.standard import StandardCandidate
 from agox.observer import ObserverHandler, FinalizationHandler
-from agox.modules.helpers.helper_observers.logger import Logger
+from agox.logger import Logger
 
-from agox.modules.helpers.writer import header_footer, Writer, ICON, header_print
+from agox.writer import Writer, agox_writer, ICON, header_print
 
-VERSION = "1.1.0"
+VERSION = "2.0.0"
 
 class AGOX(ObserverHandler, FinalizationHandler, Writer):
     """
     AGO-X
     Atomistic Global Optimization X
     """
+
+    name = 'AGOX'
+
     def __init__(self, *args, **kwargs):
         """
         Observers are supplied through *args.
@@ -29,30 +31,31 @@ class AGOX(ObserverHandler, FinalizationHandler, Writer):
             - seed: Random seed for numpy.
             - use_log: Boolean - use logger or not.
         """
-        ObserverHandler.__init__(self)
+        ObserverHandler.__init__(self, handler_identifier='AGOX', dispatch_method=self.run)
         FinalizationHandler.__init__(self)
         Writer.__init__(self, verbose=True, use_counter=False, prefix='')
 
         print(ICON.format(VERSION))
         header_print('Initialization starting')
 
+        self.elements = args
+
+        candidate_instanstiator = kwargs.pop('candidate_instanstiator', StandardCandidate)
+        self.candidate_instanstiator = candidate_instanstiator
+
         seed = kwargs.pop('seed', None)
         if seed is not None:
             np.random.seed(seed)
             self.writer('Numpy random seed: {}'.format(seed))
 
-        self.elements = args
-        self.candidate_instantiator = StandardCandidate
-        self._iteration_counter = 0
-
-        self.check_elements()
+        # This attaches all Observers
         self._update()
 
+        # This happens after because the Logger looks at the current observers.
         use_log = kwargs.pop('use_log', None)
         if use_log is not False:
             logger = Logger()
             logger.attach(self)
-            logger.assign_from_main(self)
         
         unused_keys = False
         for key, value in kwargs.items():
@@ -61,43 +64,25 @@ class AGOX(ObserverHandler, FinalizationHandler, Writer):
         if unused_keys:
             self.writer('Stopping due to unused keys as behavior may not be as expected')
             exit()
-
-    def set_candidate_instantiator(self, candidate_instantiator):
-        self.candidate_instantiator = candidate_instantiator
-
-    @property
-    def iteration_counter(self):
-        return self._iteration_counter
     
-    @iteration_counter.setter
-    def iteration_counter(self, value):
-        if isinstance(value, int):
-            self._iteration_counter = value
-        else:
-            raise TypeError('iteration counter must be an integer')
+        self.print_observers(hide_log=True)
+        self.observer_reports(hide_log=True)
+        header_print('Initialization finished')
 
-    def get_iteration_counter(self):
-        return self.iteration_counter
+
+    def set_candidate_instanstiator(self, candidate_instanstiator):
+        self.candidate_instanstiator = candidate_instanstiator
  
     def _update(self):
+        """
+        Calls 'attach' on all Observer-objects in 'self.elements' and updates 
+        the 'candidate_instan
+        """
         for element in self.elements:
             if hasattr(element, 'attach'):
                 element.attach(self)
-            if hasattr(element, 'assign_from_main'):
-                element.assign_from_main(self)
-    
-    def check_elements(self):
-        checked_elements = []
-        for element in self.elements:
-            if type(element) == list:
-                if len(element) > 1:
-                    combined_element = element[0] + element[1]
-                    checked_elements.append(combined_element)
-                else:
-                    checked_elements.append(element[0])
-            else:
-                checked_elements.append(element)
-        self.elements = checked_elements
+            if hasattr(element, 'set_candidate_instanstiator'):
+                element.set_candidate_instanstiator(self.candidate_instanstiator)
 
     def run(self, N_iterations, verbose=True, hide_log=True):
         """
@@ -115,44 +100,145 @@ class AGOX(ObserverHandler, FinalizationHandler, Writer):
         so that if a different order is wanted that can be controlled from runscripts. Do NOT change order default values!
         """
 
-        if verbose: 
-            self.print_observers(hide_log=hide_log)
-            self.observer_reports(hide_log=hide_log)
-            header_print('Initialization finished')
         # Main-loop calling the relevant observers.   
-        converged = False
-        while self.iteration_counter < N_iterations and not converged: 
-            self.iteration_counter += 1
-            self.iteration_cache = {}
-            print('\n\n')
-            self.header_print('Iteration: {}'.format(self.iteration_counter))
+        state = State()
+        while state.get_iteration_counter() <= N_iterations and not state.get_convergence_status():
+            print('\n')
+            self.header_print('Iteration: {}'.format(state.get_iteration_counter()))
             for observer in self.get_observers_in_execution_order():
-                state = observer()
-                if state is not None: 
-                    if state is True:
-                        converged = True
+                observer(state)
+
             self.header_print('Iteration finished')
+            state.clear()
+            state.advance_iteration_counter()
+
         # Some things may want to perform some operation only at the end of the run. 
         for method in self.get_finalization_methods():
             method()
+        
+class State:
 
-    ####################################################################################################################
-    # iteration Cache Methods:
-    ####################################################################################################################
-
-    def get_from_cache(self, key):
-        return self.iteration_cache.get(key)
-
-    def add_to_cache(self, key, data, mode):
+    def __init__(self):
         """
-        modes: 
+        State object.
+
+        Attributes
+        ----------
+        cache: dict
+            Data communicated between modules is stored in the cache. 
+        iteration_counter: int
+            Keeps track of the number of iterations. 
+        convergence: bool
+            Convergence status, if True the iteration-loop is halted. 
+        """
+
+        self.cache = {}    
+        self.iteration_counter = 1
+        self.converged = False
+
+    def get_iteration_counter(self):
+        """
+        Returns
+        -------
+        int
+            The current iteration number. 
+        """
+        return self.iteration_counter
+
+    def set_iteration_counter(self, count):
+        """_summary_
+
+        Parameters
+        ----------
+        count : int
+            Iteration count
+        """
+        self.iteration_counter = count
+
+    def advance_iteration_counter(self):
+        """
+        Adds one to the iteration counter. 
+        """
+        self.iteration_counter += 1
+
+    def get_from_cache(self, observer, key):
+        """
+
+        Gets from the cache with the given key. The observed is passed along 
+        aswell in order to ensure that the observer is allowed to get with 
+        that key. 
+
+        Parameters
+        ----------
+        observer : class object
+            An AGOX Observer object, e.g. an instance of a Sampler. 
+        key : str
+            The key with which to get something from the cache. 
+
+        Returns
+        -------
+        list
+            List of things stored with the given key. 
+        """
+        # Makes sure the module has said it wants to get with this key.
+        assert key in observer.get_values  
+        return self.cache.get(key)
+
+    def add_to_cache(self, observer, key, data, mode):
+        """        
+        Add data to the cache.
+
+        Parameters
+        ----------
+        observer : class object
+            An AGOX Observer object, e.g. an instance of a Sampler. 
+        key : str
+            The key with which to get something from the cache. 
+        data : list
+            List of data to store in the cache.
+        mode : str
+            Determines the mode in which the data is added to the cache:
             w: Will overwrite existing data with the same key. 
             a: Will append to existing data (if there is existing data). 
-        """        
+        """
         assert(type(data) == list)
+        # Makes sure the module has said it wants to get with this key.
+        assert key in observer.set_values
+        assert mode in ['w', 'a']
 
-        if key in self.iteration_cache.keys() and mode != 'w':
-            self.iteration_cache[key] += data
+        if key in self.cache.keys() and mode != 'w':
+            self.cache[key] += data
         else:
-            self.iteration_cache[key] = data
-        
+            self.cache[key] = data
+
+    def clear(self):
+        """
+        Clears the current cachce. Called at the end of each iteration. 
+        """
+        self.cache = {}
+
+    def get_convergence_status(self):
+        """
+        Returns the convergence status.
+
+        Returns
+        -------
+        bool
+            If True convergence has been reached and the main iteration-loop 
+            will halt. 
+        """
+        return self.converged
+
+    def set_convergence_status(self, state):
+        """
+        Set the convergence status. 
+
+        Parameters
+        ----------
+        state : bool
+            If True convergence has been reached and the main iteration-loop 
+            will halt. 
+        """
+        self.converged = state
+
+    

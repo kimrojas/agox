@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from agox.modules.databases import Database
+from agox.databases import Database
 from argparse import ArgumentParser
 from ase.io import read, write
 

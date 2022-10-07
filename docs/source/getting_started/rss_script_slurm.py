@@ -3,10 +3,10 @@ matplotlib.use('Agg')
 
 import numpy as np
 from agox import AGOX
-from agox.modules.databases import Database
-from agox.modules.environments import Environment
-from agox.modules.evaluators import LocalOptimizationEvaluator
-from agox.modules.generators import RandomGenerator
+from agox.databases import Database
+from agox.environments import Environment
+from agox.evaluators import LocalOptimizationEvaluator
+from agox.generators import RandomGenerator
 from ase import Atoms
 
 from argparse import ArgumentParser
