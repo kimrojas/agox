@@ -11,7 +11,7 @@ Therefore we have implemented a GPAW IO calculator, that can be used like so
 
 .. code-block:: 
 
-    from agox.modules.helpers.gpaw_io import GPAW_IO
+    from agox.helpers.gpaw_io import GPAW_IO
 
     calc = GPAW_IO(mode='lcao',
         xc='PBE',

@@ -6,13 +6,13 @@ import numpy
 
 extensions = [
     Extension(
-        "agox.modules.models.gaussian_process.featureCalculators_multi.angular_fingerprintFeature_cy",
-        ["agox/modules/models/gaussian_process/featureCalculators_multi/angular_fingerprintFeature_cy.pyx"],
+        "agox.models.gaussian_process.featureCalculators_multi.angular_fingerprintFeature_cy",
+        ["agox/models/gaussian_process/featureCalculators_multi/angular_fingerprintFeature_cy.pyx"],
         include_dirs=[numpy.get_include()]
     ),
     Extension(
-        "agox.modules.models.gaussian_process.delta_functions_multi.delta",
-        ["agox/modules/models/gaussian_process/delta_functions_multi/delta.pyx"],
+        "agox.models.gaussian_process.delta_functions_multi.delta",
+        ["agox/models/gaussian_process/delta_functions_multi/delta.pyx"],
         include_dirs=[numpy.get_include()]
     ),
     Extension(
@@ -24,7 +24,7 @@ extensions = [
 
 setup(
     name="agox",
-    version="1.2.0",
+    version="2.0.0",
     url="https://gitlab.com/agox/agox",
     description="Atomistic Global Optimziation X is a framework structure optimization in materials science.",
     install_requires=[
@@ -35,6 +35,8 @@ setup(
         "scikit-learn",
         "dscribe",
         "mpi4py",
+        "ray",
+        "jax",
     ],
     packages=find_packages(),
     python_requires=">=3.5",

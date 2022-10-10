@@ -1,8 +1,12 @@
+from cgitb import handler
 from optparse import BadOptionError
 import numpy as np
 from abc import ABC, abstractmethod
 
-from agox.modules.helpers.writer import header_print, pretty_print
+from agox.candidates import StandardCandidate
+from agox.writer import header_print, pretty_print
+import functools
+from copy import copy
 
 global A
 A = 0
@@ -24,9 +28,11 @@ class ObserverHandler:
     Base-class for classes that can have attached observers. 
     """
 
-    def __init__(self):
+    def __init__(self, handler_identifier, dispatch_method):
         self.observers = {}
         self.execution_sort_idx = []
+        self.handler_identifier = handler_identifier
+        self.set_dispatch_method(dispatch_method)
 
     ####################################################################################################################
     # General handling methods.
@@ -86,6 +92,9 @@ class ObserverHandler:
         """
         for observer_method in self.get_observers_in_execution_order():
             observer_method(*args, **kwargs)
+
+    def set_dispatch_method(self, method):
+        self.dispatch_method = self.name + '.' + method.__name__
 
     ####################################################################################################################
     # Printing / Reporting 
@@ -307,6 +316,10 @@ class Observer:
             for key, value in kwargs.items():
                 print(key, value)
 
+        self.iteration_counter = None
+        self.candidate_instanstiator = StandardCandidate
+
+
     @property
     def __name__(self):
         """
@@ -342,7 +355,7 @@ class Observer:
         assert key in self.set_values # Makes sure the module has said it wants to set with this key. 
         return self.main_add_to_cache(key, data, mode)
 
-    def add_observer_method(self, method, sets, gets, order):        
+    def add_observer_method(self, method, sets, gets, order, handler_identifier='any'):
         """
         Adds an observer method that will later be attached with 'self.attach'. 
 
@@ -355,7 +368,7 @@ class Observer:
         gets: dict
             Dict containing the keys that the method will get from the cache. 
         """
-        observer_method = ObserverMethod(self.__name__, method.__name__, method, gets, sets, order)
+        observer_method = ObserverMethod(self.__name__, method.__name__, method, gets, sets, order, handler_identifier)
         self.observer_methods[observer_method.key] = observer_method
 
     def remove_observer_method(self, observer_method):
@@ -388,18 +401,19 @@ class Observer:
         assert key in self.observer_methods.keys()
         self.observer_methods[key].order = order
 
-    def attach(self, main):
+    def attach(self, handler):
         """
         Attaches all ObserverMethod's as to observer-loop of the ObserverHandler 
         object 'main'
         
         Parameters
         ----------
-        main: object
+        handler: object
             An instance of an ObserverHandler. 
         """
         for observer_method in self.observer_methods.values():
-            main.attach_observer(observer_method)
+            if observer_method.handler_identifier == 'any' or observer_method.handler_identifier == handler.handler_identifier:
+                handler.attach_observer(observer_method)
 
     def reset_observer(self):
         """
@@ -407,25 +421,60 @@ class Observer:
         """
         self.observer_methods = {}
 
-    ####################################################################################################################
-    # Misc. 
-    ####################################################################################################################
+    ############################################################################
+    # State
+    ############################################################################
 
-    def assign_from_main(self, main):
+    def observer_method(func):
+        @functools.wraps(func)
+        def wrapper(self, state, *args, **kwargs):
+            self.state_update(state)
+            return func(self, state, *args, **kwargs)
+        return wrapper
+            
+    def state_update(self, state):
+        self.set_iteration_counter(state.get_iteration_counter())
+    
+    ############################################################################
+    # Iteration counter methods:
+    ############################################################################
+
+    def get_iteration_counter(self):
+        return self.iteration_counter
+    
+    def set_iteration_counter(self, iteration_count):
+        self.iteration_counter = iteration_count
+
+    def check_iteration_counter(self, count):
+        if self.iteration_counter is None:
+            return True
+        return self.iteration_counter >= count
+
+    ############################################################################
+    # Checker
+    ############################################################################
+
+    def do_check(self, **kwargs):
         """
-        Parameters
-        ----------
-        main: object
-            An instance of AGOX main (agox.main.AGOX).
+        Check if the method will run or just do nothing this iteration. 
+
+        Returns
+        -------
+        bool
+            True if function will run, False otherwise.w
         """
-        self.main_get_from_cache = main.get_from_cache
-        self.main_add_to_cache = main.add_to_cache
-        self.get_iteration_counter = main.get_iteration_counter
-        self.candidate_instantiator = main.candidate_instantiator        
+        return True
+
+    ############################################################################
+    # Candidate instanstiator
+    ############################################################################
+
+    def set_candidate_instanstiator(self, candidate_instanstiator):
+        self.candidate_instanstiator = copy(candidate_instanstiator)
 
 class ObserverMethod:
 
-    def __init__(self, class_name, method_name, method, gets, sets, order):
+    def __init__(self, class_name, method_name, method, gets, sets, order, handler_identifier):
         """
         ObserverMethod class. Holds all information about the method that an 
         observer class attaches to the observer-loop. 
@@ -456,6 +505,7 @@ class ObserverMethod:
         self.class_reference = method.__self__
         #self.key = method.__hash__() # Old
         self.key = get_next_key()
+        self.handler_identifier = handler_identifier
 
     def __getitem__(self, key):
         return self.__dict__[key]
