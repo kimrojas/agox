@@ -1,10 +1,10 @@
 from random import Random
 import numpy as np
-from agox.modules.generators.ABC_generator import GeneratorBaseClass
-from agox.modules.databases import Database
+from agox.generators.ABC_generator import GeneratorBaseClass
+from agox.databases import Database
 from agox.main import AGOX
 from agox.observer import ObserverHandler
-from agox.modules.evaluators.ABC_evaluator import EvaluatorBaseClass
+from agox.evaluators.ABC_evaluator import EvaluatorBaseClass
 from ase.calculators.singlepoint import SinglePointCalculator
 
 class AGOXGenerator(GeneratorBaseClass):
@@ -70,15 +70,15 @@ class AGOXGenerator(GeneratorBaseClass):
     def get_gofee_generator(cls, environment, database, calculator, iterations=25, 
         number_of_candidates=[1, 0, 0, 0], prefix='INNER AGOX',  c1=0.7, c2=1.3, model_kwargs={}, 
         additional_modules=None, fix_template=True, constraints=None):
-        from agox.modules.generators import RandomGenerator, PermutationGenerator, RattleGenerator, SamplingGenerator
-        from agox.modules.samplers import KMeansSampler
-        from agox.modules.databases.memory import MemoryDatabase
-        from agox.modules.collectors import StandardCollector
-        from agox.modules.acquisitors import LowerConfidenceBoundAcquisitor
-        from agox.modules.postprocessors import MPIRelaxPostprocess
-        from agox.modules.models import ModelGPR
-        from agox.modules.postprocessors import WrapperPostprocess
-        from agox.modules.evaluators import LocalOptimizationEvaluator
+        from agox.generators import RandomGenerator, PermutationGenerator, RattleGenerator, SamplingGenerator
+        from agox.samplers import KMeansSampler
+        from agox.databases.memory import MemoryDatabase
+        from agox.collectors import StandardCollector
+        from agox.acquisitors import LowerConfidenceBoundAcquisitor
+        from agox.postprocessors import MPIRelaxPostprocess
+        from agox.models import ModelGPR
+        from agox.postprocessors import WrapperPostprocess
+        from agox.evaluators import LocalOptimizationEvaluator
 
         if constraints is None:
             constraints = environment.get_constraints()
@@ -136,13 +136,13 @@ class AGOXGenerator(GeneratorBaseClass):
     @classmethod
     def get_rss_generator(cls, environment, database, calculator, iterations=25, prefix='INNER AGOX', 
         additional_modules=None, c1=0.7, c2=1.3, model_kwargs={}):
-        from agox.modules.generators import RandomGenerator
-        from agox.modules.databases.memory import MemoryDatabase
-        from agox.modules.collectors import StandardCollector
-        from agox.modules.postprocessors import RelaxPostprocess
-        from agox.modules.models import ModelGPR
-        from agox.modules.postprocessors import WrapperPostprocess
-        from agox.modules.evaluators import LocalOptimizationEvaluator
+        from agox.generators import RandomGenerator
+        from agox.databases.memory import MemoryDatabase
+        from agox.collectors import StandardCollector
+        from agox.postprocessors import RelaxPostprocess
+        from agox.models import ModelGPR
+        from agox.postprocessors import WrapperPostprocess
+        from agox.evaluators import LocalOptimizationEvaluator
 
         verbose=True
 

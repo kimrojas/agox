@@ -1,5 +1,5 @@
 import numpy as np
-from agox.modules.acquisitors.ABC_acquisitor import AcquisitorBaseClass
+from agox.acquisitors.ABC_acquisitor import AcquisitorBaseClass
 
 class MinimumEnergyAcquisitor(AcquisitorBaseClass):
 

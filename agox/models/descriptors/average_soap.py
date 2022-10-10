@@ -1,7 +1,7 @@
 import numpy as np
 from copy import copy
 
-from agox.modules.models.descriptors.ABC_descriptor import DescriptorBaseClass
+from agox.models.descriptors.ABC_descriptor import DescriptorBaseClass
 from dscribe.descriptors import SOAP as dscribeSOAP
 
 

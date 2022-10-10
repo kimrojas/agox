@@ -1,4 +1,4 @@
-from agox.modules.generators.ABC_generator import GeneratorBaseClass
+from agox.generators.ABC_generator import GeneratorBaseClass
 
 class SamplingGenerator(GeneratorBaseClass):
 

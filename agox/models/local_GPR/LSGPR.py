@@ -14,10 +14,10 @@ from scipy.linalg import cholesky, cho_solve, solve_triangular, qr, lstsq, LinAl
 from scipy.spatial.distance import cdist
 from scipy.optimize import fmin_l_bfgs_b
 
-from agox.modules.models.ABC_model import ModelBaseClass
+from agox.models.ABC_model import ModelBaseClass
 from time import time
 
-from agox.modules.helpers.writer import header_footer
+from agox.helpers.writer import header_footer
 
 
 class LSGPRModel(ModelBaseClass):

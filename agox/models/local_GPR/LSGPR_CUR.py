@@ -1,5 +1,5 @@
 import numpy as np
-from agox.modules.models.local_GPR.LSGPR import LSGPRModel
+from agox.models.local_GPR.LSGPR import LSGPRModel
 from scipy.linalg import svd
 
 class LSGPRModelCUR(LSGPRModel):

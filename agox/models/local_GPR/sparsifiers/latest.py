@@ -1,5 +1,5 @@
 import numpy as np
-from agox.modules.models.sparsifiers.ABC_sparsifier import SparsifierBaseClass
+from agox.models.sparsifiers.ABC_sparsifier import SparsifierBaseClass
 
 class LatestSparsifier(SparsifierBaseClass):
     name = 'LatestSparsifier'

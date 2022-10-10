@@ -1,6 +1,6 @@
 import numpy as np
 from agox.observer import Observer
-from agox.modules.helpers.writer import Writer, header_footer
+from agox.helpers.writer import Writer, header_footer
 from ase.calculators.singlepoint import SinglePointCalculator
 
 class ModelTrackerBeforeTraining(Observer, Writer):

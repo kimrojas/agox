@@ -1,4 +1,4 @@
-from agox.modules.models.local_GPR.LSGPR_MBKMeans import LSGPRModelMBKMeans
+from agox.models.local_GPR.LSGPR_MBKMeans import LSGPRModelMBKMeans
 
 
 class LSGPRModelMBKMeansNoise(LSGPRModelMBKMeans):

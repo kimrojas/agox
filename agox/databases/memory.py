@@ -1,7 +1,7 @@
 import numpy as np 
 from ase import Atoms
 from .ABC_database import DatabaseBaseClass
-from agox.modules.candidates import StandardCandidate
+from agox.candidates import StandardCandidate
 from copy import deepcopy
 
 class MemoryDatabase(DatabaseBaseClass):

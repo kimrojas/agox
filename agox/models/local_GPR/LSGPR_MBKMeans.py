@@ -1,5 +1,5 @@
 import numpy as np
-from agox.modules.models.local_GPR.LSGPR import LSGPRModel
+from agox.models.local_GPR.LSGPR import LSGPRModel
 from sklearn.cluster import MiniBatchKMeans
 from sklearn.utils.validation import check_random_state
 from time import time
@@ -93,7 +93,7 @@ class LSGPRModelMBKMeans(LSGPRModel):
         - single_atom_energies must be list of floats corresponding to ordering in species or array of 0's
         except at positions of numbers corresponding to species.
         """
-        from agox.modules.models.descriptors.soap import SOAP
+        from agox.models.descriptors.soap import SOAP
         from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
         from ase.atoms import symbols2numbers
         

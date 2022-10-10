@@ -1,7 +1,7 @@
 import numpy as np
 from copy import copy
 
-from agox.modules.models.descriptors.soap import SOAP
+from agox.models.descriptors.soap import SOAP
 
 from ase.data import covalent_radii
 def get_relative_distances(atoms):

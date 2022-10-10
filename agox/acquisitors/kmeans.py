@@ -1,6 +1,6 @@
 from select import select
 import numpy as np
-from agox.modules.acquisitors import AcquisitorBaseClass
+from agox.acquisitors import AcquisitorBaseClass
 from sklearn.cluster import KMeans
 
 class KmeansAcquisitor(AcquisitorBaseClass):
