@@ -16,8 +16,8 @@ extensions = [
         include_dirs=[numpy.get_include()]
     ),
     Extension(
-        "agox.modules.models.priors.repulsive",
-        ["agox/modules/models/priors/repulsive.pyx"],
+        "agox.models.priors.repulsive",
+        ["agox/models/priors/repulsive.pyx"],
         include_dirs=[numpy.get_include()]
     ),        
 ]
