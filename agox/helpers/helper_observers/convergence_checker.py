@@ -1,6 +1,6 @@
 import numpy as np
 from agox.observer import Observer
-from agox.helpers.writer import Writer, header_footer
+from agox.writer import Writer, agox_writer
 
 class ConvergenceChecker(Observer, Writer):
 
@@ -91,7 +91,7 @@ class ConvergenceCheckerBjorkMode(ConvergenceChecker):
         self.begin_change = 3
         self.sampler = sampler
 
-    @header_footer
+    @agox_writer
     def check_for_convergence(self):
 
         if self.get_iteration_counter() < self.start_iteration:

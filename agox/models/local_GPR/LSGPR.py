@@ -16,8 +16,9 @@ from scipy.optimize import fmin_l_bfgs_b
 
 from agox.models.ABC_model import ModelBaseClass
 from time import time
+from agox.observer import Observer
 
-from agox.helpers.writer import header_footer
+from agox.writer import agox_writer
 
 
 class LSGPRModel(ModelBaseClass):
@@ -208,7 +209,6 @@ class LSGPRModel(ModelBaseClass):
     #     private: _train_GPR (asserts that self.Xn, self.Xm, self.L, self.y is set)
     ####################################################################################################################
 
-    @header_footer
     def train_model(self, training_data, **kwargs):
         self.set_ready_state(True)
         self.atoms = None
@@ -356,7 +356,7 @@ class LSGPRModel(ModelBaseClass):
         else:
             self.writer(f'method name: {self.method} unknown. Will fail shortly')
             
-    @header_footer                        
+    @agox_writer               
     def update_model(self, new_data, all_data):
         t1 = time()
 
@@ -397,7 +397,9 @@ class LSGPRModel(ModelBaseClass):
         self.get_iteration_counter = main.get_iteration_counter
 
 
-    def training_observer_func(self, database):
+    @agox_writer
+    @Observer.observer_method 
+    def training_observer_func(self, database, state):
         iteration = self.get_iteration_counter()
 
         if iteration < self.iteration_start_training:

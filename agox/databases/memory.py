@@ -52,12 +52,6 @@ class MemoryDatabase(DatabaseBaseClass):
     def assign_from_main(self, main):
         super().assign_from_main(main)
     
-    def get_iteration_counter(self):
-        """
-        Overwritten when added as an observer.
-        """
-        return 0
-
     def write(self, *args, **kwargs):
         pass
 

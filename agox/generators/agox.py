@@ -68,14 +68,14 @@ class AGOXGenerator(GeneratorBaseClass):
 
     @classmethod
     def get_gofee_generator(cls, environment, database, calculator, iterations=25, 
-        number_of_candidates=[1, 0, 0, 0], prefix='INNER AGOX',  c1=0.7, c2=1.3, model_kwargs={}, 
-        additional_modules=None, fix_template=True, constraints=None):
+        number_of_candidates=[1, 0, 0, 0], prefix='INNER AGOX ',  c1=0.7, c2=1.3, model_kwargs={}, 
+        additional_modules=None, fix_template=True, constraints=None, generators=None):
         from agox.generators import RandomGenerator, PermutationGenerator, RattleGenerator, SamplingGenerator
         from agox.samplers import KMeansSampler
         from agox.databases.memory import MemoryDatabase
-        from agox.collectors import StandardCollector
+        from agox.collectors import ParallelCollector
         from agox.acquisitors import LowerConfidenceBoundAcquisitor
-        from agox.postprocessors import MPIRelaxPostprocess
+        from agox.postprocessors import ParallelRelaxPostprocess
         from agox.models import ModelGPR
         from agox.postprocessors import WrapperPostprocess
         from agox.evaluators import LocalOptimizationEvaluator
@@ -83,7 +83,7 @@ class AGOXGenerator(GeneratorBaseClass):
         if constraints is None:
             constraints = environment.get_constraints()
 
-        verbose=True
+        verbose = True
 
         internal_database = MemoryDatabase(order=6, prefix=prefix, verbose=True)
 
@@ -92,28 +92,41 @@ class AGOXGenerator(GeneratorBaseClass):
 
         internal_sampler = KMeansSampler(feature_calculator=internal_model.get_feature_calculator(), 
             database=internal_database, use_saved_features=True, order=1, verbose=verbose)
+        internal_sampler.attach(internal_database)
 
-        internal_random_generator = RandomGenerator(**environment.get_confinement(), 
-            c1=c1, c2=c2, may_nucleate_at_several_places=True, prefix=prefix, verbose=verbose)
+        ######################################################################################################
+        # Generators & Collector
+        ######################################################################################################
 
-        internal_rattle_generator = RattleGenerator(**environment.get_confinement(), 
-            c1=c1, c2=c2, prefix=prefix, verbose=verbose)
+        if generators is None:
 
-        internal_permutation_generator = PermutationGenerator(**environment.get_confinement(), 
-            c1=c1, c2=c2, prefix=prefix, verbose=verbose)
+            internal_random_generator = RandomGenerator(**environment.get_confinement(), 
+                c1=c1, c2=c2, may_nucleate_at_several_places=True, prefix=prefix, verbose=verbose)
 
-        internal_sampling_generator = SamplingGenerator(**environment.get_confinement(), 
-            c1=c2, c2=c2, prefix=prefix, verbose=verbose)
+            internal_rattle_generator = RattleGenerator(**environment.get_confinement(), 
+                c1=c1, c2=c2, prefix=prefix, verbose=verbose)
 
-        generators = [internal_random_generator, internal_permutation_generator, internal_rattle_generator, internal_sampling_generator]
+            internal_permutation_generator = PermutationGenerator(**environment.get_confinement(), 
+                c1=c1, c2=c2, prefix=prefix, verbose=verbose)
 
-        internal_collector = StandardCollector(generators=generators, 
-            sampler=internal_sampler, environment=environment, num_candidates={0:number_of_candidates}, order=2, verbose=verbose)
+            internal_sampling_generator = SamplingGenerator(**environment.get_confinement(), 
+                c1=c2, c2=c2, prefix=prefix, verbose=verbose)
+
+            generators = [internal_random_generator, internal_permutation_generator, internal_rattle_generator, 
+                internal_sampling_generator]
+
+        internal_collector = ParallelCollector(generators=generators, 
+            sampler=internal_sampler, environment=environment, 
+            num_candidates={0:number_of_candidates}, order=2, verbose=verbose)
+
+        ######################################################################################################
+        # Acquisitor - Evaluator
+        ######################################################################################################
 
         internal_acquisitor = LowerConfidenceBoundAcquisitor(internal_model, kappa=2, order=4, verbose=verbose)
 
-        internal_relaxer = MPIRelaxPostprocess(internal_acquisitor.get_acquisition_calculator(internal_database), 
-            internal_database, order=3, optimizer_run_kwargs={'fmax':0.1, 'steps':100}, 
+        internal_relaxer = ParallelRelaxPostprocess(internal_acquisitor.get_acquisition_calculator(), 
+            order=3, optimizer_run_kwargs={'fmax':0.1, 'steps':100}, 
             verbose=verbose, start_relax=2, fix_template=fix_template, constraints=constraints)
 
         internal_wrapper = WrapperPostprocess(order=3.5)
@@ -124,8 +137,12 @@ class AGOXGenerator(GeneratorBaseClass):
             order=5,  prefix=prefix, number_to_evaluate=3, 
             fix_template=fix_template, constraints=constraints)
 
+        ######################################################################################################
+        # Modules:
+        ######################################################################################################
+
         internal_agox_modules = [internal_database, internal_collector, internal_relaxer, 
-            internal_evaluator, internal_sampler, internal_acquisitor, internal_wrapper]
+            internal_evaluator, internal_acquisitor, internal_wrapper]
 
         if additional_modules is not None:
             internal_agox_modules += additional_modules
@@ -134,7 +151,7 @@ class AGOXGenerator(GeneratorBaseClass):
             main_database=database, iterations=iterations)
 
     @classmethod
-    def get_rss_generator(cls, environment, database, calculator, iterations=25, prefix='INNER AGOX', 
+    def get_rss_generator(cls, environment, database, calculator, iterations=25, prefix='INNER AGOX ', 
         additional_modules=None, c1=0.7, c2=1.3, model_kwargs={}):
         from agox.generators import RandomGenerator
         from agox.databases.memory import MemoryDatabase

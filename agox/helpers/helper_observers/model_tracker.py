@@ -1,6 +1,6 @@
 import numpy as np
 from agox.observer import Observer
-from agox.helpers.writer import Writer, header_footer
+from agox.writer import Writer, agox_writer
 from ase.calculators.singlepoint import SinglePointCalculator
 
 class ModelTrackerBeforeTraining(Observer, Writer):
@@ -40,7 +40,7 @@ class ModelTrackerAfterTraining(Observer, Writer):
         self.model = model
         self.add_observer_method(self.dump_model_energies, sets=self.sets[0], gets=self.gets[0], order=self.order[0])
 
-    @header_footer
+    @agox_writer
     def dump_model_energies(self):
 
         self.writer(f'TRACKER      {"DFT":8s} {"Epre":8s} {"Epost":8s} {"Epre-DFT":8s} {"Epost-DFT":8s}')
