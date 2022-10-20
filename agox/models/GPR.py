@@ -273,7 +273,7 @@ class ModelGPR(ModelBaseClass):
     @classmethod
     def default(cls, environment, database, lambda1min=1e-1, lambda1max=1e3, lambda2min=1e-1, lambda2max=1e3, 
                 theta0min=1, theta0max=1e5, beta=0.01, use_delta_func=True, sigma_noise = 1e-2,
-                use_delta_in_training=False, feature_calculator=None, kernel=None):
+                use_delta_in_training=False, feature_calculator=None, kernel=None, max_training_data=None):
 
         """
         Creates a GPR model. 
@@ -358,7 +358,7 @@ class ModelGPR(ModelBaseClass):
                 n_restarts_optimizer=1,
                 use_delta_in_training=use_delta_in_training)
 
-        return cls(gpr, database=database, update_interval=1, optimize_loglikelyhood=True, use_saved_features=True)
+        return cls(gpr, database=database, update_interval=1, optimize_loglikelyhood=True, use_saved_features=True, max_training_data=max_training_data)
 
     def get_feature_calculator(self):
         return self.model.featureCalculator
