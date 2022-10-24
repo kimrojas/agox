@@ -96,19 +96,16 @@ class ModelGPR(ModelBaseClass):
         args = np.argsort(energies)
         E_best = energies[args[0]]        
         allowed_idx = [arg for arg in args if energies[arg] - E_best < self.max_energy]
-        # always keep at least 10 best structures irrespective of their energies
-        if len(allowed_idx) < 10:
-            allowed_idx = args[:10]
 
         if self.max_training_data is not None:
             allowed_idx = allowed_idx[0:self.max_training_data]
-
+            
         remaining = [arg for arg in args if arg not in allowed_idx]
 
         training_data = [all_data[i] for i in allowed_idx]
         training_energies = [energies[i] for i in allowed_idx]
 
-        self.writer('Training GPR on {} structures after criteria applied'.format(len(training_data)))
+
         self.writer(f'Min GPR training energy: {np.min(training_energies)}')
         self.writer(f'Max GPR training energy: {np.max(training_energies)}')
         # Wipe any stored atoms object, since now the model will change and hence give another result
@@ -276,7 +273,7 @@ class ModelGPR(ModelBaseClass):
     @classmethod
     def default(cls, environment, database, lambda1min=1e-1, lambda1max=1e3, lambda2min=1e-1, lambda2max=1e3, 
                 theta0min=1, theta0max=1e5, beta=0.01, use_delta_func=True, sigma_noise = 1e-2,
-                use_delta_in_training=False, feature_calculator=None, kernel=None, max_training_data=None, max_energy=1000):
+                use_delta_in_training=False, feature_calculator=None, kernel=None, max_training_data=None):
 
         """
         Creates a GPR model. 
@@ -361,7 +358,7 @@ class ModelGPR(ModelBaseClass):
                 n_restarts_optimizer=1,
                 use_delta_in_training=use_delta_in_training)
 
-        return cls(gpr, database=database, update_interval=1, optimize_loglikelyhood=True, use_saved_features=True, max_training_data=max_training_data, max_energy=max_energy)
+        return cls(gpr, database=database, update_interval=1, optimize_loglikelyhood=True, use_saved_features=True, max_training_data=max_training_data)
 
     def get_feature_calculator(self):
         return self.model.featureCalculator
