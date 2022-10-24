@@ -13,10 +13,17 @@ class ModelTrackerBeforeTraining(Observer, Writer):
         self.model = model
         self.add_observer_method(self.cache_old_model_energies, sets=self.sets[0], gets=self.gets[0], order=self.order[0])
 
-    def cache_old_model_energies(self):
+    @agox_writer
+    @Observer.observer_method
+    def cache_old_model_energies(self, state):
+
+        if not self.model.ready_state:
+            return 
+        
+        self.writer('Doing stuff')
 
         candidates_with_model_energies = []
-        candidates = self.get_from_cache(self.get_key)
+        candidates = state.get_from_cache(self, self.get_key)
         for i,cached_candidate in enumerate(candidates):
             E_dft = cached_candidate.get_potential_energy()
             new_candidate = cached_candidate.copy()
@@ -27,7 +34,7 @@ class ModelTrackerBeforeTraining(Observer, Writer):
             new_candidate.add_meta_information('model_energy',E_model)
             candidates_with_model_energies.append(new_candidate)
 
-        self.add_to_cache(self.set_key, candidates_with_model_energies, mode='a')
+        state.add_to_cache(self, self.set_key, candidates_with_model_energies, mode='a')
 
             
 class ModelTrackerAfterTraining(Observer, Writer):
@@ -41,10 +48,18 @@ class ModelTrackerAfterTraining(Observer, Writer):
         self.add_observer_method(self.dump_model_energies, sets=self.sets[0], gets=self.gets[0], order=self.order[0])
 
     @agox_writer
-    def dump_model_energies(self):
+    @Observer.observer_method
+    def dump_model_energies(self, state):
+
+        if not self.model.ready_state:
+            return 
 
         self.writer(f'TRACKER      {"DFT":8s} {"Epre":8s} {"Epost":8s} {"Epre-DFT":8s} {"Epost-DFT":8s}')
-        candidates = self.get_from_cache(self.get_key)
+        candidates = state.get_from_cache(self, self.get_key)
+
+        if candidates is None:
+            return
+
         for i,candidate in enumerate(candidates):
             E_dft = candidate.get_potential_energy()
             E_old_model = candidate.get_meta_information('model_energy')
