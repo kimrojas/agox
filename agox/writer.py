@@ -1,4 +1,5 @@
 import functools
+from typing import List
 import numpy as np
 
 LINE_LENGTH = 79
@@ -16,29 +17,41 @@ ICON = """
 (_)         (_)    (_)(_)(_)(_)   (_)(_)(_)(_)  (_)         (_)  v{} \n
 """
 
-def find_spaces(string):
-    return np.array([i for i in range(len(string)) if string.startswith(' ', i)])
+def line_breaker(string: str, tab_size: int = 4) -> List[str]:
+    """Break a long string into lines to be used in `pretty_print`.
 
-def line_breaker(string):
-    all_strings = []
-    total_string = string
-    if len(total_string) > LINE_LENGTH:
-        safety_counter = 0
-        while len(total_string) > LINE_LENGTH and safety_counter < 100:
-            safety_counter += 1
-            spaces = find_spaces(total_string)
-            break_index = spaces[spaces < LINE_LENGTH]
-            if len(break_index) == 0:
-                all_strings += total_string
-                break
-            break_index = np.max(spaces)
-            all_strings.append(total_string[0:break_index])
-            total_string = total_string[break_index:]
+    Parameters
+    ----------
+    string : str
+        The long string to break into lines
+    tab_size : int, optional
+        The width of a tab character in number of space characters,
+        by default 4
 
-        all_strings.append(total_string)
-    else:
-        all_strings.append(total_string)
-    return all_strings
+    Returns
+    -------
+    List[str]
+        The original string split into individual lines
+    """
+
+    string = string.replace('\t', ' ' * tab_size)
+
+    text_length = LINE_LENGTH - 4  # lines are padded with 4 characters
+    lines = []
+    remainder = string  # every iteration, remainder will be shortened
+
+    while len(remainder) > text_length:
+        max_line = remainder[:text_length + 1]  # there might be a space at the end
+        space_index = max_line.rfind(' ')
+        if space_index != -1:  # space found
+            lines.append(remainder[:space_index])
+            remainder = remainder[space_index + 1:]  # remove the space
+        else:  # no space found, simply break the line at the maximum length
+            lines.append(remainder[:text_length])
+            remainder = remainder[text_length:]
+
+    lines.append(remainder)  # final piece of the string
+    return lines
         
 def header_print(string):
     
