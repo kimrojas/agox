@@ -2,7 +2,7 @@ from agox.collectors.ABC_collector import CollectorBaseClass
 import ray
 from timeit import default_timer as dt
 import numpy as np
-from agox.utils.ray_utils import RayBaseClass
+from agox.utils.ray_utils import RayBaseClass, ray_kwarg_keys
 
 @ray.remote
 def make_candidate_par(generators, sampler, environment, index, seed):
@@ -56,8 +56,9 @@ class ParallelCollector(CollectorBaseClass, RayBaseClass):
             be updated and will run with the parameters set at the start of the 
             run.
         """
-        CollectorBaseClass.__init__(self,**kwargs)
-        RayBaseClass.__init__(self)
+        ray_kwargs = {key:kwargs.pop(key, None) for key in ray_kwarg_keys}
+        CollectorBaseClass.__init__(self, **kwargs)
+        RayBaseClass.__init__(self, **ray_kwargs)
         self.num_candidates = num_candidates
         self.update_generators = update_generators
         self.ray_startup()
