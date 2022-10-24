@@ -6,7 +6,7 @@ from ase.calculators.singlepoint import SinglePointCalculator as SPC
 from ase.constraints import FixAtoms
 
 from agox.postprocessors.ABC_postprocess import PostprocessBaseClass
-from agox.utils.ray_utils import RayBaseClass
+from agox.utils.ray_utils import RayBaseClass, ray_kwarg_keys
 
 @ray.remote
 def ray_relaxation_function(structure, calculator, 
@@ -53,8 +53,9 @@ class ParallelRelaxPostprocess(PostprocessBaseClass, RayBaseClass):
         optimizer_run_kwargs={'fmax':0.05, 'steps':200}, fix_template=True,
         optimizer_kwargs={'logfile':None}, constraints=[], start_relax=1, 
         **kwargs):
+        ray_kwargs = {key:kwargs.pop(key, None) for key in ray_kwarg_keys}
         PostprocessBaseClass.__init__(self, **kwargs)
-        RayBaseClass.__init__(self)
+        RayBaseClass.__init__(self, **ray_kwargs)
 
         self.optimizer = BFGS if optimizer is None else optimizer
         self.optimizer_kwargs = optimizer_kwargs
