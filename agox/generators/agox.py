@@ -114,10 +114,15 @@ class AGOXGenerator(GeneratorBaseClass):
 
             generators = [internal_random_generator, internal_permutation_generator, internal_rattle_generator, 
                 internal_sampling_generator]
+        
+        if type(number_of_candidates) == list:
+            num_candidates={0:number_of_candidates}
+        else:
+            num_candidates = number_of_candidates
 
         internal_collector = ParallelCollector(generators=generators, 
             sampler=internal_sampler, environment=environment, 
-            num_candidates={0:number_of_candidates}, order=2, verbose=verbose)
+            num_candidates=num_candidates, order=2, verbose=verbose)
 
         ######################################################################################################
         # Acquisitor - Evaluator
