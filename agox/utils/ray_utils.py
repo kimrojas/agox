@@ -4,7 +4,7 @@ import ray
 
 class RayBaseClass:
 
-    def ray_startup(self, cpu_count=None, memory=None):
+    def ray_startup(self, cpu_count=None, memory=None, tmp_dir=None):
         """
         Start a Ray instance on Slurm. 
 
@@ -29,8 +29,12 @@ class RayBaseClass:
                 memory=int(os.environ['SLURM_MEM_PER_NODE']*1e6)
             except:
                 memory=cpu_count*int(2*1e9)
+
+        if tmp_dir is None:
+            path = os.getcwd()
+            tmp_dir = os.path.join(path, 'ray')
         
         if not ray.is_initialized():
             ray.init(_memory=memory, object_store_memory=int(memory/4),
-                num_cpus=cpu_count, ignore_reinit_error=True)
+                     num_cpus=cpu_count, ignore_reinit_error=True, _temp_dir=tmp_dir)
             print(ray.cluster_resources())
