@@ -22,7 +22,7 @@ copyright = '2022, AGOX Developers'
 author = 'Mads-Peter V. Christiansen'
 
 # The full version, including alpha/beta/rc tags
-release = '1.1.0'
+release = '2.1.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -33,6 +33,7 @@ release = '1.1.0'
 extensions = [
     'sphinx.ext.duration',
     'sphinx_tabs.tabs',
+    'sphinx.ext.autosectionlabel',
             ]
 
 # Add any paths that contain templates here, relative to this directory.

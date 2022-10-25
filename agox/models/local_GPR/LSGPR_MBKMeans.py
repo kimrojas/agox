@@ -22,7 +22,8 @@ class LSGPRModelMBKMeans(LSGPRModel):
 
         # tmp:
         self.exact_points = exact_points
-        
+
+
         self.cluster = MiniBatchKMeans(n_clusters=self.m_points, batch_size=batch_size, random_state=seed)
     
 

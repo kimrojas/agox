@@ -20,12 +20,11 @@ This will run in about a minute on a modern machine. After completion the script
 This file contains the information gathered by the search run. We can analyze the run using the a tool installed together 
 with AGOX. 
 
-Assuming that $AGOX_DIR points towards your AGOX installation (otherwise just replace that with the full-path), in the same 
-folder that you did the run, use the command
+Having pip installed agox the CLI tool :code:`agox-analysis` is available, use the tool like so 
 
 .. code-block:: console
 
-   python $AGOX_DIR/utils/batch_analysis.py -d . -e -hg -c
+   agox-analysis -d . -e -hg -c
 
 This produces a figure like this one: 
 

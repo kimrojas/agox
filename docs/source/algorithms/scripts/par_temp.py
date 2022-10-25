@@ -32,7 +32,7 @@ calc = EMT()
 template = Atoms('', cell=np.eye(3)*12)
 confinement_cell = np.eye(3) * 8
 confinement_corner = np.array([3, 3, 3])
-environment = Environment(template=template, symbols='Au8Ni8', 
+environment = Environment(template=template, symbols='Au12Ni2', 
     confinement_cell=confinement_cell, confinement_corner=confinement_corner)
 
 # Database
@@ -60,13 +60,13 @@ rattle_generator = RattleGenerator(**environment.get_confinement(),
     environment=environment, sampler=sampler, order=1)
 
 evaluator = LocalOptimizationEvaluator(calc, gets={'get_key':'candidates'}, 
-    use_all_traj_info=False, optimizer_run_kwargs={'fmax':0.05, 'steps':400}, 
+    store_trajectory=False, optimizer_run_kwargs={'fmax':0.05, 'steps':400}, 
     order=2, constraints=environment.get_constraints())
 
 ##############################################################################
 # Let get the show running! 
 ##############################################################################
     
-agox = AGOX(rattle_generator, database, evaluator)
+agox = AGOX(rattle_generator, database, evaluator, sampler)
 
 agox.run(N_iterations=50)
