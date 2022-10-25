@@ -7,9 +7,7 @@ which modules can be used. This is handled by an observer-pattern that the main
 iterative-loop of :code:`main.py` uses
 
 .. literalinclude:: ../../../agox/main.py
-    :linenos:
-    :lineno-start: 124
-    :lines: 124-134
+    :lines: 103-113
 
 Which calls the method :code:`get_observers_in_execution_order()`. 
 
@@ -55,7 +53,7 @@ we are going to have to dive a bit deeper into the code.
 All modules that can act as an observer inherit from the :code:`Observer`-class, 
 we can again take a look at the generator ABC to see this 
 
-.. literalinclude:: ../../../agox/modules/generators/ABC_generator.py
+.. literalinclude:: ../../../agox/generators/ABC_generator.py
     :linenos:
     :lineno-start: 17
     :lines: 17-28
@@ -64,7 +62,7 @@ So the order argument, along with some additional ones that we will discuss in t
 next section are passed to the observer class. In order to understand why the 
 generate method is the one being reported on we have to look a little bit further 
 
-.. literalinclude:: ../../../agox/modules/generators/ABC_generator.py
+.. literalinclude:: ../../../agox/generators/ABC_generator.py
     :linenos:
     :lineno-start: 60
     :lines: 60-61
@@ -72,10 +70,10 @@ generate method is the one being reported on we have to look a little bit furthe
 Which is saying that the :code:`generate` method should be called as an observer 
 with the given order. If we take a look at this method 
 
-.. literalinclude:: ../../../agox/modules/generators/ABC_generator.py
+.. literalinclude:: ../../../agox/generators/ABC_generator.py
     :linenos:
-    :lineno-start: 191
-    :lines: 191-196
+    :lineno-start: 186
+    :lines: 186-194
 
 Which indeed uses the :code:`get_candidates` method that we saw in the previous 
 section that we were obliged to write. The :code:`if` statement ensures that 

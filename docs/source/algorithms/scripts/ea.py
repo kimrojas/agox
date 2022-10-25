@@ -62,7 +62,7 @@ collector = StandardCollector(generators=generators, sampler=sampler,
     environment=environment, num_candidates=num_candidates, order=1)
 
 evaluator = LocalOptimizationEvaluator(calc, gets={'get_key':'candidates'}, 
-    use_all_traj_info=False, optimizer_run_kwargs={'fmax':0.05, 'steps':400}, 
+    optimizer_run_kwargs={'fmax':0.05, 'steps':400}, store_trajectory=False,
     order=2, constraints=environment.get_constraints(), 
     number_to_evaluate=population_size)
 

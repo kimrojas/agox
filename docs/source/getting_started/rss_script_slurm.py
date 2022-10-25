@@ -45,7 +45,7 @@ random_generator = RandomGenerator(**environment.get_confinement(),
     environment=environment, order=1)
 
 evaluator = LocalOptimizationEvaluator(calc, gets={'get_key':'candidates'}, 
-    optimizer_kwargs={'logfile':None}, use_all_traj_info=False,
+    optimizer_kwargs={'logfile':None}, store_trajectory=False,
     optimizer_run_kwargs={'fmax':0.05, 'steps':400}, order=2)
 
 ##############################################################################

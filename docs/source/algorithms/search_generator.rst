@@ -1,3 +1,8 @@
+
+.. warning::
+    This is experimental and **if** it works, it only works on a specific branch of 
+    the code (agox-generator).
+
 Search Generator
 ==================
 

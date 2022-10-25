@@ -1,3 +1,4 @@
+from cgitb import handler
 import matplotlib
 matplotlib.use('Agg')
 
@@ -40,13 +41,46 @@ random_generator = RandomGenerator(**environment.get_confinement(),
 
 evaluator = LocalOptimizationEvaluator(calc, gets={'get_key':'candidates'}, 
     optimizer_kwargs={'logfile':None}, store_trajectory=False,
-    optimizer_run_kwargs={'fmax':0.05, 'steps':400}, 
+    optimizer_run_kwargs={'fmax':0.05, 'steps':2}, 
     order=2)
 
 ##############################################################################
 # Let get the show running! 
 ##############################################################################
 
-agox = AGOX(random_generator, database, evaluator)
+from agox.writer import Writer, agox_writer
+from agox.observer import Observer
 
-agox.run(N_iterations=50)
+class DatabaseAndMainObserver(Observer, Writer):
+
+    name = 'DatabaseAndMainObserver'
+
+    def __init__(self, order=[0, 0]):
+        Observer.__init__(self, order=order)
+        Writer.__init__(self)
+        self.add_observer_method(self.database_observer_method, order=self.order[0], 
+            sets={}, gets={}, handler_identifier='database')
+        self.add_observer_method(self.main_observer_method, order=self.order[0], 
+            sets={}, gets={}, handler_identifier='AGOX')
+        
+    @agox_writer
+    @Observer.observer_method
+    def database_observer_method(self, database, state):
+        size_of_database = len(database)
+        self.writer(f'Database size: {size_of_database}')
+        self.writer(f'I am run from the database, I see the database {database} and {state}.')
+
+    @agox_writer
+    @Observer.observer_method
+    def main_observer_method(self, state):
+        self.writer(f'I am run from main, I see only the state: {state}')
+
+database_and_main_observer = DatabaseAndMainObserver()
+database_and_main_observer.attach(database)
+
+agox = AGOX(random_generator, database, evaluator, database_and_main_observer)
+
+agox.run(N_iterations=1)
+
+# database.observer_reports()
+# database.print_observers()

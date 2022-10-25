@@ -22,7 +22,7 @@ We may analyze these by running
 
 .. code-block:: console
 
-   python $AGOX_DIR/utils/batch_analysis.py -d . -e -hg -dE 0.005
+   agox-analysis -d . -e -hg -dE 0.005
 
 Which now produces a figure like this one: 
 

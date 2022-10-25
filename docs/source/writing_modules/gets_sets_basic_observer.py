@@ -47,6 +47,34 @@ evaluator = LocalOptimizationEvaluator(calc, gets={'get_key':'candidates'},
 # Let get the show running! 
 ##############################################################################
 
-agox = AGOX(random_generator, database, evaluator)
+from agox.writer import Writer, agox_writer
+from agox.observer import Observer
 
-agox.run(N_iterations=50)
+class GetsSetsBasicObserver(Observer, Writer):
+
+    name = 'LessBasicObserver'
+
+    def __init__(self, order=2, gets={'get_key':'candidates'}, 
+        sets={'set_key':'candidates'}):
+        Observer.__init__(self, gets=gets, order=order, sets=sets)
+        Writer.__init__(self)
+        self.add_observer_method(self.basic_observer_method, order=self.order[0], 
+            sets=self.sets[0], gets=self.gets[0])
+
+    @agox_writer
+    @Observer.observer_method
+    def basic_observer_method(self, state):
+        self.writer(f'Iteration: {self.get_iteration_counter()}: I AM A MODULE.')
+
+        candidates = state.get_from_cache(self, self.get_key)
+
+        for candidate in candidates:
+            candidate.positions -= candidate.get_center_of_mass() 
+
+        state.add_to_cache(self, self.set_key, candidates, mode='w')
+
+basic_observer = GetsSetsBasicObserver()
+
+agox = AGOX(random_generator, database, basic_observer, evaluator)
+
+agox.run(N_iterations=1)

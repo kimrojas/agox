@@ -42,19 +42,19 @@ database = Database(filename=db_path, order=4)
 # Search Settings:
 ##############################################################################
 
-sampler = MetropolisSampler(temperature=0.25, order=1, database=database)
+sampler = MetropolisSampler(temperature=0.25, order=3, database=database)
     
 rattle_generator = RattleGenerator(**environment.get_confinement(), 
-    environment=environment, sampler=sampler, order=2)
+    environment=environment, sampler=sampler, order=1)
 
 evaluator = LocalOptimizationEvaluator(calc, gets={'get_key':'candidates'}, 
-    use_all_traj_info=False, optimizer_run_kwargs={'fmax':0.05, 'steps':400}, 
-    order=3, constraints=environment.get_constraints())
+    store_trajectory=False, optimizer_run_kwargs={'fmax':0.05, 'steps':400}, 
+    order=2, constraints=environment.get_constraints())
 
 ##############################################################################
 # Let get the show running! 
 ##############################################################################
     
-agox = AGOX(rattle_generator, database, evaluator)
+agox = AGOX(rattle_generator, database, sampler, evaluator)
 
 agox.run(N_iterations=200)
