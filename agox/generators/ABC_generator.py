@@ -190,7 +190,7 @@ class GeneratorBaseClass(ABC, Observer, Writer):
         if candidates[0] is None and self.sampler is not None and len(self.sampler) == 0:
             candidates = self.start_candidate()
             self.writer('Fall-back to start generator, generated {} candidate '.format(len(candidates)))
-        state.add_to_cache(self.set_key, candidates, mode='a')
+        state.add_to_cache(self, self.set_key, candidates, mode='a')
         
     def plot_confinement(self, environment):
         from agox.helpers.plot_confinement import plot_confinement
