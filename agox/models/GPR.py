@@ -89,7 +89,7 @@ class ModelGPR(ModelBaseClass):
         self.writer('Lowest energy: {} eV'.format(np.min(energies)))
         self.writer('Median energy {} eV'.format(np.mean(energies)))
         self.writer('Max energy {} eV'.format(np.max(energies)))
-        self.set_ready_state(True)
+        self.ready_state = True
 
     def train_model(self, all_data, energies):        
         # Train on the best structures:
@@ -131,7 +131,7 @@ class ModelGPR(ModelBaseClass):
         else:
             self.model.train(training_data, data_values=training_energies, add_new_data=False, optimize=self.optimize_loglikelyhood)
 
-        self.set_ready_state(True) # Should only use this. 
+        self.ready_state = True
         if self.max_adapt_iters > 0 and len(remaining) > 0:
             self.writer('Running adaptive training on remaining {}'.format(len(remaining)))
             self.adaptive_training(all_data, energies, remaining)
@@ -209,7 +209,7 @@ class ModelGPR(ModelBaseClass):
 
     @agox_writer
     @Observer.observer_method
-    def training_observer_func(self, database, state):
+    def training_observer(self, database, state):
 
         iteration = state.get_iteration_counter()
         if iteration < self.iteration_start_training:
@@ -240,6 +240,7 @@ class ModelGPR(ModelBaseClass):
         self.model.verbose = verbose
 
     def get_model_parameters(self):
+        DeprecationWarning("'get_model_parameters'-method will be removed in a future release. Use the save/load functions instead.")
         parameters = {}
         parameters['feature_mat'] = self.model.featureMat
         parameters['alpha'] = self.model.alpha
@@ -250,6 +251,8 @@ class ModelGPR(ModelBaseClass):
         return parameters
     
     def set_model_parameters(self, parameters):
+        DeprecationWarning("'set_model_parameters'-method will be removed in a future release. Use the save/load functions instead.")
+
         self.model.featureMat = parameters['feature_mat']
         self.model.alpha = parameters['alpha']
         self.model.bias = parameters['bias']
@@ -262,7 +265,7 @@ class ModelGPR(ModelBaseClass):
             self.model.kernel_ = clone(self.model.kernel)
 
         self.model.kernel_.set_params(**parameters['kernel_hyperparameters'])
-        self.set_ready_state(True)
+        self.ready_state = True
 
     ####################################################################################################################
     # Misc. 

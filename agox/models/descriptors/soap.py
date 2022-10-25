@@ -1,17 +1,28 @@
-#from .descriptor_ABC import DescriptorBaseClass
-from agox.models.descriptors.descriptor_ABC import DescriptorBaseClass
+from copy import copy
 import numpy as np
 from dscribe.descriptors import SOAP as dscribeSOAP
-from copy import copy
+
+from agox.models.descriptors.descriptor_ABC import DescriptorBaseClass
+
+
+
+
 
 class SOAP(DescriptorBaseClass):
 
-    def __init__(self, species, r_cut=4, nmax=3, lmax=2, sigma=1.0, use_radial_weighting=True, periodic=False, dtype='float64', normalize=False, crossover=True):
+    def __init__(self, species, r_cut=4, nmax=3, lmax=2, sigma=1.0,
+                 weight=True, periodic=True, dtype='float64', normalize=False, crossover=True):
         self.normalize = normalize
-        if use_radial_weighting:
-            weighting = {"function":"poly", "r0": r_cut, "m":2, "c":1}
-        else:
+        
+        if weight is True:
+            weighting = {'function':'poly', 'r0':r_cut, 'm':2, 'c':1}
+        elif weight is None:
             weighting = None
+        elif weight is False:
+            weighting = None
+        else:
+            weighting = weight
+            
 
         self.soap = dscribeSOAP(
             species=species,

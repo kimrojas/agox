@@ -1,6 +1,5 @@
 import os
 import glob
-from typing_extensions import final
 import numpy as np
 from ase.io import read, write
 from agox.databases import Database

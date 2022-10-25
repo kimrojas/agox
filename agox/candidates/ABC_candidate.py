@@ -247,7 +247,7 @@ class CandidateBaseClass(Atoms, ABC):
         np.array
             Indices of of atoms that are part of the search. 
         """
-        return np.arange(len(self.template), self.get_global_number_of_atoms())
+        return np.arange(len(self.template), len(self))
 
     def get_center_of_geometry(self, all_atoms=False):
         """
