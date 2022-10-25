@@ -5,10 +5,6 @@ Welcome to AGOX's documentation!
 techniques to efficiently solve complicated problems. The package has a strong focus on enabling development of 
 new ideas in the area global optimization 
 
-.. note:: 
-
-   This documentation is under development. 
-
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
@@ -22,12 +18,16 @@ Contents
    installation
    getting_started/getting_started
    agox_framework/agox_framework
+   writing_modules/writing_modules
    algorithms/algorithms
    bonus_topics/bonus_topics
-   references/references
    command_line_tools/command_line
+   references/references
 
 This work has been supported by funding from the Villum foundation 
 
 .. figure:: villum_foundation.png
 
+.. note:: 
+
+   This documentation is a work in progress!

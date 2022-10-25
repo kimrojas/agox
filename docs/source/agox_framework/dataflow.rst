@@ -9,7 +9,7 @@ on the allowed order of execution.
 As a first example we will again take a look at the generator ABC and its 
 :code:`generate`-method
 
-.. literalinclude:: ../../../agox/modules/generators/ABC_generator.py
+.. literalinclude:: ../../../agox/generators/ABC_generator.py
     :linenos:
     :lineno-start: 191
     :lines: 191-196
@@ -19,7 +19,7 @@ In particular this method calls a method :code:`add_to_cache` parsing along
 an attribute :code:`self.set_key` and a list of generated :code:`candidates`. 
 This attribute is defined by the initialization, 
 
-.. literalinclude:: ../../../agox/modules/generators/ABC_generator.py
+.. literalinclude:: ../../../agox/generators/ABC_generator.py
     :linenos:
     :lineno-start: 17
     :lines: 17-21

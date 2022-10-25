@@ -44,7 +44,7 @@ a method of that name has to be implemented in order to use the module.
 As an example, we can look at the ABC for generator modules, :code:`ABC_generator.py`
 where we will find two methods decorated with :code:`@abstractmethod`. 
 
-.. literalinclude:: ../../../agox/modules/generators/ABC_generator.py
+.. literalinclude:: ../../../agox/generators/ABC_generator.py
     :linenos:
     :lineno-start: 63
     :lines: 63-70

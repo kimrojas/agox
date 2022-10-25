@@ -8,10 +8,10 @@ from agox.environments import Environment
 from agox.evaluators import LocalOptimizationEvaluator
 from agox.generators import RandomGenerator, RattleGenerator
 from agox.samplers import KMeansSampler
-from agox.collectors import StandardCollector
+from agox.collectors import ParallelCollector
 from agox.models import ModelGPR
 from agox.acquisitors import LowerConfidenceBoundAcquisitor
-from agox.postprocessors import MPIRelaxPostprocess
+from agox.postprocessors import ParallelRelaxPostprocess
 
 from ase import Atoms
 
@@ -61,17 +61,15 @@ num_candidates = {0:[10, 0], 10:[3, 7]}
 acquisitor = LowerConfidenceBoundAcquisitor(model_calculator=model, 
     kappa=2, order=4)
 
-collector = StandardCollector(generators=generators, sampler=sampler,
+collector = ParallelCollector(generators=generators, sampler=sampler,
     environment=environment, num_candidates=num_candidates, order=2)
 
-relaxer = MPIRelaxPostprocess(
-    model=acquisitor.get_acquisition_calculator(database), 
-    database=database, constraints=environment.get_constraints(), 
-    order=3, start_relax=8)
+relaxer = ParallelRelaxPostprocess(model=acquisitor.get_acquisition_calculator(), 
+    constraints=environment.get_constraints(), order=3, start_relax=8)
 
 evaluator = LocalOptimizationEvaluator(calc, 
     gets={'get_key':'prioritized_candidates'}, 
-    optimizer_kwargs={'logfile':None}, use_all_traj_info=True,
+    optimizer_kwargs={'logfile':None}, store_trajectory=True,
     optimizer_run_kwargs={'fmax':0.05, 'steps':1}, order=5)
 
 ##############################################################################

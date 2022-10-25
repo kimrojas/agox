@@ -22,7 +22,7 @@ runs. Here in folders called serial and slurm
 
 .. code-block:: console
 
-   python $AGOX_DIR/utils/batch_analysis.py -d serial slurm -e -hg -dE 0.005
+   agox-analysis -d serial slurm -e -hg -dE 0.005
 
 Which creates a figure like this one
 

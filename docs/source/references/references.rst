@@ -48,3 +48,17 @@ If using the GOFEE algorithm please also cite
             pages = {086102}
             }
 
+
+If using the local Gaussian regression model, please also cite
+
+.. tabs::
+
+    .. tab:: Text
+        
+        Nikolaj Rønne, Mads-Peter V. Christiansen, Andreas Møller Slavensky, Zeyuan Tang, Florian Brix, Mikkel Elkjær Pedersen, Malthe Kjær Bisbo, and Bjørk Hammer, 
+        `Atomistic structure search using local surrogate model <https://doi.org/10.1063/5.0121748>`_, J. Chem. Phys, XXXXX, (2022)
+
+    .. tab:: Bibtex
+
+At the time of writing this paper is accepted but not published, more up to date 
+information is likely available by clicking the link.

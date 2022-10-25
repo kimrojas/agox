@@ -13,7 +13,7 @@ echo "My jobid: $SLURM_JOB_ID"
 echo "My array id: $SLURM_ARRAY_TASK_ID"
 
 # Source Python environment
-source /home/machri/source_files/agox_network
+source <REPLACE THIS WITH YOUR PYTHON ENVIRONMENT> 
 
 # Move script to scratch: 
 cp rss_script_slurm.py /scratch/$SLURM_JOB_ID/.
