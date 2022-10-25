@@ -166,7 +166,7 @@ class LSGPRModel(ModelBaseClass):
             self.results['energy'] = e
         
         if 'forces' in properties:
-            self.results['forces'] = self.predict_forces(atoms=atoms, method=self.force_method)
+            self.results['forces'] = self.predict_forces(atoms=atoms)
 
     ####################################################################################################################
     # Prediction
@@ -415,6 +415,7 @@ class LSGPRModel(ModelBaseClass):
     # Assignments:
     ####################################################################################################################
 
+    @agox_writer
     @Observer.observer_method        
     def training_observer(self, database, state):
         iteration = state.get_iteration_counter()
