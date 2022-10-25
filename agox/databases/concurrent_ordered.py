@@ -1,5 +1,5 @@
 import numpy as np
-from agox.modules.databases.database_concurrent import ConcurrentDatabase
+from agox.databases.database_concurrent import ConcurrentDatabase
 
 
 class OrderedDatabase(ConcurrentDatabase):

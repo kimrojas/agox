@@ -9,7 +9,7 @@ class LSGPRModelMBKMeans(LSGPRModel):
 
     def __init__(self, m_distribution=None, include_best=True, include_transfer=False, batch_size=1024,
                  sparse_update=False, full_update_interval=10, cluster_weights=None,
-                 exact_points=False, **kwargs):
+                 exact_points=False, seed=None, **kwargs):
         """ m_distribution must be given as dict of energy:number e.g. {0.5:100, 1:100, 2:50, 50:50}
         """
         super().__init__(**kwargs)
@@ -23,7 +23,7 @@ class LSGPRModelMBKMeans(LSGPRModel):
         self.exact_points = exact_points
 
 
-        self.cluster = MiniBatchKMeans(n_clusters=self.m_points, batch_size=batch_size, random_state=np.random.RandomState())
+        self.cluster = MiniBatchKMeans(n_clusters=self.m_points, batch_size=batch_size, random_state=seed)
     
 
     def _train_sparse(self, atoms_list):
