@@ -76,10 +76,10 @@ def pretty_print(string, *args, **kwargs):
 
 def agox_writer(func):
     @functools.wraps(func)
-    def wrapper(self, state, *args, **kwargs):
+    def wrapper(self, *args, **kwargs):
         if not self.use_counter:
             header_print(self.name)
-        state = func(self, state, *args, **kwargs)
+        func(self, *args, **kwargs)
         if self.use_counter and len(self.lines_to_print) > 0:
             header_print(self.name)
             for string, args, kwargs in self.lines_to_print:
@@ -88,6 +88,21 @@ def agox_writer(func):
         self.lines_to_print = []
         
     return wrapper
+
+# def agox_writer(func):
+#     @functools.wraps(func)
+#     def wrapper(self, state, *args, **kwargs):
+#         if not self.use_counter:
+#             header_print(self.name)
+#         state = func(self, state, *args, **kwargs)
+#         if self.use_counter and len(self.lines_to_print) > 0:
+#             header_print(self.name)
+#             for string, args, kwargs in self.lines_to_print:
+#                 string = self.writer_prefix + str(string)
+#                 pretty_print(string, *args, **kwargs)
+#         self.lines_to_print = []
+        
+#     return wrapper
 
 class Writer:
 
