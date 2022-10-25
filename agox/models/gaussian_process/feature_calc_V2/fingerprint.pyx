@@ -226,7 +226,7 @@ class Fingerprint(object):
         cdef Pool mem
         mem = Pool()
 
-        cdef int Natoms = atoms.get_global_number_of_atoms()
+        cdef int Natoms = len(atoms)
 
         # Get positions and convert to Point-struct
         cdef list pos_np = atoms.get_positions().tolist()
@@ -467,7 +467,7 @@ class Fingerprint(object):
         cdef Pool mem
         mem = Pool()
 
-        cdef int Natoms = atoms.get_global_number_of_atoms()
+        cdef int Natoms = len(atoms)
 
         # Get positions and convert to Point-struct
         cdef list pos_np = atoms.get_positions().tolist()

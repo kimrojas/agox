@@ -18,7 +18,7 @@ class SimpleFingerprint(DescriptorBaseClass):
         self.r_bins = np.linspace(0,self.r_cut, Nbins)
 
     def get_feature(self, atoms):
-        Natoms = atoms.get_number_of_atoms()
+        Natoms = len(atoms)
         symbols = atoms.get_chemical_symbols()
 
         distances = atoms.get_all_distances(mic=True)

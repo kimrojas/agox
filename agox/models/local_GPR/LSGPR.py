@@ -16,60 +16,74 @@ from scipy.optimize import fmin_l_bfgs_b
 
 from agox.models.ABC_model import ModelBaseClass
 from time import time
-from agox.observer import Observer
 
 from agox.writer import agox_writer
+from agox.observer import Observer
 
 
 class LSGPRModel(ModelBaseClass):
     name = 'LSGPRModel'
     implemented_properties = ['energy', 'forces']
 
-    """
-    Implements a sparse local Gaussian Process Model
+    """ Local GPR model with uniform sparsification
 
-    """
-    def __init__(self, kernel=None, descriptor=None, noise=0.05, iteration_start_training=1,
-                 update_interval=1, single_atom_energies=np.zeros(100), m_points=1000, adaptive_noise=False,
-                 jitter=1e-8, force_method='central', transfer_data=[], sparsifier=None, method='lstsq',
-                 weights=None, prior=None, trainable_prior=False, use_prior_in_training=False,
-                 verbose=False, full_update=False, **kwargs):
+    Attributes
+    ----------
+    kernel : Scikit-learn Kernel 
+        Local kernel object.
+    descriptor : DScribe descriptor
+        descriptor object
+    noise : float
+        Noise in eV/atom
+    prior : Callable
+        Prior expectation for prediction. 
+    single_atom_energies : np.ndarray or Dict
+        If np.ndarray it must be array of number for 
+        single atom energies for species e.g. index 1 must be E for hydrogen.
+    m_points : int
+        Number of sparse points maximally used by model.
+    transfer_data : List[Candidate] or List[Atoms]
+        Training data not taken from a database, when used in an active learning 
+        scenario such as AGOX structure searches.
+    sparsifier : Callable
+        Object, which sparsifies training data on Candidate/Atoms level. 
+    jitter : float
+        Small number for numerical stability. If model training is not stable
+        try increasing this number. 
+    trainable_prior : bool
+        Whether the prior can and should be trained on the model training data.
+    use_prior_in_training : bool
+        Wheter the prior expectation should be subtracted before model training.
+    
+    
+    """    
+
+    def __init__(self, kernel=None, descriptor=None, noise=0.05,
+                 prior=None, single_atom_energies=None,
+                 m_points=1000, transfer_data=[], sparsifier=None,
+                 jitter=1e-8, trainable_prior=False, use_prior_in_training=False,
+                 **kwargs):
         
         super().__init__(**kwargs)
 
-        # model parameters
-        self.kernel = kernel    # this can be a standard sklearn kernel
+        self.kernel = kernel
         self.descriptor = descriptor         
-        self._noise = noise      # this is in eV/atom
+        self._noise = noise
         self.single_atom_energies = single_atom_energies
-        
-        self.force_method = force_method
 
         self.transfer_data = transfer_data # add additional data not generated during run
         self.jitter = jitter   # to help inversion
-        self.iteration_start_training = iteration_start_training
-        self.update_interval = update_interval
+
         self.m_points = m_points
         self.sparsifier = sparsifier
-        self.weights = weights
 
         self.prior = prior
         self.trainable_prior = trainable_prior
         self.use_prior_in_training = use_prior_in_training
-        
-        if method in ['QR', 'cholesky', 'lstsq']:
-            self.method = method
-        else:
-            self.writer('Method not known - use: QR, cholesky or lstsq')
-            self.writer('Using lstsq as default.')
-            self.method = 'lstsq'
-        
-        
-        self.rng = default_rng()
 
-        self.full_update = full_update
+        self.method = 'lstsq'
         
-        # Training info
+        # Initialize model parameters
         self.alpha = None
         self.Xn = None
         self.Xm = None
@@ -82,6 +96,7 @@ class LSGPRModel(ModelBaseClass):
         self.Kmm_inv = None
         self.L = None
 
+        
     @property
     def noise(self):
         return self._noise
@@ -89,12 +104,61 @@ class LSGPRModel(ModelBaseClass):
     @noise.setter
     def noise(self, s):
         self._noise = s
-        
 
-    ####################################################################################################################
-    # calculator stuff
-    ####################################################################################################################
-        
+    @property
+    def method(self):
+        return self._method
+
+    @method.setter
+    def method(self, name):
+        if name in ['QR', 'cholesky', 'lstsq']:
+            self._method = name
+        else:
+            self.writer('Method not known - use: QR, cholesky or lstsq')
+
+    @property
+    def single_atom_energies(self):
+        return self._single_atom_energies
+
+    @single_atom_energies.setter
+    def single_atom_energies(self, s):
+        if isinstance(s, np.ndarray):
+            self._single_atom_energies = s
+        elif isinstance(s, dict):
+            self._single_atom_energies = np.zeros(100)
+            for i, val in s.items():
+                self._single_atom_energies[i] = val
+        elif s is None:
+            self._single_atom_energies = np.zeros(100)
+
+    @property
+    def transfer_data(self):
+        return self._transfer_data
+
+    @transfer_data.setter
+    def transfer_data(self, l):
+        if isinstance(l, list):
+            self._transfer_data = l
+            self._transfer_weights = np.ones(len(l))
+        elif isinstance(l, dict):
+            self._transfer_data = []
+            self._transfer_weights = np.array([])
+            for key, val in l.items():
+                self._transfer_data += val
+                self._transfer_weights = np.hstack((self._transfer_weights, float(key) * np.ones(len(val)) ))
+        else:
+            self._transfer_data = []
+            self._trasfer_weights = np.array([])
+
+    @property
+    def transfer_weights(self):
+        return self._transfer_weights
+
+    
+    def set_verbosity(self, verbose):
+        self.verbose = verbose
+    
+    
     def calculate(self, atoms=None, properties=['energy'], system_changes=all_changes):
         Calculator.calculate(self, atoms, properties, system_changes)        
         if 'energy' in properties:
@@ -131,7 +195,8 @@ class LSGPRModel(ModelBaseClass):
             
 
     def predict_uncertainty(self, atoms=None, X=None, k=None):
-        self.writer('Uncertainty not implemented. Will break soon!')
+        self.writer('Uncertainty not implemented.')
+        return 0.
 
         
     def predict_local_energy(self, atoms=None, X=None):
@@ -149,56 +214,13 @@ class LSGPRModel(ModelBaseClass):
     def predict_forces(self, atoms, return_uncertainty=False, **kwargs):
         """
         """
-        if self.force_method == 'central':
-            f = self.predict_forces_central(atoms, **kwargs)
-        else:
-            f = self.predict_forces_central(atoms, **kwargs)
+        f = self.predict_forces_central(atoms, **kwargs)
 
         if return_uncertainty:
             return f, np.zeros(f.shape)
         else:
             return f
 
-
-    def predict_forces_central(self, atoms, acquisition_function=None, **kwargs):
-        d = 0.001
-        if acquisition_function is None:
-            energy = lambda a: self.predict_energy(a, return_uncertainty=False)
-        else:
-            energy = lambda a: acquisition_function(*self.predict_energy(a, return_uncertainty=True))
-
-        e0 = self.predict_energy(atoms)
-        energies = []
-        
-        for a in range(len(atoms)):
-            for i in range(3):
-                # Try forward energy
-                new_pos = atoms.get_positions()
-                new_pos[a, i] += d
-                atoms.set_positions(new_pos)
-                if atoms.positions[a, i] != new_pos[a, i]: # Check for constraints
-                    energies.append(e0)
-                else:
-                    energies.append(energy(atoms))
-                    atoms.positions[a, i] -= d
-
-                # Try backwards energy 
-                new_pos = atoms.get_positions()
-                new_pos[a, i] -= d
-                atoms.set_positions(new_pos)
-                if atoms.positions[a, i] != new_pos[a, i]:
-                    energies.append(e0)
-                else:
-                    energies.append(energy(atoms))
-                    atoms.positions[a, i] += d                    
-                
-        penergies = np.array(energies[0::2]) # forward energies
-        menergies = np.array(energies[1::2]) # backward energies
-
-        forces = ((menergies - penergies) / (2 * d)).reshape(len(atoms), 3)
-        return forces
-
-    
 
     ####################################################################################################################
     # Training:
@@ -209,8 +231,9 @@ class LSGPRModel(ModelBaseClass):
     #     private: _train_GPR (asserts that self.Xn, self.Xm, self.L, self.y is set)
     ####################################################################################################################
 
+    @agox_writer
     def train_model(self, training_data, **kwargs):
-        self.set_ready_state(True)
+        self.ready_state = True
         self.atoms = None
 
         # train prior
@@ -254,7 +277,7 @@ class LSGPRModel(ModelBaseClass):
         if self.m_points > self.Xn.shape[0]:
             m_indices = np.arange(0,self.Xn.shape[0])
         else:
-            m_indices = self.rng.choice(self.Xn.shape[0], size=self.m_points, replace=False)
+            m_indices = np.random.choice(self.Xn.shape[0], size=self.m_points, replace=False)
         self.Xm = self.Xn[m_indices, :]
         return True
     
@@ -356,7 +379,7 @@ class LSGPRModel(ModelBaseClass):
         else:
             self.writer(f'method name: {self.method} unknown. Will fail shortly')
             
-    @agox_writer               
+    @agox_writer
     def update_model(self, new_data, all_data):
         t1 = time()
 
@@ -392,19 +415,13 @@ class LSGPRModel(ModelBaseClass):
     # Assignments:
     ####################################################################################################################
 
-    def assign_from_main(self, main):
-        super().assign_from_main(main)
-        self.get_iteration_counter = main.get_iteration_counter
-
-
-    @agox_writer
-    @Observer.observer_method 
-    def training_observer_func(self, database, state):
-        iteration = self.get_iteration_counter()
+    @Observer.observer_method        
+    def training_observer(self, database, state):
+        iteration = state.get_iteration_counter()
 
         if iteration < self.iteration_start_training:
             return
-        if (iteration % self.update_interval != 0) * (iteration != self.iteration_start_training):
+        if (iteration % self.update_period != 0) * (iteration != self.iteration_start_training):
             return
 
 
@@ -413,7 +430,7 @@ class LSGPRModel(ModelBaseClass):
         
         if self.sparsifier is not None:
             full_update, data_for_training = self.sparsifier(all_data)
-        elif self.ready_state and not self.full_update:
+        elif self.ready_state:
             full_update = False
             data_amount_before = len(self.y) - len(self.transfer_data)
             data_for_training = all_data
@@ -436,21 +453,11 @@ class LSGPRModel(ModelBaseClass):
 
 
     def _get_X_y(self, atoms_list):
-
         X = self.descriptor.get_local_environments(atoms_list)
         y = np.array([atoms.get_potential_energy() - sum(self.single_atom_energies[atoms.get_atomic_numbers()]) \
                       for atoms in atoms_list])
         if self.prior is not None and self.use_prior_in_training:
-            try:
-                y -= np.array([self.prior.predict_energy(atoms) for atoms in atoms_list])
-            except:
-                if self.verbose > 1:
-                    self.writer('wrong prior method')
-            # try:
-            #     y -= np.array([self.prior.predict_energy(atoms) for atoms in atoms_list])
-            # except:
-            #     if self.verbose > 1:
-            #         self.writer('wrong prior method')                
+            y -= np.array([self.prior.predict_energy(atoms) for atoms in atoms_list])
             
         return X, y
 
@@ -489,9 +496,11 @@ class LSGPRModel(ModelBaseClass):
 
     def _make_sigma(self, atoms_list):
         sigma_inv = np.diag([1/(len(atoms)*self.noise**2) for atoms in atoms_list])
-        if self.weights is not None:
-            self.writer(sigma_inv.shape, self.weights.shape)
-            sigma_inv[np.diag_indices_from(sigma_inv)] *= self.weights
+        weights = np.ones(len(atoms_list))
+        weights[:len(self.transfer_weights)] = self.transfer_weights
+        # if self.weights is not None:
+        #     self.writer(sigma_inv.shape, self.weights.shape)
+        #     sigma_inv[np.diag_indices_from(sigma_inv)] *= self.weights
         return sigma_inv
         
     def symmetrize(self, A):
@@ -553,18 +562,6 @@ class LSGPRModel(ModelBaseClass):
         self.alpha = parameters['alpha']
         self.single_atom_energies = parameters['single_atom_energies']
         self.kernel.theta = parameters['theta']
-        self.set_ready_state(True)
+        self.ready_state = True
 
     
-    def save(self, prefix='my-model', directory=''):
-        with open(join(directory, prefix+'.lsgpr'), 'wb') as handle:
-            pickle.dump(self, handle)
-            
-    @classmethod
-    def load(self, path):
-        with open(path, 'rb') as handle:
-            return pickle.load(handle)
-
-
-    
-

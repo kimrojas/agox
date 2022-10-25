@@ -62,7 +62,7 @@ class Repulsive():
         cdef Pool mem
         mem = Pool()
 
-        cdef int Natoms = a.get_number_of_atoms()
+        cdef int Natoms = len(a)
         cdef double rcut = self.rcut
 
         cdef list x_np = a.get_positions().tolist()
@@ -120,7 +120,7 @@ class Repulsive():
         cdef Pool mem
         mem = Pool()
 
-        cdef int Natoms = a.get_number_of_atoms()
+        cdef int Natoms = len(a)
         cdef int dim = 3
         cdef double rcut = self.rcut
 

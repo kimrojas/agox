@@ -33,7 +33,8 @@ class LocalOptimizationEvaluator(EvaluatorBaseClass):
                 self.store_trajectory = False
 
     def evaluate_candidate(self, candidate):
-        candidate.set_calculator(self.calculator)      
+        candidate.set_calculator(self.calculator)
+
         try:
             if self.optimizer_run_kwargs['steps'] > 0:
                 self.apply_constraints(candidate)

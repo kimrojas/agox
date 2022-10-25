@@ -31,7 +31,7 @@ class Angular_Fingerprint(object):
 
         self.pbc = atoms.get_pbc()
         self.cell = atoms.get_cell()
-        self.n_atoms = atoms.get_number_of_atoms()
+        self.n_atoms = len(atoms)
         self.num = atoms.get_atomic_numbers()
         self.atomic_types = sorted(list(set(self.num)))
         self.atomic_count = {type:list(self.num).count(type) for type in self.atomic_types}
