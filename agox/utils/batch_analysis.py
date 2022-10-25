@@ -213,7 +213,7 @@ class Analysis:
         self.global_best_energy = np.nanmin(self.best_energies)
         self.global_best_structure = self.best_structures[np.nanargmin(self.best_energy)]
 
-        self.num_atoms = self.global_best_structure.get_global_number_of_atoms()
+        self.num_atoms = len(self.global_best_structure)
 
         # Threshold
         #self.energies[self.energies > self.threshold] = self.threshold
@@ -301,7 +301,7 @@ class Analysis:
         self.global_best_energy = np.min(self.best_energies)
         self.global_best_structure = best_structure  # self.best_structures[np.argmin(self.best_energy)]
 
-        self.num_atoms = best_structure.get_global_number_of_atoms()
+        self.num_atoms = len(best_structure)
 
         t2 = dt()
 

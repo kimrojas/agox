@@ -57,7 +57,11 @@ class ParallelTemperingSampler(MetropolisSampler):
             if self.verbose:
                 energies = [self.most_recently_accepted[c].get_potential_energy() \
                             if self.most_recently_accepted[c] is not None else 0 for c in self.most_recently_accepted]
-                self.writer(f'PARALLEL TEMPERING: {self.temperature:8.3f}, ' + ','.join([f'{e:8.3f}' for e in energies]))
+                if self.database.worker_number == 0:
+                    text = 'PARALLEL TEMPERING:'  + f'{self.temperature:8.3f}, ' + ','.join([f'{e:8.3f}' for e in energies])
+                else:
+                    text = 'PARALLEL TEMPERING (not main worker):'
+                self.writer(text)
 
             self.swap_func()
         

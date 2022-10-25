@@ -113,7 +113,7 @@ class Angular_Fingerprint(object):
 
         self.volume = atoms.get_volume()
         self.pbc = atoms.get_pbc()
-        self.Natoms = atoms.get_global_number_of_atoms()
+        self.Natoms = len(atoms)
         self.dim = 3
 
         # parameters for the binning:

@@ -105,7 +105,7 @@ class GPR(Writer):
         if self.delta_function is not None:
             delta_force = self.delta_function.forces(atoms)
         else:
-            Ncoord = 3 * atoms.get_global_number_of_atoms()
+            Ncoord = 3 * len(atoms)
             delta_force = np.zeros(Ncoord)
 
         kernelDeriv = np.dot(dk_df, fgrad.T)
@@ -125,7 +125,7 @@ class GPR(Writer):
             g = K0 - np.dot(K_vec.T, alpha_err)  # negative g can occur due to numerical errors.
             if g <= 0:
                 self.writer('negative g-value: g={}'.format(g))
-                Ncoord = 3 * atoms.get_global_number_of_atoms()
+                Ncoord = 3 * len(atoms)
                 error_force = np.zeros(Ncoord)
             else:
                 error_force = 1/np.sqrt(g) * (kernelDeriv.T).dot(alpha_err)
@@ -467,7 +467,7 @@ if __name__ == '__main__':
         #traj = read('graphene_data/all_every10th.traj', index='0::5')
         #a_train = traj[:100]
         E_train = np.array([a.get_potential_energy() for a in a_train])
-        Natoms = a_train[0].get_number_of_atoms()
+        Natoms = len(a_train[0])
         #view(a_train)
         
         Rc1 = 5
@@ -533,7 +533,7 @@ if __name__ == '__main__':
         traj = read('graphene_data/all_every10th.traj', index='0::5')
         a_train = traj[:100]
         E_train = np.array([a.get_potential_energy() for a in a_train])
-        Natoms = a_train[0].get_number_of_atoms()
+        Natoms = len(a_train[0])
 
         Rc1 = 5
         binwidth1 = 0.2
@@ -572,7 +572,7 @@ if __name__ == '__main__':
         traj = read('graphene_data/all_every10th.traj', index='0::5')
         a_train = traj[:100]
         E_train = np.array([a.get_potential_energy() for a in a_train])
-        Natoms = a_train[0].get_number_of_atoms()
+        Natoms = len(a_train[0])
 
         Rc1 = 5
         binwidth1 = 0.2

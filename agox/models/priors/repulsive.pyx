@@ -44,30 +44,19 @@ def convert_atom_types(num):
                 num_converted[i] = j
     return num_converted
 
-class delta():
+class Repulsive():
 
-    def __init__(self, atoms, rcut=5, ratio_of_covalent_radii=0.7):
+    def __init__(self, rcut=3., ratio=0.7):
         self.rcut = rcut
+        self.ratio = ratio
+        self.cell = None
 
-        self.pbc = atoms.get_pbc()
-        self.cell = atoms.get_cell()
+    def predict_energy(self, a):
+        if self.cell is None:
+            self.prepare(a)
+        if not np.array_equal(self.cell, a.get_cell()):
+            self.prepare(a)
 
-        self.cell_displacements = self.__get_neighbour_cells_displacement(self.pbc, self.cell)
-        self.Ncells = len(self.cell_displacements)
-
-        num = atoms.get_atomic_numbers()
-        atomic_types = sorted(list(set(num)))
-        self.Ntypes = len(atomic_types)
-
-        blmin_dict = closest_distances_generator(num, ratio_of_covalent_radii=ratio_of_covalent_radii)
-
-        self.blmin = -np.ones((self.Ntypes, self.Ntypes))
-        for i1, type1 in enumerate(atomic_types):
-            for i2, type2 in enumerate(atomic_types):
-                self.blmin[i1,i2] = blmin_dict[(type1, type2)]
-        self.blmin = self.blmin.reshape(-1).tolist()
-
-    def energy(self, a):
 
         # Memory allocation pool
         cdef Pool mem
@@ -126,7 +115,7 @@ class delta():
                         E += 1/pow(r_scaled,12)
         return E/2
 
-    def forces(self, a):
+    def predict_forces(self, a):
         # Memory allocation pool
         cdef Pool mem
         mem = Pool()
@@ -219,3 +208,23 @@ class delta():
             neighbourcells_disp.append(list(displacement))
 
         return neighbourcells_disp
+
+
+    def prepare(self, a):
+        self.pbc = a.get_pbc()
+        self.cell = a.get_cell()
+
+        self.cell_displacements = self.__get_neighbour_cells_displacement(self.pbc, self.cell)
+        self.Ncells = len(self.cell_displacements)
+
+        num = a.get_atomic_numbers()
+        atomic_types = sorted(list(set(num)))
+        self.Ntypes = len(atomic_types)
+
+        blmin_dict = closest_distances_generator(num, ratio_of_covalent_radii=self.ratio)
+
+        self.blmin = -np.ones((self.Ntypes, self.Ntypes))
+        for i1, type1 in enumerate(atomic_types):
+            for i2, type2 in enumerate(atomic_types):
+                self.blmin[i1,i2] = blmin_dict[(type1, type2)]
+        self.blmin = self.blmin.reshape(-1).tolist()
