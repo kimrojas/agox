@@ -174,7 +174,6 @@ class ConcurrentDatabase(Database):
             if not os.path.exists(self.filename_ready.format(i, expected_iteration)):
                 state = False
         
-        print(f'{expected_iteration}:{state}')
         return state
 
     def cleanup(self):
