@@ -37,7 +37,9 @@ class CollectorBaseClass(ABC, Observer, Writer):
         self.candidates = []
         self.plot_confinement()
 
-        self.add_observer_method(self.generate_candidates, sets=self.sets[0], gets=self.gets[0], order=self.order[0])
+        self.add_observer_method(self.generate_candidates,
+                                 sets=self.sets[0], gets=self.gets[0], order=self.order[0],
+                                 handler_identifier='AGOX')
 
         for generator in self.generators:            
             observer_methods = [observer_method for observer_method in generator.observer_methods.values()]

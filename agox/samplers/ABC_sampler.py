@@ -15,7 +15,9 @@ class SamplerBaseClass(ABC, Observer, Writer):
         self.use_transfer_data = use_transfer_data
         self.transfer_data = []
 
-        self.add_observer_method(self.setup_sampler, sets=self.sets[0], gets=self.gets[0], order=self.order[0])
+        self.add_observer_method(self.setup_sampler,
+                                 sets=self.sets[0], gets=self.gets[0], order=self.order[0],
+                                 handler_identifier='database')
 
         if database is not None:
             self.attach_to_database(database)

@@ -11,7 +11,9 @@ class EvaluatorBaseClass(ABC, Observer, Writer):
         Writer.__init__(self, verbose=verbose, use_counter=use_counter, prefix=prefix)
         self.number_to_evaluate = number_to_evaluate
 
-        self.add_observer_method(self.evaluate, self.sets[0], self.gets[0], self.order[0])
+        self.add_observer_method(self.evaluate,
+                                 sets=self.sets[0], gets=self.gets[0], order=self.order[0],
+                                 handler_identifier='AGOX')
     
     def __call__(self, candidate):
         return self.evaluate_candidate(candidate)
