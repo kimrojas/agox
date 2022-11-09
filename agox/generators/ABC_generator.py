@@ -57,8 +57,9 @@ class GeneratorBaseClass(ABC, Observer, Writer):
         if self.environment is not None:
             self.plot_confinement(environment)
 
-        self.add_observer_method(self.generate, sets=self.sets[0], 
-            gets=self.gets[0], order=self.order[0])
+        self.add_observer_method(self.generate,
+                                 sets=self.sets[0], gets=self.gets[0], order=self.order[0],
+                                 handler_identifier='AGOX')
 
     @abstractmethod
     def get_candidates(self, sampler, environment):

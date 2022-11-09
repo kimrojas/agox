@@ -53,7 +53,9 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
         
         self._ready_state = False
 
-        self.add_observer_method(self.training_observer, gets=self.gets[0], sets=self.sets[0], order=self.order[0])
+        self.add_observer_method(self.training_observer,
+                                 gets=self.gets[0], sets=self.sets[0], order=self.order[0],
+                                 handler_identifier='database')
 
         if database is not None:
             self.attach_to_database(database)
