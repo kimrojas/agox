@@ -274,7 +274,7 @@ class ModelGPR(ModelBaseClass):
     @classmethod
     def default(cls, environment, database, lambda1min=1e-1, lambda1max=1e3, lambda2min=1e-1, lambda2max=1e3, 
                 theta0min=1, theta0max=1e5, beta=0.01, use_delta_func=True, sigma_noise = 1e-2,
-                feature_calculator=None, kernel=None):
+                feature_calculator=None, kernel=None, max_iterations=None):
 
         """
         Creates a GPR model. 
@@ -303,6 +303,9 @@ class ModelGPR(ModelBaseClass):
             radial and angular componenets are treated at different length scales
             If None the standard RBF is used. 
             If a kernel object then that kernel is used. 
+        max_iterations: int or None
+            Maximum number of iterations for the hyperparameter optimization during 
+            its BFGS optimization through scipy. 
         """
 
         from ase import Atoms
@@ -358,6 +361,7 @@ class ModelGPR(ModelBaseClass):
                 bias_func=None,
                 optimize=True,
                 n_restarts_optimizer=1,
+                n_maxiter_optimizer = max_iterations,
                 use_delta_in_training=False)
 
         return cls(gpr, database=database, update_interval=1, optimize_loglikelyhood=True, use_saved_features=True)
