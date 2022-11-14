@@ -383,3 +383,7 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
         assert isinstance(database, DatabaseBaseClass)
         print(f'{self.name}: Attaching to database: {database}')
         self.attach(database)
+
+
+def load(path):
+    return ModelBaseClass.load(path)

@@ -19,8 +19,8 @@ to investigate prediction quality.
 
 This should result in the following figure
 
-.. figure:: parity.png
+.. figure:: scripts/parity.png
 
 .. note::
-   If a model is actively training during an AGOX run, then the model needs to be attached to a database.
+   If a model should be actively trained during an AGOX run, then the model needs to be attached to a database.
 

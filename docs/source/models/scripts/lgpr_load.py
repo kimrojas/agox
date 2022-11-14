@@ -1,14 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from agox.models.local_GPR.LSGPR_CUR import LSGPRModelCUR
-
+from agox.models import load
 from agox.models.datasets import datasets
 
 data = datasets['Ag5O3']
 test_data = data[80:]
 
-model = LSGPRModelCUR.load('my-model.pkl')
+model = load('my-model.pkl')
 
 true_energies = np.array([d.get_potential_energy() for d in test_data])
 pred_energies = model.predict_energies(test_data)
