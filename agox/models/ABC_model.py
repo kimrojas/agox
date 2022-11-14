@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 from ase.calculators.calculator import Calculator, all_changes
 from agox.writer import agox_writer, Writer
@@ -347,7 +348,7 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
             The directory to save the model in, by default the current folder.
         """
         import pickle
-        with open(join(directory, prefix+'.pkl'), 'wb') as handle:
+        with open(os.path.join(directory, prefix+'.pkl'), 'wb') as handle:
             pickle.dump(self, handle)
             
     @classmethod
