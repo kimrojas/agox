@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 from ase.calculators.calculator import Calculator, all_changes
 from agox.writer import agox_writer, Writer
@@ -53,7 +54,9 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
         
         self._ready_state = False
 
-        self.add_observer_method(self.training_observer, gets=self.gets[0], sets=self.sets[0], order=self.order[0])
+        self.add_observer_method(self.training_observer,
+                                 gets=self.gets[0], sets=self.sets[0], order=self.order[0],
+                                 handler_identifier='database')
 
         if database is not None:
             self.attach_to_database(database)
@@ -345,7 +348,7 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
             The directory to save the model in, by default the current folder.
         """
         import pickle
-        with open(join(directory, prefix+'.pkl'), 'wb') as handle:
+        with open(os.path.join(directory, prefix+'.pkl'), 'wb') as handle:
             pickle.dump(self, handle)
             
     @classmethod
@@ -380,3 +383,7 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
         assert isinstance(database, DatabaseBaseClass)
         print(f'{self.name}: Attaching to database: {database}')
         self.attach(database)
+
+
+def load(path):
+    return ModelBaseClass.load(path)

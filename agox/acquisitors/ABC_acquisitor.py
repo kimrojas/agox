@@ -28,7 +28,9 @@ class AcquisitorBaseClass(ABC, Observer, Writer):
         Observer.__init__(self, gets=gets, sets=sets, order=order)
         Writer.__init__(self, verbose=verbose, use_counter=use_counter, prefix=prefix)
 
-        self.add_observer_method(self.prioritize_candidates, sets=self.sets[0], gets=self.gets[0], order=self.order[0])
+        self.add_observer_method(self.prioritize_candidates,
+                                 sets=self.sets[0], gets=self.gets[0], order=self.order[0],
+                                 handler_identifier='AGOX')
 
     ########################################################################################
     # Required properties
@@ -179,5 +181,3 @@ class AcquisitonCalculatorBaseClass(Calculator):
     @property
     def ready_state(self):
         return self.model_calculator.ready_state
-
-

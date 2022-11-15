@@ -16,7 +16,9 @@ class DatabaseBaseClass(ABC, ObserverHandler, Observer, Writer):
 
         self.objects_to_assign = []
 
-        self.add_observer_method(self.store_in_database, sets=self.sets[0], gets=self.gets[0], order=self.order[0])
+        self.add_observer_method(self.store_in_database,
+                                 sets=self.sets[0], gets=self.gets[0], order=self.order[0],
+                                 handler_identifier='AGOX')
 
     ########################################################################################
     # Required methods                                                          
