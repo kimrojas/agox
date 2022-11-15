@@ -17,8 +17,10 @@ class ModelGPR(ModelBaseClass):
 
     name = 'ModelGPR'
     
-    def __init__(self, model=None, max_training_data=None, iteration_start_training=7, update_interval=1, max_energy=1000, max_adapt_iters=0, n_adapt=25, 
-                    force_kappa=0, extrapolate=False, optimize_loglikelyhood=True, use_saved_features=False, sparsifier=None, **kwargs):
+    def __init__(self, model=None, max_training_data=10e8, iteration_start_training=7,
+                 update_interval=1, max_energy=1000, max_adapt_iters=0, n_adapt=25, 
+                 force_kappa=0, extrapolate=False, optimize_loglikelyhood=True, use_saved_features=False,
+                 sparsifier=None, **kwargs):
         super().__init__(**kwargs)
         self.model = model
         self.iteration_start_training = iteration_start_training
