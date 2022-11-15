@@ -1,6 +1,6 @@
 import numpy as np
 from ase.calculators.calculator import Calculator, all_changes
-
+from scipy.linalg import svd
 from timeit import default_timer as dt
 from agox.writer import agox_writer
 
@@ -17,8 +17,10 @@ class ModelGPR(ModelBaseClass):
 
     name = 'ModelGPR'
     
-    def __init__(self, model=None, max_training_data=None, iteration_start_training=7, update_interval=1, max_energy=1000, max_adapt_iters=0, n_adapt=25, 
-                    force_kappa=0, extrapolate=False, optimize_loglikelyhood=True, use_saved_features=False, sparsifier=None, **kwargs):
+    def __init__(self, model=None, max_training_data=10e8, iteration_start_training=7,
+                 update_interval=1, max_energy=1000, max_adapt_iters=0, n_adapt=25, 
+                 force_kappa=0, extrapolate=False, optimize_loglikelyhood=True, use_saved_features=False,
+                 sparsifier=None, **kwargs):
         super().__init__(**kwargs)
         self.model = model
         self.iteration_start_training = iteration_start_training
@@ -97,21 +99,11 @@ class ModelGPR(ModelBaseClass):
         E_best = energies[args[0]]        
         allowed_idx = [arg for arg in args if energies[arg] - E_best < self.max_energy]
 
-        if self.max_training_data is not None:
-            allowed_idx = allowed_idx[0:self.max_training_data]
-            
-        remaining = [arg for arg in args if arg not in allowed_idx]
-
         training_data = [all_data[i] for i in allowed_idx]
         training_energies = [energies[i] for i in allowed_idx]
-
-
-        self.writer(f'Min GPR training energy: {np.min(training_energies)}')
-        self.writer(f'Max GPR training energy: {np.max(training_energies)}')
-        # Wipe any stored atoms object, since now the model will change and hence give another result
-        self.atoms = None
-
-        # Use saved features: 
+        remaining = [arg for arg in args if arg not in allowed_idx]
+        
+        # calculate features
         if self.use_saved_features:
             features = []
             deltas = []
@@ -127,15 +119,39 @@ class ModelGPR(ModelBaseClass):
                 deltas.append(d)
             features = np.array(features)
             deltas = np.array(deltas)
-            self.model.train(features=features, data_values=training_energies, delta_values=deltas, add_new_data=False, optimize=self.optimize_loglikelyhood)                
         else:
-            self.model.train(training_data, data_values=training_energies, add_new_data=False, optimize=self.optimize_loglikelyhood)
+            features = self.model.featureCalculator.get_featureMat(training_data)
+            deltas = np.array([c.get_meta_information('GPR_delta') for c in training_data])
+
+        
+        if self.max_training_data is not None and self.max_training_data < len(training_data):
+            self.writer('Performing structure sparsification using CUR')
+            self.writer(f'Training structures before sparsification: {len(training_data)}')            
+            U, _, _ = svd(features)
+            score = np.sum(U[:,:self.max_training_data]**2, axis=1)/self.max_training_data
+            sorter = np.argsort(score)[::-1]
+            training_data = [training_data[i] for i in sorter[:self.max_training_data]]
+            features = features[sorter, :][:self.max_training_data, :]
+            training_energies = [d.get_potential_energy() for d in training_data]
+            self.writer(f'Training structures after sparsification: {len(training_data)}')
+            
+
+        self.writer(f'Min GPR training energy: {np.min(training_energies)}')
+        self.writer(f'Max GPR training energy: {np.max(training_energies)}')
+        
+        # Wipe any stored atoms object, since now the model will change and hence give another result
+        self.atoms = None
+
+        self.model.train(features=features, data_values=training_energies,
+                         delta_values=deltas, add_new_data=False, optimize=self.optimize_loglikelyhood) 
+
 
         self.ready_state = True
         if self.max_adapt_iters > 0 and len(remaining) > 0:
             self.writer('Running adaptive training on remaining {}'.format(len(remaining)))
             self.adaptive_training(all_data, energies, remaining)
 
+            
     def adaptive_training(self, all_data, energies, remaining):
         run_adapt = True
         t0 = dt()
