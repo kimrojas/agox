@@ -196,7 +196,7 @@ class GeneratorBaseClass(ABC, Observer, Writer):
     def plot_confinement(self, environment):
         from agox.helpers.plot_confinement import plot_confinement
         import matplotlib.pyplot as plt
-        from agox.utils.matplotlib import use_agox_mpl_backend; use_agox_mpl_backend()
+        from agox.utils.matplotlib_utils import use_agox_mpl_backend; use_agox_mpl_backend()
 
         if self.confined:
             fig, ax = plot_confinement(environment.get_template(), self.confinement_cell, self.confinement_corner)
