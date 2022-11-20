@@ -2,9 +2,11 @@ import numpy as np
 from scipy.linalg import eigvalsh
 from ase.data import covalent_radii
 
-from .descriptor_ABC import DescriptorBaseClass
+from agox.models.descriptors import DescriptorBaseClass
 
 class SpectralGraphDescriptor(DescriptorBaseClass):
+
+    feature_types = ['global']
 
     def __init__(self, mode='adjacency', diagonal_mode='atomic_number', number_to_compare='all', descending=False, scale_factor=1.3):
         self.covalent_bond_scale_factor = scale_factor
@@ -45,7 +47,7 @@ class SpectralGraphDescriptor(DescriptorBaseClass):
         elif self.mode == 'laplacian':
             return self.get_laplacian_matrix(candidate)
 
-    def get_feature(self, candidate):
+    def create_global_features(self, candidate):
         graph = self.get_graph(candidate)
 
         if self.number_to_compare == 'all':

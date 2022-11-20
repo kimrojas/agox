@@ -156,8 +156,6 @@ class BehlerParrinello(DescriptorBaseClass):
     def cutoff_derivative(self, r):
         return -0.5*np.pi/self.rc * np.sin(np.pi*r/self.rc)
 
-
-
 class BehlerParanello(BehlerParrinello):
     def __init__(self, *args, **kwargs):
         warnings.warn('Use BehlerParrinello instead - this will be deleted')

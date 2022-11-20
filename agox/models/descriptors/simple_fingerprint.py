@@ -1,10 +1,12 @@
-from .descriptor_ABC import DescriptorBaseClass
+from agox.models.descriptors import DescriptorBaseClass
 import numpy as np
 
 def eval_gauss(r, x, width):
     return np.exp(-0.5*((x-r)/width)**2)
 
 class SimpleFingerprint(DescriptorBaseClass):
+
+    feature_types = ['global']
 
     def __init__(self, species, Nbins=30, width=0.2, r_cut=3, separate_center_species=True):
         self.species = species
@@ -17,7 +19,7 @@ class SimpleFingerprint(DescriptorBaseClass):
         self.Nspecies = len(self.species)
         self.r_bins = np.linspace(0,self.r_cut, Nbins)
 
-    def get_feature(self, atoms):
+    def create_global_features(self, atoms):
         Natoms = len(atoms)
         symbols = atoms.get_chemical_symbols()
 
@@ -40,6 +42,3 @@ class SimpleFingerprint(DescriptorBaseClass):
                 else:
                     descriptor[i, idx_sym_j] += 0.5*eval_gauss(r_ij, self.r_bins, self.width) / r_ij**2
         return descriptor.reshape(Natoms, -1)
-
-    def get_feature_matrix(self, traj):
-        return [self.get_feature(a) for a in traj]

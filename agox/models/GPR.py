@@ -111,7 +111,7 @@ class ModelGPR(ModelBaseClass):
                 F = candidate.get_meta_information('GPR_feature')
                 d = candidate.get_meta_information('GPR_delta')
                 if F is None:
-                    F = self.model.featureCalculator.get_feature(candidate)
+                    F = self.model.descriptor.get_global_features(candidate)[0]
                     candidate.add_meta_information('GPR_feature', F)
                     d = self.model.delta_function.energy(candidate)
                     candidate.add_meta_information('GPR_delta', d)
@@ -120,7 +120,7 @@ class ModelGPR(ModelBaseClass):
             features = np.array(features)
             deltas = np.array(deltas)
         else:
-            features = self.model.featureCalculator.get_featureMat(training_data)
+            features = np.array(self.model.descriptor.get_global_features(training_data))
             deltas = np.array([c.get_meta_information('GPR_delta') for c in training_data])
 
         
@@ -290,7 +290,7 @@ class ModelGPR(ModelBaseClass):
     @classmethod
     def default(cls, environment, database, lambda1min=1e-1, lambda1max=1e3, lambda2min=1e-1, lambda2max=1e3, 
                 theta0min=1, theta0max=1e5, beta=0.01, use_delta_func=True, sigma_noise = 1e-2,
-                feature_calculator=None, kernel=None, max_iterations=None):
+                descriptor=None, kernel=None, max_iterations=None):
 
         """
         Creates a GPR model. 
@@ -325,7 +325,6 @@ class ModelGPR(ModelBaseClass):
         """
 
         from ase import Atoms
-        from agox.models.gaussian_process.featureCalculators_multi.angular_fingerprintFeature_cy import Angular_Fingerprint
         from agox.models.gaussian_process.delta_functions_multi.delta import delta as deltaFunc
         from agox.models.gaussian_process.kernels import RBF, ConstantKernel as C, WhiteKernel, GeneralAnisotropicRBF
         from agox.models.gaussian_process.GPR import GPR
@@ -334,9 +333,9 @@ class ModelGPR(ModelBaseClass):
         temp_atoms = environment.get_template()
         temp_atoms += Atoms(environment.get_numbers())
 
-        if feature_calculator is None:
-            feature_calculator = Angular_Fingerprint(temp_atoms, Rc1=6, Rc2=4, binwidth1=0.2, Nbins2=30,
-                                                    sigma1=0.2, sigma2=0.2, gamma=2, eta=20, use_angular=True)
+        if descriptor is None:
+            from agox.models.descriptors import Fingerprint
+            descriptor = Fingerprint(temp_atoms)
 
         lambda1ini = (lambda1max - lambda1min)/2 + lambda1min
         lambda2ini = (lambda2max - lambda2min)/2 + lambda2min
@@ -354,8 +353,8 @@ class ModelGPR(ModelBaseClass):
             lambda1ini_aniso = np.array([lambda1ini, lambda1ini])
             lambda2ini_aniso = np.array([lambda2ini, lambda2ini])
 
-            length_scale_indices = np.array([0 for _ in range(feature_calculator.Nelements_2body)] 
-                + [1 for _ in range(feature_calculator.Nelements_3body)])
+            length_scale_indices = np.array([0 for _ in range(descriptor.cython_module.Nelements_2body)] 
+                + [1 for _ in range(descriptor.cython_module.Nelements_3body)])
 
             kernel = C(theta0ini, (theta0min, theta0max)) * \
             ( \
@@ -371,7 +370,7 @@ class ModelGPR(ModelBaseClass):
             delta = None
         
         gpr = GPR(kernel=kernel,
-                featureCalculator=feature_calculator,
+                featureCalculator=descriptor,
                 delta_function=delta,
                 # delta_function=None,          
                 bias_func=None,
@@ -383,4 +382,4 @@ class ModelGPR(ModelBaseClass):
         return cls(gpr, database=database, update_interval=1, optimize_loglikelyhood=True, use_saved_features=True)
 
     def get_feature_calculator(self):
-        return self.model.featureCalculator
+        return self.model.descriptor

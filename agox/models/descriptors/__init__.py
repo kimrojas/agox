@@ -1,1 +1,2 @@
-
+from agox.models.descriptors.ABC_descriptor import DescriptorBaseClass
+from agox.models.descriptors.fingerprint import Fingerprint
