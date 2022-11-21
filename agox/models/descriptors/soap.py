@@ -4,7 +4,7 @@ from agox.models.descriptors import DescriptorBaseClass
 
 class SOAP(DescriptorBaseClass):
 
-    feature_types = ['local']
+    feature_types = ['local', 'global', 'local_derivative']
 
     def __init__(self, species, r_cut=4, nmax=3, lmax=2, sigma=1.0,
                  weight=True, periodic=True, dtype='float64', normalize=False, crossover=True, **kwargs):
@@ -51,17 +51,6 @@ class SOAP(DescriptorBaseClass):
         n_centers, n_atoms, n_dim, n_features = f_deriv.shape
         return f_deriv.reshape(n_centers, n_dim*n_atoms, n_features)
     
-    # def get_local_environments(self, atoms):
-    #     """Returns local environments for all "atoms".
-    #     Dimensions of output (num local environents) x (lenght descriptor) as array
-    #     """
-    #     if isinstance(atoms, list):
-    #         features = np.vstack([self.soap.create(atom) for atom in atoms])
-    #     else:
-    #         features = self.soap.create(atoms)
-    #     if self.normalize:
-    #         ddot = np.dot(features, features.T)
-    #         return features/np.sqrt(np.diagonal(ddot)[:,np.newaxis])
-    #     else:
-    #         return features
-
+    def create_global_features(self, atoms):
+        features = self.soap.create(atoms)
+        return np.sum(features, axis=0)
