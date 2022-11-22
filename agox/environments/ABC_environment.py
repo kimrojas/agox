@@ -20,7 +20,7 @@ class EnvironmentBaseClass(ABC):
         self.constraints = constraints 
         self.use_box_constraint = use_box_constraint
         self.fix_template = fix_template
-
+        
     @abstractmethod
     def get_template(self, **kwargs):
         pass
@@ -28,7 +28,11 @@ class EnvironmentBaseClass(ABC):
     @abstractmethod    
     def get_numbers(self, numbers, **kwargs):
         pass
-    
+        
+    @abstractmethod
+    def environment_report(self):
+        pass 
+
     def get_missing_indices(self):
         return np.arange(len(self._template), len(self._template)+len(self._numbers))
 

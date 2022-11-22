@@ -18,6 +18,9 @@ class Environment(EnvironmentBaseClass):
         
         self._template = template
 
+        self.environment_report()
+
+
     def get_template(self):
         return self._template.copy()
 
@@ -61,18 +64,40 @@ class Environment(EnvironmentBaseClass):
         feature = tuple(self.get_numbers()) + tuple(self._template.get_atomic_numbers()) + tuple(self._template.get_positions().flatten().tolist())
         return hash(feature)    
 
+    def environment_report(self):
+        from agox.writer import pretty_print, header_print
 
+        header_print('Environment Properties')
+        tab = '    '
 
-if __name__ == '__main__':
+        missing_numbers = self.get_numbers()
 
-    from ase import Atoms
+        pretty_print('Atoms in search:')  
+        for number in np.unique(missing_numbers):
+            symbols_object = Symbols([number])
+            specie = symbols_object.species().pop()
+            count = np.count_nonzero(missing_numbers == number)
+            pretty_print(tab + f'{specie} = {count}')
 
-    template = Atoms('H1', positions=[[5, 5, 5]], cell=np.eye(3)*10)
+        total_symbols = Symbols(self.get_all_numbers())
+        pretty_print(f'Template formula: {self._template.get_chemical_formula()}')
+        pretty_print(f'Full formula: {total_symbols.get_chemical_formula()}')
 
-    numbers = [1, 1]
+        pretty_print('Cell:')
+        for cell_vec in self._template.get_cell():
+            pretty_print(tab + '{:4.2f} {:4.2f} {:4.2f}'.format(*cell_vec))
+        pretty_print('Periodicity:')
+        pretty_print(tab + '{} {} {}'.format(*self._template.pbc))
 
-    env = EnvironmentSingular(template, numbers=numbers)
+        pretty_print(f'Box constraint: {self.use_box_constraint}')
+        if self.use_box_constraint:
+            assert self.confinement_cell is not None
+            assert self.confinement_corner is not None
+            pretty_print('Confinement corner')
+            pretty_print(tab + '{:4.2f} {:4.2f} {:4.2f}'.format(*self.confinement_corner))
+            pretty_print('Confinement cell:')
+            for cell_vec in self.confinement_cell:
+                pretty_print(tab + '{:4.2f} {:4.2f} {:4.2f}'.format(*cell_vec))
 
-    print(env.get_identifier())
-
+        header_print('')
     
