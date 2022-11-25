@@ -10,7 +10,7 @@ from bootcamp2022.gpr.ABC_model import ModelBaseClass
 from time import time, sleep
 
 class GPR(ModelBaseClass):
-    name = 'Best ever Jax GPR'
+    name = 'JaxGPR'
     implemented_properties = ['energy', 'forces']
 
     def __init__(self, descriptor, kernel, noise=0.1, n_optimize=-1, seed=0, **kwargs):    
