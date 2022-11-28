@@ -7,10 +7,8 @@
 # have received a copy of the GNU General Public License along with AGOX. If not, see <https://www.gnu.org/licenses/>.
 
 import numpy as np
-from agox.candidates.standard import StandardCandidate
 from agox.observer import ObserverHandler, FinalizationHandler
 from agox.logger import Logger
-
 from agox.writer import Writer, agox_writer, ICON, header_print
 
 VERSION = "2.0.0"
@@ -39,7 +37,8 @@ class AGOX(ObserverHandler, FinalizationHandler, Writer):
         header_print('Initialization starting')
 
         self.elements = args
-
+        
+        from agox.candidates.standard import StandardCandidate
         candidate_instanstiator = kwargs.pop('candidate_instanstiator', StandardCandidate)
         self.candidate_instanstiator = candidate_instanstiator
 

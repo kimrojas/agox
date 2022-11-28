@@ -4,6 +4,8 @@ from scipy.spatial.distance import cdist
 
 class CenterOfGeometryGenerator(ReplaceGenerator):
 
+    name = 'CenterOfGeometryGenerator'
+
     def __init__(self, selection_percentages={'low':0.25, 'high':0.5}, extra_radius_amplitude=1, extra_radius_params={'low':-0.5, 'high':3}, **kwargs):
         super().__init__(**kwargs)
         self.selection_percentages = selection_percentages
