@@ -1,14 +1,14 @@
 import numpy as np
 from abc import ABC, abstractmethod
-from agox import observer
+from agox.module import Module
 from agox.observer import Observer
-from agox.writer import agox_writer, Writer
+from agox.writer import Writer, agox_writer
 
 class CollectorBaseClass(ABC, Observer, Writer):
 
     def __init__(self, generators=None, sampler=None, environment=None, order=2,
         sets={'set_key':'candidates'}, gets={}, verbose=True, use_counter=True,
-        prefix=''):
+        prefix='', surname=''):
         """
         Quite simple, except for lines 50-54 that remove generators as observers,
         as they are now part of a Collector. This may now yield wanted behaviour 
@@ -25,7 +25,7 @@ class CollectorBaseClass(ABC, Observer, Writer):
         environment : Environment object.
             An instance of an AGOX environment object. 
         """
-        Observer.__init__(self, sets=sets, gets=gets, order=order)
+        Observer.__init__(self, sets=sets, gets=gets, order=order, surname=surname)
         Writer.__init__(self, verbose=verbose, use_counter=use_counter, prefix=prefix)
 
         assert generators is not None

@@ -16,6 +16,8 @@ class ModelGPR(ModelBaseClass):
     implemented_properties = ['energy', 'forces', 'uncertainty', 'force_uncertainty']
 
     name = 'ModelGPR'
+
+    dynamic_attributes = ['model']
     
     def __init__(self, model=None, max_training_data=10e8, iteration_start_training=7,
                  update_interval=1, max_energy=1000, max_adapt_iters=0, n_adapt=25, 
@@ -98,6 +100,9 @@ class ModelGPR(ModelBaseClass):
         args = np.argsort(energies)
         E_best = energies[args[0]]        
         allowed_idx = [arg for arg in args if energies[arg] - E_best < self.max_energy]
+        # always keep at least 10 best structures irrespective of their energies
+        if len(allowed_idx) < 10:
+            allowed_idx = args[:10]
 
         training_data = [all_data[i] for i in allowed_idx]
         training_energies = [energies[i] for i in allowed_idx]
@@ -242,6 +247,8 @@ class ModelGPR(ModelBaseClass):
         if self.sparsifier != None:
             _, all_data = self.sparsifier(all_data)
         energies = np.array([x.get_potential_energy() for x in all_data])
+
+        self.writer('Training GPR on {} structures'.format(len(all_data)))
         self.train_model(all_data, energies)
 
         self.writer('GPR model k1:',self.model.kernel_.get_params().get('k1','NA'))
@@ -290,7 +297,7 @@ class ModelGPR(ModelBaseClass):
     @classmethod
     def default(cls, environment, database, lambda1min=1e-1, lambda1max=1e3, lambda2min=1e-1, lambda2max=1e3, 
                 theta0min=1, theta0max=1e5, beta=0.01, use_delta_func=True, sigma_noise = 1e-2,
-                feature_calculator=None, kernel=None, max_iterations=None):
+                feature_calculator=None, kernel=None, max_iterations=None, max_training_data=1000):
 
         """
         Creates a GPR model. 
@@ -373,14 +380,13 @@ class ModelGPR(ModelBaseClass):
         gpr = GPR(kernel=kernel,
                 featureCalculator=feature_calculator,
                 delta_function=delta,
-                # delta_function=None,          
                 bias_func=None,
                 optimize=True,
                 n_restarts_optimizer=1,
                 n_maxiter_optimizer = max_iterations,
                 use_delta_in_training=False)
 
-        return cls(gpr, database=database, update_interval=1, optimize_loglikelyhood=True, use_saved_features=True)
+        return cls(gpr, database=database, update_interval=1, optimize_loglikelyhood=True, use_saved_features=True, max_training_data=max_training_data)
 
     def get_feature_calculator(self):
         return self.model.featureCalculator

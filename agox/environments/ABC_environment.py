@@ -4,7 +4,9 @@ from abc import ABC, abstractmethod
 from agox.utils.constraints.box_constraint import BoxConstraint
 from ase.constraints import FixAtoms
 
-class EnvironmentBaseClass(ABC):
+from agox.module import Module
+
+class EnvironmentBaseClass(ABC, Module):
     """
     The Environment contains important properties about the envrionment (or conditions) of the global atomisation problem. 
     These are at least: 
@@ -14,7 +16,9 @@ class EnvironmentBaseClass(ABC):
     """
 
     def __init__(self, confinement_cell=None, confinement_corner=None, constraints=[], 
-        use_box_constraint=True, fix_template=True):
+        use_box_constraint=True, fix_template=True, surname=''):
+        Module.__init__(self, surname=surname)
+
         self.confinement_cell = confinement_cell
         self.confinement_corner = confinement_corner
         self.constraints = constraints 

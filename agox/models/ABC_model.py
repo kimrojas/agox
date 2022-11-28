@@ -1,10 +1,10 @@
 import os
 from abc import ABC, abstractmethod
 from ase.calculators.calculator import Calculator, all_changes
-from agox.writer import agox_writer, Writer
-from agox.observer import Observer
-
 import numpy as np
+
+from agox.observer import Observer
+from agox.writer import Writer, agox_writer
 
 class ModelBaseClass(Calculator, Observer, Writer, ABC):
     """ Model Base Class implementation
@@ -22,9 +22,8 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
         When model is attached as observer it updates every update_period
         iterations.
     """
-
     def __init__(self, database=None, order=0, verbose=True, use_counter=True, prefix='',
-                 iteration_start_training=0, update_period=1):
+                 iteration_start_training=0, update_period=1, surname='', gets={}, sets={}):
         """ __init__ method for model base class
 
         If a database is supplied the model will attach itself as an observer on the database.
@@ -44,9 +43,9 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
             Writer settings
 
         """
-        Observer.__init__(self, order=order)
+        Observer.__init__(self, order=order, surname=surname, gets=gets, sets=sets)
         Writer.__init__(self, verbose=verbose, use_counter=use_counter, prefix=prefix)
-        Calculator.__init__(self)
+        Calculator.__init__(self)        
 
         self.verbose = verbose
         self.iteration_start_training = iteration_start_training
