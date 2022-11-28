@@ -58,7 +58,7 @@ class MDgeneratorLangevin(GeneratorBaseClass):
         else:
             candidate.set_constraint(self.constraints)
 
-        dynamics = Langevin(candidate, timestep=self.timestep, friction = self.friction)
+        dynamics = Langevin(candidate, timestep=self.timestep, temperature_K = 100, friction = self.friction) # temperature is set but changed later
         for i in range(len(self.step_lengths)):
             dynamics.set_temperature(temperature_K = self.temperatures[i])
             for _ in range(self.step_lengths[i]):
