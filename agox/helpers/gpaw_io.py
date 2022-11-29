@@ -55,8 +55,8 @@ calc = GPAW(**built_settings)
 
 # Write the output file:
 t.set_calculator(calc)
-t.get_forces()
-t.get_potential_energy()
+t.get_forces(apply_constraint=False)
+t.get_potential_energy(apply_constraint=False)
 Trajectory(args.output_file, mode='a').write(t)
 """
 
@@ -134,9 +134,9 @@ class GPAW_IO(Calculator):
             self.error_handling(e)
 
         # Assign energies:
-        self.results['energy'] = tnew.get_potential_energy()
+        self.results['energy'] = tnew.get_potential_energy(apply_constraint=False)
         try: # Not sure when this can happen? 
-            self.results['forces'] = tnew.get_forces()
+            self.results['forces'] = tnew.get_forces(apply_constraint=False)
         except Exception as e:
            self.error_handling(e)
 

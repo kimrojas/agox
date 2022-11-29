@@ -5,7 +5,9 @@ import numpy as np
 from copy import deepcopy
 from ase.calculators.singlepoint import SinglePointCalculator
 
-class CandidateBaseClass(Atoms, ABC):
+from agox.module import Module
+
+class CandidateBaseClass(ABC, Atoms, Module):
 
     def __init__(self, template=None, template_indices=None, **kwargs):
         """
@@ -23,7 +25,8 @@ class CandidateBaseClass(Atoms, ABC):
             Everything that can be supplied to an ASE atoms object, specifically 
             cell, positions and numbers of ALL atoms - including template atoms. 
         """
-        super().__init__(**kwargs) # This means all Atoms-related stuff gets set. 
+        Atoms.__init__(self, **kwargs) # This means all Atoms-related stuff gets set. 
+        Module.__init__(self)
         self.meta_information = dict()
 
         # Template stuff:        

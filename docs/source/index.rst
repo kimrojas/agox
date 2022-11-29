@@ -20,6 +20,7 @@ Contents
    agox_framework/agox_framework
    writing_modules/writing_modules
    algorithms/algorithms
+   models/models
    bonus_topics/bonus_topics
    command_line_tools/command_line
    references/references

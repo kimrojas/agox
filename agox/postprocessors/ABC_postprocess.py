@@ -1,21 +1,19 @@
 from abc import ABC, abstractmethod
-from agox.writer import agox_writer, Writer
 from agox.observer import Observer
+from agox.writer import Writer, agox_writer
 
 import functools
 
 class PostprocessBaseClass(ABC, Observer, Writer):
 
-    def __init__(self, gets={'get_key':'candidates'}, sets={'set_key':'candidates'}, order=3, verbose=True, use_counter=True, prefix=''):
-        Observer.__init__(self, gets=gets, sets=sets, order=order)
+    def __init__(self, gets={'get_key':'candidates'}, sets={'set_key':'candidates'}, 
+        order=3, verbose=True, use_counter=True, prefix='', surname=''):
+        Observer.__init__(self, gets=gets, sets=sets, order=order, surname=surname)
         Writer.__init__(self, verbose=verbose, use_counter=use_counter, prefix=prefix)
 
-        self.add_observer_method(self.postprocess_candidates, sets=self.sets[0], gets=self.gets[0], order=self.order[0])
-
-    @property
-    @abstractmethod
-    def name(self):
-        return NotImplementedError
+        self.add_observer_method(self.postprocess_candidates,
+                                 sets=self.sets[0], gets=self.gets[0], order=self.order[0],
+                                 handler_identifier='AGOX')
 
     def update(self):
         """
