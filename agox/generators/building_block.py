@@ -3,13 +3,17 @@ from ase.data import covalent_radii
 from ase import Atom
 import numpy as np
 
+from ase.constraints import FixInternals
+
+from copy import deepcopy
+
 from scipy.spatial.distance import cdist
 
 class BuildingBlockGenerator(GeneratorBaseClass):
 
     name = 'BuildingBlockGenerator'
 
-    def __init__(self, building_blocks, N, **kwargs):
+    def __init__(self, building_blocks, N, apply_constraint=False, **kwargs):
         super().__init__(**kwargs)
         self.building_blocks = building_blocks
         self.N = np.array(N)
@@ -17,6 +21,16 @@ class BuildingBlockGenerator(GeneratorBaseClass):
         for building_block in self.building_blocks:
             building_block.positions -= building_block.get_center_of_mass()
 
+        self.apply_constraint = apply_constraint
+        if apply_constraint:
+            self.fix_internal_constraints = []
+            for block in building_blocks:
+                for constraint in block.constraints:
+                    if isinstance(constraint, FixInternals):
+                        self.fix_internal_constraints.append(constraint)
+                    else:
+                        raise NotImplementedError('Transferring constraints other than FixInternals from building blocks is not implemented.')
+                        
     def get_candidates(self, sampler, environment):
         template = environment.get_template()
         numbers_list = environment.get_numbers()
@@ -32,9 +46,9 @@ class BuildingBlockGenerator(GeneratorBaseClass):
 
         placed = np.zeros(len(self.building_blocks))
         count = 0
+        bbs_used = []
         while np.sum(placed) < np.sum(self.N):
-            print(count); count += 1
-
+            #print(count, np.sum(placed)); count += 1
             build_succesful = True
             bb, bb_index = self.get_building_block(placed)
             
@@ -52,26 +66,35 @@ class BuildingBlockGenerator(GeneratorBaseClass):
             
             bb.positions += suggested_position
 
-            for pos, num in zip(bb.positions, bb.numbers):
-                if not self.check_confinement(pos):
+            # Checks confinement for all atoms in the building block at once.
+            confinement_bool = self.check_positions_within_confinement(bb.positions)
+            if not confinement_bool.all():
+                continue
+            
+            # Checks that distances are not too bad.
+            # This implementation does NOT care about PBCs.
+            if np.sum(placed) > 0:
+                distances = cdist(candidate.positions, bb.positions)
+                if distances.min() < 1:
                     build_succesful = False
-                    continue
-                
-                if np.sum(placed) > 0:
-                    if not self.check_new_position(candidate, pos, num):
-                       build_succesful = False
+                if distances.min() > 1.75:
+                    build_succesful = False
 
             if build_succesful:
-                bb_count = np.sum(placed)
-                bb_indices += [bb_count] * len(bb)
                 candidate += bb
                 placed[bb_index] += 1
+                bbs_used.append(bb_index)
             
         candidate = self.convert_to_candidate_object(candidate, template)
         candidate.add_meta_information('description', self.name)
 
-        return [candidate]
+        if self.apply_constraint:
+            constraint, bonds, angles, dihedrals = self.get_fix_internal_constraint(bbs_used)
+            candidate.set_constraint(constraint)
 
+            return [candidate], bonds, angles, dihedrals
+
+        return [candidate]
 
     def get_building_block(self, placed):
 
@@ -86,8 +109,33 @@ class BuildingBlockGenerator(GeneratorBaseClass):
         bb.rotate(phi1, (0,1,0))
         return bb, index
 
-    #def prepare(self):
+    def get_fix_internal_constraint(self, bbs_used):
+        blocks_in_order = [self.building_blocks[index] for index in bbs_used]
+        index_offsets = np.cumsum([0] + [len(bb) for bb in blocks_in_order])
 
+        all_bonds = []
+        all_angles = []
+        all_dihedrals = []
 
+        print(bbs_used)
+        for bb_index, atom_index_offset in zip(bbs_used, index_offsets):
+            print(atom_index_offset)
 
+            base_constraint = deepcopy(self.fix_internal_constraints[bb_index])
+
+            # Get the base constraint list:
+            bonds = base_constraint.bonds.copy()
+            angles = base_constraint.angles.copy()
+            dihedrals = base_constraint.dihedrals.copy()
+
+            # Update the indices:
+            for value_index_list in [bonds, angles, dihedrals]:
+                for value_index in value_index_list:
+                    value_index[1] += atom_index_offset
+
+            all_bonds += bonds
+            all_angles += angles
+            all_dihedrals += dihedrals
+
+        return FixInternals(bonds=all_bonds, angles=all_angles, dihedrals=all_dihedrals), all_bonds, all_angles, all_dihedrals
 
