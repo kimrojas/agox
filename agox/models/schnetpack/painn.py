@@ -30,7 +30,7 @@ class PaiNN(ModelBaseClass):
     
     """
     
-    def __init__(self, max_steps_per_iteration=100, max_epochs_per_iteration=2, cutoff=6., base_path='', db_name='dataset.db',
+    def __init__(self, max_steps_per_iteration=100, max_epochs_per_iteration=10, cutoff=6., base_path='', db_name='dataset.db',
                  transfer_data=None, seed=None, **kwargs):
         super().__init__(**kwargs)
 
@@ -123,7 +123,7 @@ class PaiNN(ModelBaseClass):
             optimizer_cls=torch.optim.AdamW,
             optimizer_args={"lr": 1e-3},
             scheduler_cls=spk.train.ReduceLROnPlateau,
-            scheduler_args={'factor': 0.5, 'patience': 10, 'verbose': True},    
+            scheduler_args={'factor': 0.5, 'patience': 1000, 'verbose': True},    
             scheduler_monitor = 'val_loss',
         )
 
