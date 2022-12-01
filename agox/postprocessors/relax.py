@@ -40,7 +40,7 @@ class RelaxPostprocess(PostprocessBaseClass):
         return candidate
 
     def do_check(self, **kwargs):
-        return (self.get_iteration_counter() < self.start_relax) * self.model.ready_state
+        return (self.get_iteration_counter() > self.start_relax) * self.model.ready_state
 
     ####################################################################################################################
     # Constraints
