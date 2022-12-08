@@ -4,7 +4,9 @@ from abc import ABC, abstractmethod
 from agox.utils.constraints.box_constraint import BoxConstraint
 from ase.constraints import FixAtoms
 
-class EnvironmentBaseClass(ABC):
+from agox.module import Module
+
+class EnvironmentBaseClass(ABC, Module):
     """
     The Environment contains important properties about the envrionment (or conditions) of the global atomisation problem. 
     These are at least: 
@@ -14,13 +16,15 @@ class EnvironmentBaseClass(ABC):
     """
 
     def __init__(self, confinement_cell=None, confinement_corner=None, constraints=[], 
-        use_box_constraint=True, fix_template=True):
+        use_box_constraint=True, fix_template=True, surname=''):
+        Module.__init__(self, surname=surname)
+
         self.confinement_cell = confinement_cell
         self.confinement_corner = confinement_corner
         self.constraints = constraints 
         self.use_box_constraint = use_box_constraint
         self.fix_template = fix_template
-
+        
     @abstractmethod
     def get_template(self, **kwargs):
         pass
@@ -28,7 +32,11 @@ class EnvironmentBaseClass(ABC):
     @abstractmethod    
     def get_numbers(self, numbers, **kwargs):
         pass
-    
+        
+    @abstractmethod
+    def environment_report(self):
+        pass 
+
     def get_missing_indices(self):
         return np.arange(len(self._template), len(self._template)+len(self._numbers))
 

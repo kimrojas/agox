@@ -3,6 +3,7 @@ from agox.observer import Observer, ObserverHandler
 from timeit import default_timer as dt
 import pickle
 from agox.writer import agox_writer, Writer
+from agox.module import Module
 
 """
 File contains three class
@@ -124,7 +125,7 @@ class Log(Writer):
 
         return np.mean(timings, axis=0)
 
-class LogEntry(Observer, Writer):
+class LogEntry(Observer, Writer, Module):
 
     name = 'LogEntry'
 
