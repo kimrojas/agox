@@ -42,7 +42,7 @@ class MDPostprocess(PostprocessBaseClass):
         
 
     def postprocess(self, candidate):
-        candidate.set_model(self.model)        
+        candidate.set_calculator(self.model)        
         self.apply_constraints(candidate)
 
         self.run(candidate)
