@@ -1,17 +1,19 @@
 from abc import ABC, abstractmethod
 from agox.observer import Observer
-from agox.writer import agox_writer, Writer
+from agox.writer import Writer, agox_writer
 
 
 class EvaluatorBaseClass(ABC, Observer, Writer):
 
     def __init__(self, number_to_evaluate=1, gets={'get_key':'prioritized_candidates'}, sets={'set_key':'evaluated_candidates'}, 
-        order=5, verbose=True, use_counter=True, prefix=''):
-        Observer.__init__(self, gets=gets, sets=sets, order=order)
+        order=5, verbose=True, use_counter=True, prefix='', surname=''):
+        Observer.__init__(self, gets=gets, sets=sets, order=order, surname=surname)
         Writer.__init__(self, verbose=verbose, use_counter=use_counter, prefix=prefix)
         self.number_to_evaluate = number_to_evaluate
 
-        self.add_observer_method(self.evaluate, self.sets[0], self.gets[0], self.order[0])
+        self.add_observer_method(self.evaluate,
+                                 sets=self.sets[0], gets=self.gets[0], order=self.order[0],
+                                 handler_identifier='AGOX')
     
     def __call__(self, candidate):
         return self.evaluate_candidate(candidate)

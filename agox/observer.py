@@ -1,10 +1,9 @@
-from cgitb import handler
-from optparse import BadOptionError
 import numpy as np
 from abc import ABC, abstractmethod
 
 from agox.candidates import StandardCandidate
 from agox.writer import header_print, pretty_print
+from agox.module import Module
 import functools
 from copy import copy
 
@@ -252,10 +251,9 @@ class FinalizationHandler:
             print('Name: {}'.format(name))
         print('='*len('=' * 25 + ' Observers ' + '='*25))
     
-class Observer:
-    """
-    """
-    def __init__(self, gets=[dict()], sets=[dict()], order=[0], sur_name='', **kwargs):
+class Observer(Module):
+
+    def __init__(self, gets=[dict()], sets=[dict()], order=[0], surname='', **kwargs):
         """
         Base-class for classes that act as observers. 
 
@@ -279,6 +277,7 @@ class Observer:
             An additional name added to classes name, can be used to distinguish 
             between instances of the same class. 
         """
+        Module.__init__(self, surname=surname)
 
         if type(gets) == dict:
             gets = [gets]
@@ -307,7 +306,6 @@ class Observer:
         self.sets = sets
 
         self.order = order
-        self.sur_name = sur_name
 
         self.observer_methods = {}
 
@@ -318,15 +316,7 @@ class Observer:
 
         self.iteration_counter = None
         self.candidate_instanstiator = StandardCandidate
-
-
-    @property
-    def __name__(self):
-        """
-        Defines the name.
-        """
-        return self.name + self.sur_name
-
+        
     def get_from_cache(self, key):
         """
         Attempts to get from the cache, but it is checked that the class instance 

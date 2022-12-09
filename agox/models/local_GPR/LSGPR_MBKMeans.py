@@ -19,6 +19,7 @@ class LSGPRModelMBKMeans(LSGPRModel):
         self.sparse_update = sparse_update
         self.full_update_interval = full_update_interval
         self.cluster_weights = cluster_weights
+
         # tmp:
         self.exact_points = exact_points
 
@@ -74,9 +75,8 @@ class LSGPRModelMBKMeans(LSGPRModel):
 
     def sparse_plot(self, name=''):
         from sklearn.decomposition import PCA
+        from agox.utils.matplotlib_utils import use_agox_mpl_backend; use_agox_mpl_backend()
         import matplotlib.pyplot as plt
-        import matplotlib
-        matplotlib.use('Agg')
         pca = PCA(n_components=2)
         pca.fit(self.Xn)
         l = pca.transform(self.Xn)

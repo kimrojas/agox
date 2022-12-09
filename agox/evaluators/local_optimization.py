@@ -50,16 +50,16 @@ class LocalOptimizationEvaluator(EvaluatorBaseClass):
                 if not self.store_trajectory:
                     self.evaluated_candidates.append(candidate)
             else:
-                E = candidate.get_potential_energy()
-                F = candidate.get_forces()
+                E = candidate.get_potential_energy(apply_constraint=False)
+                F = candidate.get_forces(apply_constraint=False)
                 self.evaluated_candidates.append(candidate)
             
         except Exception as e:
             self.writer('Energy calculation failed with exception: {}'.format(e))
             return False
 
-        E = candidate.get_potential_energy()
-        F = candidate.get_forces()
+        E = candidate.get_potential_energy(apply_constraint=False)
+        F = candidate.get_forces(apply_constraint=False)
         self.writer(f'Final energy of candidate = {E:5.3f}')
         calc = SinglePointCalculator(candidate, energy=E, forces=F)
         candidate.set_calculator(calc)
@@ -68,8 +68,8 @@ class LocalOptimizationEvaluator(EvaluatorBaseClass):
 
 
     def _observer(self, candidate, steps):
-        E = candidate.get_potential_energy()
-        F = candidate.get_forces()
+        E = candidate.get_potential_energy(apply_constraint=False)
+        F = candidate.get_forces(apply_constraint=False)
         
         traj_candidate = candidate.copy()
         calc = SinglePointCalculator(traj_candidate, energy=E, forces=F)

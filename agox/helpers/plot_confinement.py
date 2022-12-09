@@ -6,7 +6,9 @@ from ase.data import covalent_radii, atomic_numbers
 from matplotlib.patches import Circle, Patch
 from matplotlib.collections import PatchCollection
 
-def plot_atoms(atoms, ax, dim1=0, dim2=1, repeats=[], edgecolor='black', alpha_repeat=0.75, **kwargs):
+def plot_atoms(atoms, ax, dim1=0, dim2=1, repeats=[], edgecolor='black', 
+    jmol_edgecolor=False, use_facecolor=True, alpha_repeat=0.75, **kwargs):
+
     # Should sort according to the third dimension:
     sort_dim = [i for i in range(3) if i != dim1 and i != dim2][0]
     dim_array = atoms.positions[:, sort_dim]
@@ -14,7 +16,16 @@ def plot_atoms(atoms, ax, dim1=0, dim2=1, repeats=[], edgecolor='black', alpha_r
 
     for i in sort_indices:
         atom = atoms[i]
-        c = Circle((atom.position[dim1], atom.position[dim2]), radius=covalent_radii[atom.number], facecolor=jmol_colors[atom.number], edgecolor=edgecolor, **kwargs)
+
+        if use_facecolor:
+            facecolor = jmol_colors[atom.number]
+        else:
+            facecolor = 'none'
+
+        if jmol_edgecolor:
+            edgecolor = jmol_colors[atom.number]
+
+        c = Circle((atom.position[dim1], atom.position[dim2]), radius=covalent_radii[atom.number], facecolor=facecolor, edgecolor=edgecolor, **kwargs)
         ax.add_patch(c)
     
     ax.axis('equal')

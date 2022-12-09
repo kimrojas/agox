@@ -1,12 +1,11 @@
-from os import environ
 import numpy as np
 from ase.data import covalent_radii
 from abc import ABC, abstractmethod
-
 from agox.candidates import StandardCandidate
-from agox.writer import agox_writer, Writer
-from agox.observer import Observer
 from ase.geometry import get_distances                         
+from agox.observer import Observer
+from agox.writer import Writer, agox_writer
+
 
 dimensionality_angles = {
                         3:{'theta':[0, 2*np.pi], 'phi':[0, np.pi]},
@@ -18,14 +17,14 @@ class GeneratorBaseClass(ABC, Observer, Writer):
 
     def __init__(self, confinement_cell=None, confinement_corner=None, c1=0.75, c2=1.25, dimensionality=3, 
                 use_mic=True, environment=None, sampler=None, gets={}, sets={'set_key':'candidates'}, order=2, 
-                verbose=True, use_counter=True, prefix=''):
+                verbose=True, use_counter=True, prefix='', surname=''):
         """
         use_mic: Whether to use minimum image convention when checking distances. 
                  If using a periodic cell but a smaller confinement cell set this to False to speed
                  up generation time! 
         sampler/enivronment: Needs to be set when not used with a collector!
         """
-        Observer.__init__(self, sets=sets, gets=gets, order=order)
+        Observer.__init__(self, sets=sets, gets=gets, order=order, surname=surname)
         Writer.__init__(self, verbose=verbose, use_counter=use_counter, prefix=prefix)
 
         self.confinement_cell = confinement_cell
@@ -57,8 +56,9 @@ class GeneratorBaseClass(ABC, Observer, Writer):
         if self.environment is not None:
             self.plot_confinement(environment)
 
-        self.add_observer_method(self.generate, sets=self.sets[0], 
-            gets=self.gets[0], order=self.order[0])
+        self.add_observer_method(self.generate,
+                                 sets=self.sets[0], gets=self.gets[0], order=self.order[0],
+                                 handler_identifier='AGOX')
 
     @abstractmethod
     def get_candidates(self, sampler, environment):
@@ -195,8 +195,7 @@ class GeneratorBaseClass(ABC, Observer, Writer):
     def plot_confinement(self, environment):
         from agox.helpers.plot_confinement import plot_confinement
         import matplotlib.pyplot as plt
-        import matplotlib
-        matplotlib.use('Agg')
+        from agox.utils.matplotlib_utils import use_agox_mpl_backend; use_agox_mpl_backend()
 
         if self.confined:
             fig, ax = plot_confinement(environment.get_template(), self.confinement_cell, self.confinement_corner)
