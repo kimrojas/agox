@@ -53,6 +53,9 @@ class BoxConstraint:
                 forces[idx] = self.linear_boundary(np.max(coeff), self.au, self.bu) * forces[idx]
             elif (coeff < self.lower_soft_boundary).any():
                 forces[idx] = self.linear_boundary(np.min(coeff), self.al, self.bl) * forces[idx]
+
+    def get_removed_dof(self, atoms):
+        return 3*len(atoms)
         
     def get_projection_coefficients_old(self, positions):
         return np.linalg.solve(self.confinement_cell, (positions-self.confinement_corner).T).T
