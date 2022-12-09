@@ -38,7 +38,8 @@ class ParallelCollector(CollectorBaseClass, RayPoolUser):
         # The args and kwargs passed to the function - in this case the remote_generate 
         # function defined above. 
         args = [[sampler_id, environment_id]] * np.sum(number_of_candidates)
-        kwargs = [{}] * np.sum(number_of_candidates)
+        #kwargs = [{}] * np.sum(number_of_candidates)
+        kwargs = [{} for _ in range(np.sum(number_of_candidates))]
 
         # Generate in parallel using the pool.
         candidates = self.pool_map(remote_generate, modules, args, kwargs)
