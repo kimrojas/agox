@@ -381,6 +381,8 @@ class LSGPRModel(ModelBaseClass):
             
     @agox_writer
     def update_model(self, new_data, all_data):
+        self.atoms = None
+        
         t1 = time()
 
         self.L = self._update_L(new_data)
