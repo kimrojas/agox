@@ -6,12 +6,14 @@ from agox.main import AGOX
 from agox.observer import ObserverHandler
 from agox.evaluators.ABC_evaluator import EvaluatorBaseClass
 from ase.calculators.singlepoint import SinglePointCalculator
+from agox.candidates import StandardCandidate
 
 class AGOXGenerator(GeneratorBaseClass):
 
     name = 'AGOX generator'
 
-    def __init__(self, modules=[], database=None, main_database=None, iterations=50, recalc=True, **kwargs):
+    def __init__(self, modules=[], database=None, main_database=None, iterations=50, recalc=True, 
+                 strucs_for_inner_database=[], template=None, **kwargs):
         super().__init__(**kwargs)
         self.modules = modules
         self.iterations = iterations
@@ -25,12 +27,14 @@ class AGOXGenerator(GeneratorBaseClass):
                 if issubclass(module.__class__,EvaluatorBaseClass):
                     evaluator = module
                     break
-            assert evaluator is not None, 'Cannot find the evaluator for the AGOX recalc generator'
+            assert evaluator is not None, 'Cannot find the evaluator for the AGOX generator'
 
             # get the calculator from the evaluator module
             self.calculator = evaluator.calculator
-            
+
         self.first_call = True
+        self.strucs_for_inner_database = strucs_for_inner_database
+        self.template = template # only used if len(self.strucs_for_inner_database) > 0
 
     def _copy_candidates_from_main_database_to_database(self):
         if self.recalc:
@@ -40,16 +44,34 @@ class AGOXGenerator(GeneratorBaseClass):
                 E = inner_candidate.get_potential_energy()
                 single_point_calc = SinglePointCalculator(inner_candidate, energy=E)
                 inner_candidate.set_calculator(single_point_calc)
+                print('outerE: {:8.3f}'.format(outer_candidate.get_potential_energy()),'innerE: {:8.3f}'.format(inner_candidate.get_potential_energy()))
                 self.database.store_candidate(inner_candidate, dispatch=False)
         else:
             [self.database.store_candidate(candidate, dispatch=False) for candidate
              in self.main_database.get_all_candidates(respect_worker_number=True)]
+
+    def _copy_strucs_for_inner_database(self):
+        for struc in self.strucs_for_inner_database:
+            candidate = StandardCandidate(
+                template=self.template,
+                numbers=struc.get_atomic_numbers(),
+                positions=struc.get_positions(),
+                cell=struc.get_cell(),
+                pbc=struc.get_pbc())
+            candidate.set_calculator(self.calculator)
+            E = struc.get_potential_energy()
+            sp_calc = SinglePointCalculator(candidate, energy=E)
+            candidate.set_calculator(sp_calc)
+            print('FROM PREVIOUS GOFEE SEARCH E: {:8.3f}'.format(E))
+            self.database.store_candidate(candidate, dispatch=False)
+
 
     def get_candidates(self, sample, environment):
         self.database.reset()
 
         # Add the data from the main database, such that it can be used for sampling/training/etc.
         self._copy_candidates_from_main_database_to_database()
+        self._copy_strucs_for_inner_database()
         
         self.database.set_number_of_preset_candidates(len(self.database))
 
@@ -69,7 +91,8 @@ class AGOXGenerator(GeneratorBaseClass):
     @classmethod
     def get_gofee_generator(cls, environment, database, calculator, iterations=25, 
         number_of_candidates=[1, 0, 0, 0], prefix='INNER AGOX ',  c1=0.7, c2=1.3, model_kwargs={}, 
-        additional_modules=None, fix_template=True, constraints=None, generators=None):
+                            additional_modules=None, fix_template=True, constraints=None, generators=None,
+                            strucs_for_inner_database=[]):
         from agox.generators import RandomGenerator, PermutationGenerator, RattleGenerator, SamplingGenerator
         from agox.samplers import KMeansSampler
         from agox.databases.memory import MemoryDatabase
@@ -86,7 +109,7 @@ class AGOXGenerator(GeneratorBaseClass):
         verbose = True
 
         internal_database = MemoryDatabase(order=6, prefix=prefix, verbose=True)
-
+            
         internal_model = ModelGPR.default(environment, internal_database, **model_kwargs)
         internal_model.iteration_start_training = 1
 
@@ -153,7 +176,8 @@ class AGOXGenerator(GeneratorBaseClass):
             internal_agox_modules += additional_modules
 
         return cls(modules=internal_agox_modules, database=internal_database, 
-            main_database=database, iterations=iterations)
+                   main_database=database, iterations=iterations,
+                   strucs_for_inner_database=strucs_for_inner_database, template=environment.get_template())
 
     @classmethod
     def get_rss_generator(cls, environment, database, calculator, iterations=25, prefix='INNER AGOX ', 
