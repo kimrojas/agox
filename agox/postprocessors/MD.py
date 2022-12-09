@@ -46,6 +46,8 @@ class MDPostprocess(PostprocessBaseClass):
         
 
     def postprocess(self, candidate):
+        candidate = candidate.copy()
+        
         candidate.set_calculator(self.model)        
         self.apply_constraints(candidate)
 
@@ -59,6 +61,8 @@ class MDPostprocess(PostprocessBaseClass):
     def run(self, candidate):
         for cls, kwargs in zip(self.prepare_candidate_cls, self.prepare_candidate_kwargs):
             cls(candidate, **kwargs)
+
+        self.writer(f'K={candidate.get_kinetic_energy()}, E={candidate.get_potential_energy()}')
         
         dyn = self.thermostat(candidate, **self.thermostat_kwargs)
         
@@ -71,7 +75,7 @@ class MDPostprocess(PostprocessBaseClass):
             dyn.run(steps)
 
     def write_observer(self, c):
-        self.writer(f'K={c.get_kinetic_energy()}, U={c.get_potential_energy()}')
+        self.writer(f'K={c.get_kinetic_energy()}, E={c.get_potential_energy()}')
 
     def do_check(self, **kwargs):
         if self.get_iteration_counter() > self.start_md and self.model.ready_state:
