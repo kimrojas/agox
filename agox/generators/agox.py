@@ -5,7 +5,6 @@ from agox.databases import Database
 from agox.main import AGOX
 from agox.observer import ObserverHandler
 from agox.evaluators.ABC_evaluator import EvaluatorBaseClass
-from agox.environments import EnvironmentBaseClass
 from ase.calculators.singlepoint import SinglePointCalculator
 from agox.candidates import StandardCandidate
 
@@ -14,7 +13,7 @@ class AGOXGenerator(GeneratorBaseClass):
     name = 'AGOX generator'
 
     def __init__(self, modules=[], database=None, main_database=None, iterations=50, recalc=True, 
-                 strucs_for_inner_database=[], **kwargs):
+                 strucs_for_inner_database=[], template=None, **kwargs):
         super().__init__(**kwargs)
         self.modules = modules
         self.iterations = iterations
@@ -35,15 +34,7 @@ class AGOXGenerator(GeneratorBaseClass):
 
         self.first_call = True
         self.strucs_for_inner_database = strucs_for_inner_database
-        if len(self.strucs_for_inner_database) > 0:
-            # search for environment among modules
-            environment = None
-            for module in self.modules:
-                if issubclass(module.__class__,EnvironmentBaseClass):
-                    environment = module
-                    break
-            assert environment is not None, 'Cannot find the environment for the AGOX generator'
-            self.template = environment.get_template()
+        self.template = template # only used if len(self.strucs_for_inner_database) > 0
 
     def _copy_candidates_from_main_database_to_database(self):
         if self.recalc:
@@ -186,7 +177,7 @@ class AGOXGenerator(GeneratorBaseClass):
 
         return cls(modules=internal_agox_modules, database=internal_database, 
                    main_database=database, iterations=iterations,
-                   strucs_for_inner_database=strucs_for_inner_database)
+                   strucs_for_inner_database=strucs_for_inner_database, template=environment.get_template())
 
     @classmethod
     def get_rss_generator(cls, environment, database, calculator, iterations=25, prefix='INNER AGOX ', 
