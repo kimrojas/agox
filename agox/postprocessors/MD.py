@@ -67,7 +67,7 @@ class MDPostprocess(PostprocessBaseClass):
             
         for temp, steps in self.temperature_scheme.items():
             self.writer(f'MD at {temp}K for {steps} steps.')
-            dyn.set_temperature(temp)
+            dyn.set_temperature(temperature_K=temp)
             dyn.run(steps)
 
     def write_observer(self, c):
