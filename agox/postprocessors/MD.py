@@ -46,7 +46,6 @@ class MDPostprocess(PostprocessBaseClass):
         
 
     def postprocess(self, candidate):
-        candidate = candidate.copy()
         
         candidate.set_calculator(self.model)        
         self.apply_constraints(candidate)
@@ -78,7 +77,12 @@ class MDPostprocess(PostprocessBaseClass):
         self.writer(f'K={c.get_kinetic_energy()}, E={c.get_potential_energy()}')
 
     def do_check(self, **kwargs):
-        if self.get_iteration_counter() > self.start_md and self.model.ready_state:
+        try:
+            ready = self.model.ready_state
+        except:
+            ready = True
+            
+        if self.get_iteration_counter() > self.start_md and ready:
             return True
         else:
             return False
