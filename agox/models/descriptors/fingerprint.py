@@ -7,7 +7,7 @@ class Fingerprint(DescriptorBaseClass):
 
     name = 'Fingerprint'
 
-    def __init__(self, init_atoms, rc1=1, rc2=4, binwidth=0.2, Nbins=30, sigma1=0.2, sigma2=0.2, gamma=2, 
+    def __init__(self, init_atoms, rc1=6, rc2=4, binwidth=0.2, Nbins=30, sigma1=0.2, sigma2=0.2, gamma=2, 
         eta=20, use_angular=True, **kwargs):
         super().__init__(**kwargs)
         self.cython_module = Angular_Fingerprint(init_atoms, Rc1=rc1, Rc2=rc2, 
