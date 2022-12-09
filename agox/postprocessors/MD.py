@@ -1,11 +1,13 @@
 from ase import units
 import numpy as np
 
+from ase.constraints import FixAtoms
 from ase.md.nvtberendsen import NVTBerendsen
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, ZeroRotation, Stationary
 from ase.units import fs, kB
 
 from agox.postprocessors.ABC_postprocess import PostprocessBaseClass
+
 
 
 class MDPostprocess(PostprocessBaseClass):
