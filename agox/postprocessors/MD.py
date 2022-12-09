@@ -61,7 +61,7 @@ class MDPostprocess(PostprocessBaseClass):
         dyn = self.thermostat(candidate, **self.thermostat_kwargs)
         for temp, steps in self.temperature_scheme.items():
             dyn.set_temperature(temp)
-            dynamics.run(steps)
+            dyn.run(steps)
         
 
     def do_check(self, **kwargs):
