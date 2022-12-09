@@ -15,7 +15,7 @@ class SOAP(DescriptorBaseClass):
         self.normalize = normalize
 
         if periodic:
-            self.feature_types.remove('local_derivative')
+            self.feature_types.remove('local_gradient')
         
         if weight is True:
             weighting = {'function':'poly', 'r0':r_cut, 'm':2, 'c':1}
