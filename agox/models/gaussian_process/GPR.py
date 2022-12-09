@@ -102,7 +102,7 @@ class GPR(Writer):
             fnew = self.descriptor.get_global_features(atoms)[0]
         if fgrad is None:
             #fgrad = self.featureCalculator.get_featureGradient(atoms)
-            fgrad = self.descriptor.get_global_feature_derivatives(atoms)[0]
+            fgrad = self.descriptor.get_global_feature_gradient(atoms)[0]
         dk_df = self.kernel_.get_kernel_jac(self.featureMat, fnew)
         
         # Calculate contribution from delta-function

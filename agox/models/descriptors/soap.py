@@ -5,12 +5,17 @@ from agox.models.descriptors import DescriptorBaseClass
 
 class SOAP(DescriptorBaseClass):
 
-    feature_types = ['local', 'global', 'local_derivative']
+    feature_types = ['local', 'global', 'local_gradient']
+
+    name = 'SOAP'
 
     def __init__(self, species, r_cut=4, nmax=3, lmax=2, sigma=1.0,
                  weight=True, periodic=True, dtype='float64', normalize=False, crossover=True, **kwargs):
         super().__init__(self, **kwargs)
         self.normalize = normalize
+
+        if periodic:
+            self.feature_types.remove('local_derivative')
         
         if weight is True:
             weighting = {'function':'poly', 'r0':r_cut, 'm':2, 'c':1}
@@ -43,7 +48,7 @@ class SOAP(DescriptorBaseClass):
         """
         return self.soap.create(atoms)
             
-    def create_local_feature_derivatives(self, atoms):
+    def create_local_feature_gradient(self, atoms):
         """Returns derivative of soap descriptor for "atoms" with
         respect to atomic coordinates.
         Dimension of output is [n_centers, 3*n_atoms, n_features]

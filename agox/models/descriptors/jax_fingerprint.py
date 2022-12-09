@@ -15,7 +15,9 @@ class Fingerprint(DescriptorBaseClass):
         based on agox/models/gaussian_process/featureCalculators_multi/angular_fingerprintFeature_cy.pyx
     '''
 
-    feature_types = ['global', 'global_derivative']
+    name = 'JaxFingerprint'
+
+    feature_types = ['global', 'global_gradient']
 
     def __init__(self, r_cutoff_radial=4, r_cutoff_angular=4, smearing_width_radial=0.2, smearing_width_angular=0.2,
                 bin_width_radial=0.1, bin_num_angular=30,
@@ -148,7 +150,7 @@ class Fingerprint(DescriptorBaseClass):
 
         return np.asarray(radial_feature)
 
-    def create_global_feature_derivatives(self, atoms):
+    def create_global_feature_gradient(self, atoms):
         self.load_atoms_info(atoms)
         idx_i, idx_j, positions, bond_types = self.convert_atoms(atoms)
         radial_gradient = self.get_radial_feature_gradient(positions, idx_i, idx_j, bond_types)

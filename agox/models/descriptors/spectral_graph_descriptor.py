@@ -5,6 +5,7 @@ from agox.models.descriptors import DescriptorBaseClass
 
 class SpectralGraphDescriptor(DescriptorBaseClass):
 
+    name = 'SpectralGraphDescriptor'
     feature_types = ['global']
 
     def __init__(self, mode='adjacency', diagonal_mode='atomic_number', number_to_compare='all', descending=False, scale_factor=1.3):

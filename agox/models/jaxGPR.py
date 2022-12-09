@@ -31,7 +31,7 @@ class GPR(ModelBaseClass):
     def predict_forces(self, atoms):
         # F_i = - dE / dr_i = dE/dk dk/df df/dr_i = - alpha dk/df df_dr_i
         f = np.array(self.descriptor.get_global_features(atoms)[0]).reshape(1, -1)
-        dfdr = np.array(self.descriptor.get_global_feature_derivatives(atoms)[0])
+        dfdr = np.array(self.descriptor.get_global_feature_gradient(atoms)[0])
         dkdf = self.kernel.feature_gradient(self.X, f)
         dkdr = np.dot(dkdf, dfdr.T)
         return - np.dot(dkdr.T, self.alpha).reshape(-1,3)

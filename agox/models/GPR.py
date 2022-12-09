@@ -126,7 +126,7 @@ class ModelGPR(ModelBaseClass):
             deltas = np.array(deltas)
         else:
             features = np.array(self.model.descriptor.get_global_features(training_data))
-            deltas = np.array([c.get_meta_information('GPR_delta') for c in training_data])
+            deltas = np.array([self.model.delta_function.energy(cand) for cand in training_data]) #np.array([c.get_meta_information('GPR_delta') for c in training_data])
 
         
         if self.max_training_data is not None and self.max_training_data < len(training_data):
@@ -295,7 +295,7 @@ class ModelGPR(ModelBaseClass):
     ####################################################################################################################
 
     @classmethod
-    def default(cls, environment, database, lambda1min=1e-1, lambda1max=1e3, lambda2min=1e-1, lambda2max=1e3, 
+    def default(cls, environment=None, database=None, temp_atoms=None, lambda1min=1e-1, lambda1max=1e3, lambda2min=1e-1, lambda2max=1e3, 
                 theta0min=1, theta0max=1e5, beta=0.01, use_delta_func=True, sigma_noise = 1e-2,
                 descriptor=None, kernel=None, max_iterations=None, max_training_data=1000):
 
@@ -335,8 +335,11 @@ class ModelGPR(ModelBaseClass):
         from agox.models.gaussian_process.kernels import RBF, ConstantKernel as C, WhiteKernel, GeneralAnisotropicRBF
         from agox.models.gaussian_process.GPR import GPR
 
-        temp_atoms = environment.get_template()
-        temp_atoms += Atoms(environment.get_numbers())
+        assert temp_atoms is not None or environment is not None
+
+        if temp_atoms is None:
+            temp_atoms = environment.get_template()
+            temp_atoms += Atoms(environment.get_numbers())
 
         if descriptor is None:
             from agox.models.descriptors import Fingerprint

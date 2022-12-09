@@ -2,7 +2,7 @@ import numpy as np
 from abc import ABC, abstractmethod
 from agox.module import Module
 
-all_feature_types = ['global', 'local', 'global_derivative', 'local_derivative']
+all_feature_types = ['global', 'local', 'global_gradient', 'local_gradient']
 
 class DescriptorBaseClass(ABC, Module):
 
@@ -32,15 +32,15 @@ class DescriptorBaseClass(ABC, Module):
         """
         pass
 
-    def create_global_feature_derivatives(self, atoms):
+    def create_global_feature_gradient(self, atoms):
         """
         Method to implement on child classes that does the calculate of 
-        global feature derivatives. 
+        global feature gradients. 
 
         This method should not (generally) deal with being given a list of 
         Atoms objects. 
 
-        If implemented 'global_derivative' can be added to the child class' feature_types.
+        If implemented 'global_gradient' can be added to the child class' feature_types.
 
         Parameters
         ----------
@@ -48,7 +48,7 @@ class DescriptorBaseClass(ABC, Module):
 
         Returns
         --------
-        A single global feature derivative.
+        A single global feature gradient.
         """
         pass
 
@@ -72,15 +72,15 @@ class DescriptorBaseClass(ABC, Module):
         """
         pass
 
-    def create_local_feature_derivatives(self, atoms):
+    def create_local_feature_gradient(self, atoms):
         """
         Method to implement on child classes that does the calculate of 
-        local feature derivatives.
+        local feature gradients.
 
         This method should not (generally) deal with being given a list of 
         Atoms objects. 
 
-        If implemented 'local_derivative' can be added to the child class' feature_types.
+        If implemented 'local_gradient' can be added to the child class' feature_types.
 
         Parameters
         ----------
@@ -88,7 +88,7 @@ class DescriptorBaseClass(ABC, Module):
 
         Returns
         --------
-        A single global feature derivative.
+        A single global feature gradient.
         """
         pass
 
@@ -111,7 +111,7 @@ class DescriptorBaseClass(ABC, Module):
             atoms = [atoms]
         return [self.create_global_features(a) for a in atoms]
 
-    def get_global_feature_derivatives(self, atoms):
+    def get_global_feature_gradient(self, atoms):
         """
         Method to get global features.
 
@@ -123,12 +123,12 @@ class DescriptorBaseClass(ABC, Module):
         Returns
         -------
         list
-            Global feature derivatives for the given atoms.
+            Global feature gradients for the given atoms.
         """
-        self.feature_type_check('global_derivative')
+        self.feature_type_check('global_gradient')
         if not (type(atoms) == list):
             atoms = [atoms]
-        return [self.create_global_feature_derivatives(a) for a in atoms]
+        return [self.create_global_feature_gradient(a) for a in atoms]
 
     def get_local_features(self, atoms):
         """
@@ -149,9 +149,9 @@ class DescriptorBaseClass(ABC, Module):
             atoms = [atoms]
         return [self.create_local_features(a) for a in atoms]
 
-    def get_local_feature_derivatives(self, atoms):
+    def get_local_feature_gradient(self, atoms):
         """
-        Method to get local feature derivatives.
+        Method to get local feature gradients.
 
         Parameters
         ----------
@@ -161,12 +161,12 @@ class DescriptorBaseClass(ABC, Module):
         Returns
         -------
         list
-            Local feature derivatives for the given atoms.
+            Local feature gradients for the given atoms.
         """
-        self.feature_type_check('local_derivative')
+        self.feature_type_check('local_gradient')
         if not (type(atoms) == list):
             atoms = [atoms]
-        return [self.create_local_feature_derivatives(a) for a in atoms]
+        return [self.create_local_feature_gradient(a) for a in atoms]
 
     def feature_type_check(self, feature_type):
         if not feature_type in self.feature_types:
