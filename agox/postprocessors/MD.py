@@ -25,6 +25,7 @@ class MDPostprocess(PostprocessBaseClass):
             temperature_scheme={10: 20, 30: 50, 5: 20},
             constraints=[],
             fix_template=True,
+            verbose=True,
             **kwargs
     ):
 
@@ -41,6 +42,7 @@ class MDPostprocess(PostprocessBaseClass):
         # Constraints:
         self.constraints = constraints
         self.fix_template = fix_template
+        self.verbose = verbose
         
 
     def postprocess(self, candidate):
@@ -59,10 +61,17 @@ class MDPostprocess(PostprocessBaseClass):
             cls(candidate, **kwargs)
         
         dyn = self.thermostat(candidate, **self.thermostat_kwargs)
+        
+        if self.verbose:
+            dyn.attach(self.write_observer, interval=10, c=candidate)
+            
         for temp, steps in self.temperature_scheme.items():
+            self.writer(f'MD at {temp}K for {steps} steps.')
             dyn.set_temperature(temp)
             dyn.run(steps)
-        
+
+    def write_observer(self, c):
+        self.writer(f'K={c.get_kinetic_energy()}, U={c.get_potential_energy()}')
 
     def do_check(self, **kwargs):
         if self.get_iteration_counter() > self.start_md and self.model.ready_state:
