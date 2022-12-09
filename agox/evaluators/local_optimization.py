@@ -85,13 +85,13 @@ class LocalOptimizationEvaluator(EvaluatorBaseClass):
     
 
     def apply_constraints(self, candidate):
-        constraints = [] + self.constraints
+        constraints = [] + self.constraints + candidate.constraints
         if self.fix_template:
             constraints.append(self.get_template_constraint(candidate))
 
         for constraint in constraints:
             if hasattr(constraint, 'reset'):
-                constraint.reset()
+                constraint.reset() 
 
         candidate.set_constraint(constraints)
 
