@@ -1,4 +1,5 @@
 import numpy as np
+from copy import copy
 from dscribe.descriptors import SOAP as dscribeSOAP
 from agox.models.descriptors import DescriptorBaseClass
 

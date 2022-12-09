@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.linalg import eigvalsh
 from ase.data import covalent_radii
-
 from agox.models.descriptors import DescriptorBaseClass
 
 class SpectralGraphDescriptor(DescriptorBaseClass):

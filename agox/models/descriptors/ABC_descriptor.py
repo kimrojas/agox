@@ -1,16 +1,15 @@
 import numpy as np
 from abc import ABC, abstractmethod
-#from agox.module import Module
+from agox.module import Module
 
 all_feature_types = ['global', 'local', 'global_derivative', 'local_derivative']
 
-#class DescriptorBaseClass(ABC, Module):
-class DescriptorBaseClass(ABC):
+class DescriptorBaseClass(ABC, Module):
 
     feature_types = []
 
     def __init__(self, surname='', **kwargs):
-        #Module.__init__(self, surname=surname)
+        Module.__init__(self, surname=surname)
         assert np.array([feature_type in all_feature_types for feature_type in self.feature_types]).all(), 'Unknown feature type declared.'
 
     def create_global_features(self, atoms):

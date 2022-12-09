@@ -499,9 +499,7 @@ class LSGPRModel(ModelBaseClass):
         sigma_inv = np.diag([1/(len(atoms)*self.noise**2) for atoms in atoms_list])
         weights = np.ones(len(atoms_list))
         weights[:len(self.transfer_weights)] = self.transfer_weights
-        # if self.weights is not None:
-        #     self.writer(sigma_inv.shape, self.weights.shape)
-        #     sigma_inv[np.diag_indices_from(sigma_inv)] *= self.weights
+        sigma_inv[np.diag_indices_from(sigma_inv)] *= weights
         return sigma_inv
         
     def symmetrize(self, A):

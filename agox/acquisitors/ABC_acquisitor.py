@@ -1,11 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from ase.io import write
-from ase import Atoms
-from ase.calculators.singlepoint import SinglePointCalculator
 from agox.observer import Observer
-
-from agox.writer import agox_writer, Writer
+from agox.writer import Writer, agox_writer
 
 class AcquisitorBaseClass(ABC, Observer, Writer):
 
@@ -24,22 +20,13 @@ class AcquisitorBaseClass(ABC, Observer, Writer):
     """
 
     def __init__(self, order=4, gets={'get_key':'candidates'}, sets={'set_key':'prioritized_candidates'}, verbose=True, 
-                use_counter=True, prefix=''):   
-        Observer.__init__(self, gets=gets, sets=sets, order=order)
+                use_counter=True, prefix='', surname=''):
+        Observer.__init__(self, gets=gets, sets=sets, order=order, surname=surname)
         Writer.__init__(self, verbose=verbose, use_counter=use_counter, prefix=prefix)
 
         self.add_observer_method(self.prioritize_candidates,
                                  sets=self.sets[0], gets=self.gets[0], order=self.order[0],
                                  handler_identifier='AGOX')
-
-    ########################################################################################
-    # Required properties
-    ########################################################################################    
-
-    @property
-    @abstractmethod
-    def name(self):
-        return NotImplementedError
 
     ########################################################################################
     # Required methods
@@ -151,8 +138,11 @@ class AcquisitorBaseClass(ABC, Observer, Writer):
         raise NotImplementedError("'get_acqusition_calculator' is not implemented for this acquisitor")
 
 from ase.calculators.calculator import Calculator, all_changes
+from agox.module import Module
 
-class AcquisitonCalculatorBaseClass(Calculator):
+class AcquisitonCalculatorBaseClass(Calculator, Module):
+
+    name = 'AcqusitionCalculator'
 
     def __init__(self, model_calculator, **kwargs):
         super().__init__(**kwargs)
