@@ -67,7 +67,7 @@ class ModelTrackerAfterTraining(Observer, Writer):
             E_new_model = candidate.get_potential_energy()
             Delta_old_E = E_old_model - E_dft
             Delta_new_E = E_new_model - E_dft
-            arrow = '<-- LARGE DELTA' if abs(Delta_old_E) or abs(Delta_new_E) > 0.5 else ''
+            arrow = '<-- LARGE DELTA' if abs(Delta_old_E) > 0.5 or abs(Delta_new_E) > 0.5 else ''
                 
             self.writer(f'TRACKER {i:04d} {E_dft:8.3f} {E_old_model:8.3f} {E_new_model:8.3f} {Delta_old_E:8.3f} {Delta_new_E:8.3f} {arrow:s}')
 
