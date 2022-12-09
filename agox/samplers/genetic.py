@@ -170,8 +170,8 @@ class DistanceComparator:
         return self.compare_candidates(candidate_A, candidate_B)
 
     def compare_candidates(self, candidate_A, candidate_B):
-        feature_A = self.get_feature(candidate_A)
-        feature_B = self.get_feature(candidate_B)
+        feature_A = self.get_global_features(candidate_A)
+        feature_B = self.get_global_features(candidate_B)
 
         return np.linalg.norm(feature_A-feature_B) < self.threshold
 

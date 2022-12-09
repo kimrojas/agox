@@ -389,4 +389,8 @@ class ModelGPR(ModelBaseClass):
         return cls(gpr, database=database, update_interval=1, optimize_loglikelyhood=True, use_saved_features=True, max_training_data=max_training_data)
 
     def get_feature_calculator(self):
+        print(DeprecationWarning("The 'get_feature_calculator'-method will be deprecated in a future release, please use 'get_descriptor'-method instead."))
+        return self.model.descriptor
+
+    def get_descriptor(self):
         return self.model.descriptor

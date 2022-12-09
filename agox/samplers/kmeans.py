@@ -10,11 +10,18 @@ class KMeansSampler(SamplerBaseClass):
     name = 'SamplerKMeans'
     parameters = {}
 
-    def __init__(self, descriptor, feature_calculator, model_calculator=None, sample_size=10, max_energy=5, 
+    def __init__(self, descriptor=None, feature_calculator=None, model_calculator=None, sample_size=10, max_energy=5, 
                         use_saved_features=False, **kwargs):
         super().__init__(**kwargs)
-        self.feature_calculator = feature_calculator
-        self.descriptor = descriptor
+
+        if descriptor is not None and feature_calculator is None:
+            self.descriptor = descriptor
+        if feature_calculator is not None and descriptor is None:
+            print(DeprecationWarning("'feature_calculator'-argument will be removed in a future release, please use the descriptor argument instead."))
+            self.descriptor = feature_calculator
+        if feature_calculator is not None and descriptor is not None:
+            print(DeprecationWarning("Both feature_calculator and descriptor arguments have been specified, please use only 'descriptor'"))
+
         self.sample_size = sample_size
         self.max_energy = max_energy
         self.sample = []
@@ -100,7 +107,6 @@ class KMeansSampler(SamplerBaseClass):
             return None
         
         # find out what cluster we belong to
-        #f_this = self.feature_calculator.get_featureMat([candidate_object])
         f_this = np.array(self.descriptor.get_global_features(candidate_object))
         distances = cdist(f_this, self.sample_features, metric='euclidean').reshape(-1)
 
@@ -130,12 +136,10 @@ class KMeansSampler(SamplerBaseClass):
             for candidate in structures:
                 F = candidate.get_meta_information('kmeans_feature')
                 if F is None:
-                    #F = self.feature_calculator.get_feature(candidate)
                     F = self.descriptor.get_global_features(candidate)[0]
                     candidate.add_meta_information('kmeans_feature', F)
                 features.append(F)
             features = np.array(features)
         else:
-            #features = np.array(self.feature_calculator.get_featureMat(structures))
             features = np.array(self.descriptor.get_global_features(structures))
         return features
