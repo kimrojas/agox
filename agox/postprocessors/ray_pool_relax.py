@@ -60,7 +60,7 @@ class ParallelRelaxPostprocess(PostprocessBaseClass, RayPoolUser):
         N_jobs = len(candidates)
         modules = [[self.model_key]] * N_jobs
         args = [[candidate] + [self.optimizer, self.optimizer_kwargs, self.optimizer_run_kwargs] for candidate in candidates]
-        kwargs = [{}] * N_jobs
+        kwargs = [{} for _ in range(N_jobs)]
         relaxed_candidates = self.pool_map(relax, modules, args, kwargs)
         
         # Remove constraints & move relaxed positions to input candidates:
