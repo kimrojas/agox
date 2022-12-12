@@ -23,19 +23,18 @@ class BoxConstraint:
         elif len(pbc) == 3:
             self.pbc = list(pbc)
         else:
-            self.writer('pbc should be list or bool! Setting pbc=False.')
+            print('pbc should be list or bool! Setting pbc=False.')
             self.pbc = [False]*3
 
         self.hard_boundaries = [not p for p in self.pbc]
 
-            
         if np.any(self.pbc):
             periodic_cell_vectors = self.confinement_cell[:, self.pbc]
             non_periodic_cell_vectors = self.confinement_cell[:, self.hard_boundaries]
-            if np.any(np.matmul(periodic_cell_vectors.T, non_periodic_cell_vectors) > 0):
-                self.writer('---- BOX CONSTRAINT ----')
-                self.writer('Periodicity does not work for non-square non-periodic directions!')
-                self.writer('------------------------')
+            if np.any(np.abs(np.matmul(periodic_cell_vectors.T, non_periodic_cell_vectors)) > 0):
+                print('---- BOX CONSTRAINT ----')
+                print('Periodicity does not work for non-square non-periodic directions!')
+                print('------------------------')
 
         # Soft boundary & force decay.
         self.lower_soft_boundary = 0.05; self.lower_hard_boundary = 0.001
