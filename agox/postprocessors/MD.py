@@ -1,5 +1,8 @@
-from ase import units
 import numpy as np
+
+from ase import units
+from ase.io import write
+from ase.calculators.singlepoint import SinglePointCalculator as SPC
 
 from ase.constraints import FixAtoms
 from ase.md.nvtberendsen import NVTBerendsen
@@ -23,9 +26,10 @@ class MDPostprocess(PostprocessBaseClass):
             prepare_candidate_cls=[MaxwellBoltzmannDistribution, ZeroRotation, Stationary],
             prepare_candidate_kwargs=[{'temperature_K':10}, {}, {}],
             temperature_scheme={10: 20, 30: 50, 5: 20},
+            log=True,
+            logging_interval=1,
             constraints=[],
-            fix_template=True,
-            verbose=True,
+            fix_template=False,
             **kwargs
     ):
 
@@ -39,10 +43,12 @@ class MDPostprocess(PostprocessBaseClass):
         self.prepare_candidate_kwargs = prepare_candidate_kwargs
         self.temperature_scheme = temperature_scheme
 
+        self.log = log
+        self.logging_interval = logging_interval
+        
         # Constraints:
         self.constraints = constraints
         self.fix_template = fix_template
-        self.verbose = verbose
         
 
     def postprocess(self, candidate):
@@ -65,16 +71,22 @@ class MDPostprocess(PostprocessBaseClass):
         
         dyn = self.thermostat(candidate, **self.thermostat_kwargs)
         
-        if self.verbose:
-            dyn.attach(self.write_observer, interval=10, c=candidate)
+        if self.log:
+            dyn.attach(self.write_observer, interval=self.logging_interval, c=candidate, dyn=dyn)
             
         for temp, steps in self.temperature_scheme.items():
             self.writer(f'MD at {temp}K for {steps} steps.')
             dyn.set_temperature(temperature_K=temp)
             dyn.run(steps)
 
-    def write_observer(self, c):
+    def write_observer(self, c, dyn):
         self.writer(f'K={c.get_kinetic_energy()}, E={c.get_potential_energy()}')
+        atoms = c.copy()
+        atoms.set_constraint([])
+        atoms.set_calculator(SPC(atoms, energy=c.get_potential_energy(), forces=c.get_forces()))
+        name = f'MDPostproccesor_iteration_{self.get_iteration_counter()}_step_{dyn.nsteps}.traj'
+        write(name, atoms)
+        
 
     def do_check(self, **kwargs):
         try:
