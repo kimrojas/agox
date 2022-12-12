@@ -108,7 +108,19 @@ class BlockGeneratorBaseClass(GeneratorBaseClass):
 
         return FixInternals(bonds=all_bonds, angles=all_angles, dihedrals=all_dihedrals)
 
-    
+    def get_building_block(self, placed, random_rotation=True):
+        # Get a building block:
+        remaining = np.argwhere((self.N_blocks - placed) > 0).flatten()
+        index = int(np.random.choice(remaining, size=1)[0])
+        bb = self.building_blocks[index].copy()
+
+        if random_rotation:
+            phi0, phi1, phi2 = np.random.uniform(0, 360, size=3)
+            bb.rotate(phi2, (0,0,1))
+            bb.rotate(phi0, (1,0,0))
+            bb.rotate(phi1, (0,1,0))
+            
+        return bb, index    
 
 
 

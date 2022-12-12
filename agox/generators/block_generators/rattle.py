@@ -53,13 +53,14 @@ class RattleBlockGenerator(BlockGeneratorBaseClass):
                     continue
 
                 if self.check_distances(candidate, block, inter_indices, present=True):
-                    progress = True
                     self.block_move(candidate, block, inter_indices)
 
                     # Renormalize distribution:
                     block_probs[block_index] = 0
                     block_probs = block_probs / np.sum(block_probs)
                     atleast_one = True
+                    progress = True
+
 
         if not atleast_one:
             candidate = None
