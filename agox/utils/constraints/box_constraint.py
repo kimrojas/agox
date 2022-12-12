@@ -61,9 +61,10 @@ class BoxConstraint:
         #newpositions[not inside, :] = atoms.positions[not inside]        
         # New positions of those atoms that are not inside (so outside) the box are set inside the box.
 
-        newpositions[self.indices[np.invert(inside)], :] = wrap_positions(newpositions[self.indices[np.invert(inside)], :],
-                                                                          cell=self.effective_confinement_cell, pbc=self.pbc)
-        newpositions[self.indices[np.invert(inside)], self.hard_boundaries] = atoms.positions[self.indices[np.invert(inside)], self.hard_boundaries]
+        if np.invert(inside).any():
+            newpositions[self.indices[np.invert(inside)], :] = wrap_positions(newpositions[self.indices[np.invert(inside)], :],
+                                                                              cell=self.effective_confinement_cell, pbc=self.pbc)
+            newpositions[self.indices[np.invert(inside)], self.hard_boundaries] = atoms.positions[self.indices[np.invert(inside)], self.hard_boundaries]
 
     def adjust_forces(self, atoms, forces):
         C = self.get_projection_coefficients(atoms.positions[self.indices])
