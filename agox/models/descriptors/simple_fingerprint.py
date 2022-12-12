@@ -1,4 +1,4 @@
-from .descriptor_ABC import DescriptorBaseClass
+from agox.models.descriptors.ABC_descriptor import DescriptorBaseClass
 import numpy as np
 
 def eval_gauss(r, x, width):

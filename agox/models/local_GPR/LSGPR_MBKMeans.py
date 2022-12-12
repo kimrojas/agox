@@ -19,6 +19,7 @@ class LSGPRModelMBKMeans(LSGPRModel):
         self.sparse_update = sparse_update
         self.full_update_interval = full_update_interval
         self.cluster_weights = cluster_weights
+
         # tmp:
         self.exact_points = exact_points
 

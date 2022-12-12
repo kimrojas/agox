@@ -1,15 +1,16 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from ase.io import write
-from agox.writer import agox_writer, Writer
 from agox.candidates.ABC_candidate import CandidateBaseClass
+from agox.module import Module
 from agox.observer import Observer
+from agox.writer import Writer, agox_writer
 
 class SamplerBaseClass(ABC, Observer, Writer):
 
     def __init__(self, database=None, sets={}, gets={}, order=1, verbose=True, use_counter=True, prefix='', 
-        use_transfer_data=True):
-        Observer.__init__(self, sets=sets, gets=gets, order=order)
+        use_transfer_data=True, surname=''):
+        Observer.__init__(self, sets=sets, gets=gets, order=order, surname=surname)
         Writer.__init__(self, verbose=verbose, use_counter=use_counter, prefix=prefix)
         self.sample = []
         self.use_transfer_data = use_transfer_data
