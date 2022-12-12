@@ -26,6 +26,8 @@ class BoxConstraint:
             self.writer('pbc should be list or bool! Setting pbc=False.')
             self.pbc = [False]*3
 
+        self.hard_boundaries = [not p for p in self.pbc]
+
         # Soft boundary & force decay.
         self.lower_soft_boundary = 0.05; self.lower_hard_boundary = 0.001
         self.al, self.bl = np.polyfit([self.lower_soft_boundary, self.lower_hard_boundary], [1, 0], 1)
@@ -48,8 +50,11 @@ class BoxConstraint:
     def adjust_positions(self, atoms, newpositions):
         inside = self.check_if_inside_box(newpositions[self.indices])
         #newpositions[not inside, :] = atoms.positions[not inside]        
-        # New positions of those atoms that are not inside (so outside) the box are set inside the box. 
-        newpositions[self.indices[np.invert(inside)], :] = wrap_positions(newpositions[self.indices[np.invert(inside)], :], cell=self.effective_confinement_cell, pbc=self.pbc) #atoms.positions[self.indices[np.invert(inside)], :] 
+        # New positions of those atoms that are not inside (so outside) the box are set inside the box.
+
+        newpositions[self.indices[np.invert(inside)], :] = wrap_positions(newpositions[self.indices[np.invert(inside)], :],
+                                                                          cell=self.effective_confinement_cell, pbc=self.pbc)
+        newpositions[self.indices[np.invert(inside)], self.hard_boundaries] = atoms.positions[self.indices[np.invert(inside)], self.hard_boundaries]
 
     def adjust_forces(self, atoms, forces):
         C = self.get_projection_coefficients(atoms.positions[self.indices])
@@ -60,9 +65,9 @@ class BoxConstraint:
             if ((coeff < 0) * (coeff > 1)).any():
                 forces[idx] = 0 # Somehow the atom is outside, so it is just locked. 
             if (coeff > self.upper_soft_boundary).any():
-                forces[idx] = self.linear_boundary(np.max(coeff), self.au, self.bu) * forces[idx]
+                forces[idx, self.hard_boundaries] = self.linear_boundary(np.max(coeff), self.au, self.bu) * forces[idx, self.hard_boundaries]
             elif (coeff < self.lower_soft_boundary).any():
-                forces[idx] = self.linear_boundary(np.min(coeff), self.al, self.bl) * forces[idx]
+                forces[idx, self.hard_boundaries] = self.linear_boundary(np.min(coeff), self.al, self.bl) * forces[idx, self.hard_boundaries]
 
     def adjust_momenta(self, atoms, momenta):
         self.adjust_forces(atoms, momenta)
@@ -110,22 +115,23 @@ if __name__ == '__main__':
     B = np.eye(3) * 1
     c = np.array([0, 0, 0])
 
-    atoms = Atoms('H4', positions=[[0.5, 0.5, 0.5], [0.1, 0.1, 0.9], [0.1, 0.1, 0.9], [0.02, 0.5, 0.1]], cell=B)
+    atoms = Atoms('H3', positions=[[0.5, 0.5, 0.5], [0.1, 0.1, 0.9], [0.02, 0.9, 0.1]], cell=B)
     write('initial.traj', atoms)
 
     print(atoms.positions)
-    BC = BoxConstraint(B, c, indices=np.array([0, 1, 2, 3]), pbc=True)
+    BC = BoxConstraint(B, c, indices=np.array([0, 1, 2]), pbc=[False, False, True])
+    atoms.set_constraint([BC])
 
     print(BC.check_if_inside_box(atoms.positions))
-
-    forces = np.tile(np.array([[1, 0, 0]]), 4).reshape(4, 3).astype(float)
-
+    forces = np.tile(np.array([[1, 1, 1]]), 3).reshape(3, 3).astype(float)
     print(forces)    
     BC.adjust_forces(atoms, forces)
     print(forces)
 
-    BC.adjust_positions(atoms, np.array([[0.5, 0.5, 0.5], [0.1, 0.1, 0.9], [0.1, 0.1, 0.9], [0.02, 0.5, 1.1]]))
+    atoms.set_positions([[0.5, 0.5, 0.5], [0.1, 0.1, 0.9], [0.02, 1.1, -0.1]])
     print(atoms.positions)
+    atoms.set_constraint([])
+    write('moved.traj', atoms)
     
     #print(BC.upper_boundary_factor(0.999))
     
