@@ -47,7 +47,7 @@ setup(
         "scikit-learn",
         "dscribe",
         "mpi4py",
-        "ray",
+        "ray==2.0.0",
         "jax",
     ],
     packages=find_packages(),
