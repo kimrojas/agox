@@ -2,6 +2,7 @@ from agox.generators.ABC_generator import GeneratorBaseClass
 import numpy as np
 from ase import Atoms
 from ase.data import covalent_radii
+from ase.geometry import get_distances
 
 from scipy.spatial.distance import cdist
 from ase.constraints import FixInternals
@@ -10,7 +11,7 @@ from copy import deepcopy
 
 class BlockGeneratorBaseClass(GeneratorBaseClass):
 
-    def __init__(self, building_blocks, N_blocks, apply_constraint=False, **kwargs):
+    def __init__(self, building_blocks, N_blocks, apply_constraint=False, use_mic=True, **kwargs):
         super().__init__(**kwargs)
 
         self.building_blocks = building_blocks
@@ -28,6 +29,8 @@ class BlockGeneratorBaseClass(GeneratorBaseClass):
                         self.fix_internal_constraints.append(constraint)
                     else:
                         raise NotImplementedError('Transferring constraints other than FixInternals from building blocks is not implemented.')
+
+        self.use_mic = use_mic
 
     def extract_block(self, candidate, block_indices):
         positions = candidate.positions[block_indices]
@@ -52,6 +55,9 @@ class BlockGeneratorBaseClass(GeneratorBaseClass):
     def check_distances(self, candidate, block, internal_indices=None, present=True):
         if len(candidate) == 0:
             return True
+        
+        if self.use_mic:
+            return self.check_distances_mic(candidate, block, internal_indices, present)
 
         # Find the distances of relevant atoms - we mask out the block 
         # itself if it is already present in the candidate object. 
@@ -77,7 +83,21 @@ class BlockGeneratorBaseClass(GeneratorBaseClass):
         # Then check that ANY distance is smaller than c2 * cv
         max_check = (self.c2 * cv > D).any()
         # Combined this esnures that we at least have ONE bond of appropriate length 
-        # and that NONE are too short. 
+        # and that NONE are too short.
+        return min_check * max_check
+
+    def check_distances_mic(self, candidate, block, internal_indices=None, present=True):
+        # Find the distances of relevant atoms - we mask out the block 
+        # itself if it is already present in the candidate object. 
+        mask = np.ones(len(candidate)).astype(bool)
+        if present:
+            mask[internal_indices] = False
+        _, D = get_distances(block.positions, candidate.positions[mask, :], cell=candidate.get_cell(), pbc=candidate.get_pbc())
+
+        cv = np.add.outer(covalent_radii[block.numbers], covalent_radii[candidate.numbers[mask]])
+        min_check = (self.c1 * cv < D).all()
+        max_check = (self.c2 * cv > D).any()
+
         return min_check * max_check
 
     def get_fix_internal_constraint(self, bbs_used):
