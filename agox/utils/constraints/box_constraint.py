@@ -54,6 +54,9 @@ class BoxConstraint:
             elif (coeff < self.lower_soft_boundary).any():
                 forces[idx] = self.linear_boundary(np.min(coeff), self.al, self.bl) * forces[idx]
 
+    def adjust_momenta(self, atoms, momenta):
+        self.adjust_forces(atoms, momenta)
+
     def get_removed_dof(self, atoms):
         return 0
         

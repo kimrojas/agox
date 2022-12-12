@@ -34,7 +34,7 @@ class RelaxPostprocess(PostprocessBaseClass):
         
         candidate.add_meta_information('relaxation_steps', optimizer.get_number_of_steps())
 
-        print(f'Relaxed for {optimizer.get_number_of_steps()} steps')
+        self.writer(f'Relaxed for {optimizer.get_number_of_steps()} steps')
 
         self.remove_constraints(candidate)
         return candidate
