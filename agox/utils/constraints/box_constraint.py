@@ -28,6 +28,15 @@ class BoxConstraint:
 
         self.hard_boundaries = [not p for p in self.pbc]
 
+            
+        if np.any(self.pbc):
+            periodic_cell_vectors = self.confinement_cell[:, self.pbc]
+            non_periodic_cell_vectors = self.confinement_cell[:, self.hard_boundaries]
+            if np.any(np.matmul(periodic_cell_vectors.T, non_periodic_cell_vectors) > 0):
+                self.writer('---- BOX CONSTRAINT ----')
+                self.writer('Periodicity does not work for non-square non-periodic directions!')
+                self.writer('------------------------')
+
         # Soft boundary & force decay.
         self.lower_soft_boundary = 0.05; self.lower_hard_boundary = 0.001
         self.al, self.bl = np.polyfit([self.lower_soft_boundary, self.lower_hard_boundary], [1, 0], 1)
