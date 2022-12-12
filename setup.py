@@ -1,3 +1,4 @@
+import re
 from setuptools import setup, find_packages
 from setuptools.extension import Extension
 from Cython.Build import cythonize
@@ -21,9 +22,21 @@ extensions = [
     ),        
 ]
 
+# Version Number:
+version_file = 'agox/__version__.py'
+with open(version_file) as f:
+    lines = f.readlines()
+
+for line in lines:
+    if '__version_info__' in line:
+        result = re.findall('\d+', line)
+        result = [int(x) for x in result]
+        version = '{}.{}.{}'.format(*result)
+        break
+
 setup(
     name="agox",
-    version="2.1.0",
+    version=version,
     url="https://gitlab.com/agox/agox",
     description="Atomistic Global Optimziation X is a framework structure optimization in materials science.",
     install_requires=[
