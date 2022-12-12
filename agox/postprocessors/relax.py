@@ -36,7 +36,7 @@ class RelaxPostprocess(PostprocessBaseClass):
 
         self.writer(f'Relaxed for {optimizer.get_number_of_steps()} steps')
 
-        self.remove_constraints(candidate)
+        #self.remove_constraints(candidate)
         return candidate
 
     def do_check(self, **kwargs):
@@ -50,7 +50,7 @@ class RelaxPostprocess(PostprocessBaseClass):
     ####################################################################################################################
 
     def apply_constraints(self, candidate):
-        constraints = [] + self.constraints
+        constraints = [] + self.constraints + candidate.constraints
         if self.fix_template:
             constraints.append(self.get_template_constraint(candidate))
 
