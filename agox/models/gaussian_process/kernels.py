@@ -1129,7 +1129,6 @@ class RBF(StationaryKernelMixin, NormalizedKernelMixin, Kernel):
             return "{0}(length_scale={1:.3g})".format(
                 self.__class__.__name__, np.ravel(self.length_scale)[0])
 
-
 class GeneralAnisotropicRBF(StationaryKernelMixin, NormalizedKernelMixin, Kernel):
     """Anisotropic radial-basis function kernel (aka squared-exponential kernel).
 

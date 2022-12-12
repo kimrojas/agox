@@ -1,15 +1,17 @@
 from abc import ABC, abstractmethod
-from agox.observer import Observer, ObserverHandler
-
 from ase.calculators.singlepoint import SinglePointCalculator
-from agox.writer import agox_writer, Writer
+#from agox import Observer, Writer, agox_writer, Module, ObserverHandler
+from agox.observer import Observer, ObserverHandler
+from agox.writer import Writer, agox_writer
+
 
 from ase import Atoms
 
 class DatabaseBaseClass(ABC, ObserverHandler, Observer, Writer):
 
-    def __init__(self, gets={'get_key':'evaluated_candidates'}, sets={}, order=6, verbose=True, use_counter=True, prefix=''):
-        Observer.__init__(self, gets=gets, sets=sets, order=order)        
+    def __init__(self, gets={'get_key':'evaluated_candidates'}, sets={}, order=6, verbose=True, use_counter=True, 
+        prefix='', surname=''):
+        Observer.__init__(self, gets=gets, sets=sets, order=order, surname=surname)
         ObserverHandler.__init__(self, handler_identifier='database', dispatch_method=self.store_in_database)
         Writer.__init__(self, verbose=verbose, use_counter=use_counter, prefix=prefix)
         self.candidates = []

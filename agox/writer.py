@@ -2,11 +2,13 @@ import functools
 from typing import List
 import numpy as np
 
+from agox.__version__ import __version__
+
 LINE_LENGTH = 79
 PADDING_CHARACTER = '='
 TERMINATE_CHARACTER = '|'
 
-ICON = """
+ICON = f"""
        _            _  _  _        _  _  _  _    _           _ 
      _(_)_       _ (_)(_)(_) _   _(_)(_)(_)(_)_ (_)_       _(_)
    _(_) (_)_    (_)         (_) (_)          (_)  (_)_   _(_)  
@@ -14,7 +16,7 @@ ICON = """
 (_) _  _  _ (_) (_)   (_)(_)(_) (_)          (_)     _(_)_     
 (_)(_)(_)(_)(_) (_)         (_) (_)          (_)   _(_) (_)_   
 (_)         (_) (_) _  _  _ (_) (_)_  _  _  _(_) _(_)     (_)_ 
-(_)         (_)    (_)(_)(_)(_)   (_)(_)(_)(_)  (_)         (_)  v{} \n
+(_)         (_)    (_)(_)(_)(_)   (_)(_)(_)(_)  (_)         (_)  v{__version__} \n
 """
 
 def line_breaker(string: str, tab_size: int = 4) -> List[str]:

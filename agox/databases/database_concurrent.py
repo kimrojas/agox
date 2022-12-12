@@ -57,14 +57,15 @@ class ConcurrentDatabase(Database):
     pack_functions = [blob, nothing, blob, blob, blob, blob, blob, nothing, nothing]
     unpack_functions = [nothing, nothing, deblob, nothing, deblob, deblob, deblob, deblob, deblob, nothing, nothing]
 
-    def __init__(self, worker_number=0, total_workers=1, sleep_timing=1, sync_frequency=50, sync_order=10, **kwargs):
+    def __init__(self, worker_number=0, total_workers=1, sleep_timing=1, 
+        sync_frequency=50, sync_order=None, synchronous=True, **kwargs):
         super().__init__(**kwargs)
 
         self.storage_keys.append('worker_number')
         self.worker_number = worker_number
         self.total_workers = total_workers
-        self.sleep_timing = sleep_timing
         self.sync_frequency = sync_frequency
+        self.synchronous = synchronous 
 
         self.filename_ready = self.filename[:-3] + '_WORKER{}_READY{}'                
         self.filename_done = self.filename[:-3] + '_WORKER{}_DONE{}'
@@ -131,41 +132,49 @@ class ConcurrentDatabase(Database):
     # @agox_writer
     # @Observer.observer_method
     def sync_database(self):
-        if self.decide_to_sync():
-            self.writer(f'Structures in database before sync: {len(self)}')
-            # write file
-            iteration = self.get_iteration_counter()
-            with open(self.filename_ready.format(self.worker_number, iteration), mode='w'): pass
-            
-            self.writer('Attempting to sync database')
-            # Make sure the database contains all the expected information from all workers.
-            check_state = self.check_status()
-            print_string  = ''
-            while not check_state:
+        if self.decide_to_sync():            
+            if self.synchronous:
+                self.synchronous_update()
+            else:
+                self.asynchronous_update()
+
+    def synchronous_update(self):
+        # write file
+        iteration = self.get_iteration_counter()
+        with open(self.filename_ready.format(self.worker_number, iteration), mode='w'): pass
+        
+        self.writer('Attempting to sync database')
+        # Make sure the database contains all the expected information from all workers.
+        state = self.check_status()
+        print_string  = ''
+        while not state:
+            sleep(self.sleep_timing)
+            state = self.check_status()
+            print_string += '.'
+        if len(print_string) > 0:
+            self.writer(print_string)
+        
+        # Restore the database to memory. 
+        # This will change the order of candidates in the Database, so be careful if another module relies on that!
+        self.restore_to_memory()
+        self.writer('Succesfully synced database')
+
+        # write success file
+        with open(self.filename_done.format(self.worker_number, iteration), mode='w'): pass
+
+        if self.worker_number == 0: # i.e. i'm the master!
+            state = self.cleanup()                    
+            while not state:
                 sleep(self.sleep_timing)
-                check_state = self.check_status()
-                print_string += '.'
-            if len(print_string) > 0:
-                self.writer(print_string)
-            
-            # Restore the database to memory. 
-            # This will change the order of candidates in the Database, so be careful if another module relies on that!
-            self.restore_to_memory()
-            self.writer('Succesfully synced database')
+                state = self.cleanup()                    
 
-            # write success file
-            with open(self.filename_done.format(self.worker_number, iteration), mode='w'): pass
+        
+        self.writer('Number of candidates synced from database {}'.format(len(self)))
 
-            if self.worker_number == 0: # i.e. i'm the master!
-                cleanup_state = self.cleanup()         
-                while not cleanup_state:
-                    sleep(self.sleep_timing)
-                    cleanup_state = self.cleanup()
-            
-            self.writer('Number of candidates synced from database {}'.format(len(self)))
-        else:
-            self.writer('Not syncing database this iteration.')
-            
+    def asynchronous_update(self):
+        self.writer('Before asynchronous update: {}'.format(len(self)))
+        self.restore_to_memory()
+        self.writer('After asynchronous update: {}'.format(len(self)))
 
     def check_status(self):
         expected_iteration = self.get_iteration_counter()
@@ -190,6 +199,15 @@ class ConcurrentDatabase(Database):
         return state
 
     def decide_to_sync(self):
-        return self.get_iteration_counter() % self.sync_frequency == 0        
+        return self.get_iteration_counter() % self.sync_frequency == 0
 
+    def get_all_candidates(self, respect_worker_number=False):
+        if respect_worker_number:
+            all_candidates = []
+            for candidate in self.candidates:
+                if candidate.get_meta_information('worker_number') == self.worker_number:
+                    all_candidates.append(candidate)
+            return all_candidates
+        else:
+            return super().get_all_candidates()
 
