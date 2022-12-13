@@ -43,7 +43,7 @@ class RattleBlockGenerator(BlockGeneratorBaseClass):
 
                 # Pick a block to move:
                 block_index = np.random.choice(np.arange(N_blocks), size=1, p=block_probs)[0]
-                inter_indices = inter_block_indices[block_index]
+                inter_indices = np.array(inter_block_indices[block_index], dtype=int)
                 block = self.extract_block(candidate, inter_indices)
 
                 self.rattle_block(block) # Now we have a rattled block. In place.
