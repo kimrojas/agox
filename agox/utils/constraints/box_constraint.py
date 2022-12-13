@@ -1,9 +1,10 @@
 from types import new_class
 import numpy as np
+from ase.geometry import wrap_positions
 
 class BoxConstraint:
 
-    def __init__(self, confinement_cell=None, confinement_corner=None, indices=None, **kwargs):
+    def __init__(self, confinement_cell=None, confinement_corner=None, indices=None, pbc=[False]*3, **kwargs):
         """
         Constraint that wont allow atoms to move outside of a 'box' or cell defined by the matrix B. 
         Atoms influenced by the constraint are to be specified by indices
@@ -16,6 +17,24 @@ class BoxConstraint:
         if indices is None:
             indices = np.array([])
         self.indices = np.array(indices).flatten()
+
+        if isinstance(pbc, bool):
+            self.pbc = [pbc]*3
+        elif len(pbc) == 3:
+            self.pbc = list(pbc)
+        else:
+            print('pbc should be list or bool! Setting pbc=False.')
+            self.pbc = [False]*3
+
+        self.hard_boundaries = [not p for p in self.pbc]
+
+        if np.any(self.pbc):
+            periodic_cell_vectors = self.confinement_cell[:, self.pbc]
+            non_periodic_cell_vectors = self.confinement_cell[:, self.hard_boundaries]
+            if np.any(np.abs(np.matmul(periodic_cell_vectors.T, non_periodic_cell_vectors)) > 0):
+                print('---- BOX CONSTRAINT ----')
+                print('Periodicity does not work for non-square non-periodic directions!')
+                print('------------------------')
 
         # Soft boundary & force decay.
         self.lower_soft_boundary = 0.05; self.lower_hard_boundary = 0.001
@@ -39,20 +58,31 @@ class BoxConstraint:
     def adjust_positions(self, atoms, newpositions):
         inside = self.check_if_inside_box(newpositions[self.indices])
         #newpositions[not inside, :] = atoms.positions[not inside]        
-        # New positions of those atoms that are not inside (so outside) the box are set inside the box. 
-        newpositions[self.indices[np.invert(inside)], :] = atoms.positions[self.indices[np.invert(inside)], :] 
+        # New positions of those atoms that are not inside (so outside) the box are set inside the box.
+
+        if np.invert(inside).any():
+            newpositions[self.indices[np.invert(inside)], :] = wrap_positions(newpositions[self.indices[np.invert(inside)], :],
+                                                                              cell=self.effective_confinement_cell, pbc=self.pbc)
+            newpositions[self.indices[np.invert(inside)], self.hard_boundaries] = atoms.positions[self.indices[np.invert(inside)], self.hard_boundaries]
 
     def adjust_forces(self, atoms, forces):
-        C = self.get_projection_coefficients(atoms.positions[self.indices])        
+        C = self.get_projection_coefficients(atoms.positions[self.indices])
         # Because adjust positions does not allow the atoms to escape the box we know that all atoms are witihn the box. 
         # Want to set the forces to zero if atoms are close to the box, this happens if any component of C is close to 0 or 1. 
         for coeff, idx in zip(C, self.indices):
+            coeff = np.array([0.5 if p else c for c, p in zip(coeff, self.pbc)])
             if ((coeff < 0) * (coeff > 1)).any():
                 forces[idx] = 0 # Somehow the atom is outside, so it is just locked. 
             if (coeff > self.upper_soft_boundary).any():
-                forces[idx] = self.linear_boundary(np.max(coeff), self.au, self.bu) * forces[idx]
+                forces[idx, self.hard_boundaries] = self.linear_boundary(np.max(coeff), self.au, self.bu) * forces[idx, self.hard_boundaries]
             elif (coeff < self.lower_soft_boundary).any():
-                forces[idx] = self.linear_boundary(np.min(coeff), self.al, self.bl) * forces[idx]
+                forces[idx, self.hard_boundaries] = self.linear_boundary(np.min(coeff), self.al, self.bl) * forces[idx, self.hard_boundaries]
+
+    def adjust_momenta(self, atoms, momenta):
+        self.adjust_forces(atoms, momenta)
+
+    def get_removed_dof(self, atoms):
+        return 0
         
     def get_projection_coefficients_old(self, positions):
         return np.linalg.solve(self.confinement_cell, (positions-self.confinement_corner).T).T
@@ -89,22 +119,29 @@ constraints.BoxConstraint = BoxConstraint
 
 if __name__ == '__main__':
     from ase import Atoms
-
+    from ase.io import write
+    
     B = np.eye(3) * 1
     c = np.array([0, 0, 0])
 
-    atoms = Atoms('H4', positions=[[0.5, 0.5, 0.5], [0.1, 0.1, 0.9], [0.1, 0.1, 0.9], [0.02, 0.5, 0.1]])
+    atoms = Atoms('H3', positions=[[0.5, 0.5, 0.5], [0.1, 0.1, 0.9], [0.02, 0.9, 0.1]], cell=B)
+    write('initial.traj', atoms)
 
-    BC = BoxConstraint(B, c, indices=np.array([0, 1, 2, 3]))
+    print(atoms.positions)
+    BC = BoxConstraint(B, c, indices=np.array([0, 1, 2]), pbc=[False, False, True])
+    atoms.set_constraint([BC])
 
     print(BC.check_if_inside_box(atoms.positions))
-
-    forces = np.tile(np.array([[1, 0, 0]]), 4).reshape(4, 3).astype(float)
-
+    forces = np.tile(np.array([[1, 1, 1]]), 3).reshape(3, 3).astype(float)
     print(forces)    
     BC.adjust_forces(atoms, forces)
     print(forces)
 
+    atoms.set_positions([[0.5, 0.5, 0.5], [0.1, 0.1, 0.9], [0.02, 1.1, -0.1]])
+    print(atoms.positions)
+    atoms.set_constraint([])
+    write('moved.traj', atoms)
+    
     #print(BC.upper_boundary_factor(0.999))
     
 
