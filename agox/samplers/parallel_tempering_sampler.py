@@ -42,7 +42,7 @@ class ParallelTemperingSampler(MetropolisSampler):
         Assumes that the database is synced. 
         """
         
-        if self.decide_to_swap():
+        if self.decide_to_swap(database):
             for candidate in database.candidates:
 
                 worker_number = candidate.get_meta_information('worker_number')
@@ -63,35 +63,15 @@ class ParallelTemperingSampler(MetropolisSampler):
                     text = 'PARALLEL TEMPERING (not main worker):'
                 self.writer(text)
 
-            self.swap_func()
+            self.swap_func(database)
         
-    def swap_down(self):
-        """
-        Swaps candidates 'down' in worker_number:
-
-        So if 4 total workers: 
-        worker 0: Gets from worker 1.
-        worker 1: Gets from worker 2. 
-        worker 2: Gets from worker 3.
-        worker 3: Gets from worker 4. 
-        """
-        
-        total_workers = self.database.total_workers
-        worker_number = self.database.worker_number
-        if worker_number < total_workers-1:
-            self.chosen_candidate = self.most_recently_accepted[worker_number+1]
-        else:
-            self.chosen_candidate = self.most_recently_accepted[total_workers-1]
-
-        self.writer('Finish swapping candidate!')
-
-    def metropolis_hastings_swap(self):
-        worker_number = self.database.worker_number
-        total_workers = self.database.total_workers
+    def metropolis_hastings_swap(self, database):
+        worker_number = database.worker_number
+        total_workers = database.total_workers
         iteration = self.get_iteration_counter()
 
         # I abuse the filenames a bit here: 
-        filename = self.database.filename[:-3] + '_swap_iteration_{}_worker_{}.traj'
+        filename = database.filename[:-3] + '_swap_iteration_{}_worker_{}.traj'
 
         if worker_number == 0:
             # This one does the calculation and 'broadcasts' to the others over disk. 
@@ -141,8 +121,8 @@ class ParallelTemperingSampler(MetropolisSampler):
                                           cell=atoms_type_object.cell)
         return candidate
 
-    def decide_to_swap(self):
-        return (self.get_iteration_counter() % self.swap_frequency == 0) * (self.database.total_workers > 1)
+    def decide_to_swap(self, database):
+        return (self.get_iteration_counter() % self.swap_frequency == 0) * (database.total_workers > 1)
 
     def get_candidate_to_consider(self):        
         candidates = self.get_from_cache(self.get_key)
