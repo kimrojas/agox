@@ -412,7 +412,6 @@ class Database(DatabaseBaseClass):
 
         dict_of_dicts = {} # Uses the id as the key to the meta information dict for each candidate. (Id from structures table).
 
-        print(dict_of_dicts)
         for table, func in zip(tables, functions):
             cursor.execute(f'SELECT * FROM {table}')
             rows = cursor.fetchall()

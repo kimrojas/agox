@@ -31,8 +31,9 @@ class MetropolisSampler(SamplerBaseClass):
         if self.do_check():            
             evaled_candidates = state.get_from_cache(self, self.get_key)
             evaled_candidates = list(filter(None, evaled_candidates))
-            best_candidate = evaled_candidates[np.argmin([atoms.get_potential_energy() for atoms in evaled_candidates])]
-            self.setup(best_candidate)
+            if len(evaled_candidates) > 0:
+                best_candidate = evaled_candidates[np.argmin([atoms.get_potential_energy() for atoms in evaled_candidates])]
+                self.setup(best_candidate)
 
     def setup(self, potential_step):
         # If the current sample is not empty
