@@ -16,13 +16,14 @@ class EnvironmentBaseClass(ABC, Module):
     """
 
     def __init__(self, confinement_cell=None, confinement_corner=None, constraints=[], 
-        use_box_constraint=True, fix_template=True, surname=''):
+                 use_box_constraint=True, box_constraint_pbc=[False]*3, fix_template=True, surname=''):
         Module.__init__(self, surname=surname)
 
         self.confinement_cell = confinement_cell
         self.confinement_corner = confinement_corner
         self.constraints = constraints 
         self.use_box_constraint = use_box_constraint
+        self.box_constraint_pbc = box_constraint_pbc
         self.fix_template = fix_template
         
     @abstractmethod
@@ -73,7 +74,8 @@ class EnvironmentBaseClass(ABC, Module):
     def get_box_constraint(self):
         confinement_cell = self.get_confinement_cell()
         confinement_corner = self.get_confinement_corner()
-        return BoxConstraint(confinement_cell=confinement_cell, confinement_corner=confinement_corner, indices=self.get_missing_indices())
+        return BoxConstraint(confinement_cell=confinement_cell, confinement_corner=confinement_corner,
+                             indices=self.get_missing_indices(), pbc=self.box_constraint_pbc)
 
     def get_constraints(self):
         constraints = []
