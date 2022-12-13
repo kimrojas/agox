@@ -169,7 +169,6 @@ class ConcurrentDatabase(Database):
                 sleep(self.sleep_timing)
                 state = self.cleanup()                    
 
-        
         self.writer('Number of candidates synced from database {}'.format(len(self)))
 
     def asynchronous_update(self):

@@ -20,20 +20,20 @@ class ParallelTemperingSampler(MetropolisSampler):
     
     name = 'ParallelTemperingSampler'
 
-    def __init__(self, temperatures=[], swap_frequency=10, gets=[{'get_key':'evaluated_candidates'}, {}], 
+    def __init__(self, temperatures=[], database=None, swap_frequency=10, gets=[{'get_key':'evaluated_candidates'}, {}], 
                 sets=[{}, {}], swap_order=2, **kwargs):
         super().__init__(gets=gets, sets=sets, **kwargs)
         self.swap_frequency = swap_frequency
         self.temperatures = temperatures
-        self.temperature = temperatures[self.database.worker_number]
+        self.temperature = temperatures[database.worker_number]
         self.swap_order = swap_order
         self.swap_func = self.metropolis_hastings_swap
-        self.most_recently_accepted = {worker_number:None for worker_number in range(self.database.total_workers)}
-        self.most_recently_accepted_iteration = {worker_number:0 for worker_number in range(self.database.total_workers)}
+        self.most_recently_accepted = {worker_number:None for worker_number in range(database.total_workers)}
+        self.most_recently_accepted_iteration = {worker_number:0 for worker_number in range(database.total_workers)}
 
         self.add_observer_method(self.swap_candidates, sets=self.sets[1], gets=self.gets[1], order=self.swap_order, handler_identifier='database')
 
-        self.attach_to_database(kwargs['database'])
+        self.attach_to_database(database)
 
     @agox_writer
     @Observer.observer_method
@@ -57,7 +57,7 @@ class ParallelTemperingSampler(MetropolisSampler):
             if self.verbose:
                 energies = [self.most_recently_accepted[c].get_potential_energy() \
                             if self.most_recently_accepted[c] is not None else 0 for c in self.most_recently_accepted]
-                if self.database.worker_number == 0:
+                if database.worker_number == 0:
                     text = 'PARALLEL TEMPERING:'  + f'{self.temperature:8.3f}, ' + ','.join([f'{e:8.3f}' for e in energies])
                 else:
                     text = 'PARALLEL TEMPERING (not main worker):'
@@ -101,7 +101,9 @@ class ParallelTemperingSampler(MetropolisSampler):
 
             # Write the candidates:
             for wn in range(1, total_workers):
-                safe_write(filename.format(iteration, wn), self.most_recently_accepted[wn])
+                atoms = self.most_recently_accepted[wn]
+                atoms.info = atoms.meta_information
+                safe_write(filename.format(iteration, wn), atoms)
             self.chosen_candidate = self.most_recently_accepted[worker_number]
 
         else: 
@@ -111,6 +113,7 @@ class ParallelTemperingSampler(MetropolisSampler):
             chosen_atoms = read(filename.format(iteration, worker_number))
             
             self.sample[0] = self.convert_to_candidate_object(chosen_atoms, self.sample[0].template)
+            self.sample[0].meta_information = chosen_atoms.info
             scp = SinglePointCalculator(self.sample[0], energy=chosen_atoms.get_potential_energy(), forces=chosen_atoms.get_forces())
             self.sample[0].set_calculator(scp)
 
