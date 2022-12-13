@@ -166,6 +166,7 @@ class PaiNN(ModelBaseClass):
                 trn.CastTo64(),
             ]
         )
+        self.nnpot.to(device=self.device.type)
 
         # Output
         output_energy = spk.task.ModelOutput(
@@ -214,8 +215,6 @@ class PaiNN(ModelBaseClass):
         
             
 
-
-
     @property
     def transfer_data(self):
         return self._transfer_data
@@ -248,6 +247,8 @@ class PaiNN(ModelBaseClass):
         Calculator.calculate(self, atoms, properties, system_changes)
         
         self.nnpot.eval()
+        self.nnpot.to(device=self.device.type)
+        
         model_inputs = self.converter(atoms)
         model_results = self.nnpot(model_inputs)
 
@@ -258,7 +259,6 @@ class PaiNN(ModelBaseClass):
         if 'forces' in properties:
             self.results['forces'] = model_results['forces'].cpu().data.numpy()
 
-        self.nnpot.train()
 
     ####################################################################################################################
     # Prediction
@@ -266,6 +266,8 @@ class PaiNN(ModelBaseClass):
 
     def predict_energy(self, atoms=None, X=None, return_uncertainty=False):
         self.nnpot.eval()
+        self.nnpot.to(device=self.device.type)
+        
         model_inputs = self.converter(atoms)
         model_results = self.nnpot(model_inputs)
         
@@ -274,6 +276,7 @@ class PaiNN(ModelBaseClass):
 
     def predict_energies(self, atoms_list):
         self.nnpot.eval()
+        self.nnpot.to(device=self.device.type)        
         
         model_inputs = self.converter(atoms_list)
         model_results = self.nnpot(model_inputs)
@@ -293,6 +296,7 @@ class PaiNN(ModelBaseClass):
 
     def predict_forces(self, atoms, return_uncertainty=False, **kwargs):
         self.nnpot.eval()
+        self.nnpot.to(device=self.device.type)
         
         model_inputs = self.converter(atoms)
         model_results = self.nnpot(model_inputs)
