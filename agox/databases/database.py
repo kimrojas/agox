@@ -395,7 +395,12 @@ class Database(DatabaseBaseClass):
             cur.execute(f'SELECT * FROM {table} WHERE id=?', (id,))
             A = cur.fetchall()
             for key, value, _ in A:
-                dict_recreation[key] = func(value)
+                try:
+                    converted_value = func(value)
+                except:
+                    converted_value = deblob(value)
+
+                dict_recreation[key] = converted_value
 
         return dict_recreation
 
@@ -407,15 +412,21 @@ class Database(DatabaseBaseClass):
 
         dict_of_dicts = {} # Uses the id as the key to the meta information dict for each candidate. (Id from structures table).
 
+        print(dict_of_dicts)
         for table, func in zip(tables, functions):
             cursor.execute(f'SELECT * FROM {table}')
             rows = cursor.fetchall()
 
             for key, value, id in rows:
+                try:
+                    converted_value = func(value)
+                except:
+                    converted_value = deblob(value)
+
                 if id in dict_of_dicts.keys():
-                    dict_of_dicts[id][key] = func(value)
+                    dict_of_dicts[id][key] = converted_value
                 else:
-                    dict_of_dicts[id] = {key:func(value)}
+                    dict_of_dicts[id] = {key:converted_value}
 
         return dict_of_dicts
 
