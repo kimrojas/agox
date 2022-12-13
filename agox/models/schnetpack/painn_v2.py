@@ -10,6 +10,8 @@ from pytorch_lightning import seed_everything
 import schnetpack as spk
 import schnetpack.transform as trn
 from schnetpack.data import AtomsDataModule, ASEAtomsData
+from schnetpack.representation import PaiNN
+from schnetpack.interfaces import AtomsConverter
 
 from ase.calculators.singlepoint import SinglePointCalculator as SPC
 from ase.calculators.calculator import Calculator, all_changes
@@ -30,16 +32,28 @@ class PaiNN(ModelBaseClass):
     
     """
 
-    
-    
-    def __init__(self, max_steps_per_iteration=100, max_epochs_per_iteration=10,
-                 cutoff=6., base_path='', db_name='dataset.db',
-                 transfer_data=None, seed=None, **kwargs):
+    def __init__(
+            self,
+            cutoff=6.,
+            dataset_settings={},
+            representation_settings={},
+            loss_settings={},
+            learning_settings={},
+            learning_callbacks=[],
+            max_steps_per_iteration=100,
+            max_epochs_per_iteration=10,
+            representation_cls=PaiNN,
+            base_path='',
+            db_name='dataset.db',
+            transfer_data=None,
+            tensorboard=False,
+            seed=None,
+            **kwargs
+    ):
         
         super().__init__(**kwargs)
 
-        self.reload_model = True
-        
+        self.tensorboard = tensorboard
         if seed is not None:
             seed_everything(seed, workers=True)
 
@@ -61,11 +75,61 @@ class PaiNN(ModelBaseClass):
         self.data_path = self.train_path / self.db_name
             
         self.cutoff = cutoff
+        self.dataset_settings = {**dataset_settings,
+                                 **{
+                                     'batch_size': 16,
+                                     'num_train': 0.8,
+                                     'num_val': 0.2,
+                                     'transforms': [
+                                         trn.ASENeighborList(cutoff=cutoff),
+                                         trn.CastTo32()
+                                     ],    
+                                     'num_workers': 8,
+                                     'pin_memory': True,
+                                     'split_file': None #str(self.train_path / Path('split.npz')),
+                                 }
+        }
+        self.representation_settings = {**representation_settings,
+                                        **{
+                                            'n_atom_basis': 96,
+                                            'n_interactions': 5,
+                                            'radial_basis': spk.nn.GaussianRBF(n_rbf=20, cutoff=cutoff),
+                                            'cutoff_fn': spk.nn.CosineCutoff(cutoff)
+                                        }
+        }
+        self.loss_settings = {**loss_settings,
+                              **{
+                                  'energy_weight': 0.01
+                                  'forces_weight': 0.99
+                              }
+        }
+        self.learning_settings = {**learning_settings,
+                                  {
+                                      'optimizer_cls': torch.optim.AdamW,
+                                      'optimizer_args': {"lr": 1e-3},
+                                      'scheduler_cls': spk.train.ReduceLROnPlateau,
+                                      'scheduler_args': {'factor': 0.5, 'patience': 1000, 'verbose': True},
+                                      'scheduler_monitor': 'val_loss',
+                                  }
+        }
+        
+        self.callbacks = learning_callbacks
+        # self.callbacks = [
+        #     spk.train.ModelCheckpoint(
+        #         model_path=str(self.train_path / Path('best_inference_model')),
+        #         monitor='val_loss',
+        #         save_top_k=-1,
+        #         save_last=True,
+        #         every_n_epochs=1,
+        #     ),
+        #     pl.callbacks.LearningRateMonitor(logging_interval='epoch')
+        # ]
+        
         self.max_steps_per_iteration = max_steps_per_iteration
         self.max_epochs_per_iteration = max_epochs_per_iteration
-        self.init_defaults(self.cutoff)
+        self.representation_cls = representation_cls
 
-
+        
         # Training DB
         if self.data_path.is_file():
             self.writer('ASE Database already exist. \n Connecting to existing database.')
@@ -87,13 +151,14 @@ class PaiNN(ModelBaseClass):
         
 
         # Model
-        representation = spk.representation.PaiNN(**self.defaults['representation'])
-        pred_energy = spk.atomistic.Atomwise(n_in=self.defaults['representation']['n_atom_basis'],
+        representation = self.representation_cls(**self.representation_defaults)
+        pred_energy = spk.atomistic.Atomwise(n_in=self.representation_defaults.get('n_atom_basis'),
                                              output_key='energy')
         pred_forces = spk.atomistic.Forces(energy_key='energy', force_key='forces')
 
-        pairwise_distance = spk.atomistic.PairwiseDistances()        
-        nnpot = spk.model.NeuralNetworkPotential(
+        pairwise_distance = spk.atomistic.PairwiseDistances()
+        
+        self.nnpot = spk.model.NeuralNetworkPotential(
             representation=representation,
             input_modules=[pairwise_distance],
             output_modules=[pred_energy, pred_forces],
@@ -106,7 +171,7 @@ class PaiNN(ModelBaseClass):
         output_energy = spk.task.ModelOutput(
             name='energy',
             loss_fn=torch.nn.MSELoss(),
-            loss_weight=0.01,
+            loss_weight=self.loss_settings.get('energy_weight'),
             metrics={
                 "MAE": torchmetrics.MeanAbsoluteError()
             }
@@ -115,72 +180,40 @@ class PaiNN(ModelBaseClass):
         output_forces = spk.task.ModelOutput(
             name='forces',
             loss_fn=torch.nn.MSELoss(),
-            loss_weight=0.99,
+            loss_weight=self.loss_settings.get('forces_weight'),
             metrics={
                 "MAE": torchmetrics.MeanAbsoluteError()
             }
         )
 
         self.task = spk.task.AtomisticTask(
-            model=nnpot,
+            model=self.nnpot,
             outputs=[output_energy, output_forces],
-            optimizer_cls=torch.optim.AdamW,
-            optimizer_args={"lr": 1e-3},
-            scheduler_cls=spk.train.ReduceLROnPlateau,
-            scheduler_args={'factor': 0.5, 'patience': 1000, 'verbose': True},    
-            scheduler_monitor = 'val_loss',
+            **self.learning_settings,
         )
 
         # Logging
-        self.logger = pl.loggers.TensorBoardLogger(save_dir=str(self.base_path),
-                                              name=None, version=str(self.version))
-        self.callbacks = [
-            spk.train.ModelCheckpoint(
-                model_path=str(self.train_path / Path('best_inference_model')),
-                monitor='val_loss',
-                save_top_k=-1,
-                save_last=True,
-                every_n_epochs=1,
-            ),
-            pl.callbacks.LearningRateMonitor(logging_interval='epoch')
-        ]
+        if self.tensorboard:
+            self.logger = pl.loggers.TensorBoardLogger(save_dir=str(self.base_path),
+                                                       name=None, version=str(self.version))
 
 
-    def init_defaults(self, cutoff, dataset_settings, ):
-        self.dataset_settings = {
-            'batch_size': 16,
-            'num_train': 0.8,
-            'num_val': 0.2,
-            'transforms': [
-                trn.ASENeighborList(cutoff=cutoff),
-                trn.CastTo32()
-            ],    
-            'num_workers': 8,
-            'pin_memory': True,
-            'split_file': None #str(self.train_path / Path('split.npz')),
-        }
+        ########## FOR PREDICTION ##########
+        self.converter = AtomsConverter(
+            neighbor_list=trn.ASENeighborList(cutoff=self.cutoff),
+            device=self.device.type,
+            dtype=torch.float32,
+            transforms=None,
+            additional_inputs=None,
+            
+        )
+            
+        self.energy_key = 'energy'
+        self.forces_key = 'forces'
 
-        self.defaults = {
-            'dataset': {
-                'batch_size': 16,
-                'num_train': 0.8,
-                'num_val': 0.2,
-                'transforms': [
-                    trn.ASENeighborList(cutoff=cutoff),
-                    trn.CastTo32()
-                ],    
-                'num_workers': 8,
-                'pin_memory': True,
-                'split_file': None #str(self.train_path / Path('split.npz')),
-                
-            },
-            'representation': {
-                'n_atom_basis': 96,
-                'n_interactions': 5,
-                'radial_basis': spk.nn.GaussianRBF(n_rbf=20, cutoff=cutoff),
-                'cutoff_fn': spk.nn.CosineCutoff(cutoff)
-            }
-        }
+        
+            
+
 
 
     @property
@@ -212,31 +245,40 @@ class PaiNN(ModelBaseClass):
     
     
     def calculate(self, atoms=None, properties=['energy'], system_changes=all_changes):
-        Calculator.calculate(self, atoms, properties, system_changes)        
+        Calculator.calculate(self, atoms, properties, system_changes)
+        
+        self.nnpot.eval()
+        model_inputs = self.converter(atoms)
+        model_results = self.nnpot(model_inputs)
+
         if 'energy' in properties:
-            e = self.predict_energy(atoms=atoms)
+            e = model_results['energy'].cpu().data.numpy()[0]
             self.results['energy'] = e
         
         if 'forces' in properties:
-            self.results['forces'] = self.predict_forces(atoms=atoms)
+            self.results['forces'] = model_results['forces'].cpu().data.numpy()
+
+        self.nnpot.train()
 
     ####################################################################################################################
     # Prediction
     ####################################################################################################################
 
     def predict_energy(self, atoms=None, X=None, return_uncertainty=False):
-        if self.reload_model:
-            self.load_model()
-            
-        a = atoms.copy()
-        a.set_calculator(self.calculator)
-        return a.get_potential_energy(apply_constraint=False)
+        self.nnpot.eval()
+        model_inputs = self.converter(atoms)
+        model_results = self.nnpot(model_inputs)
+        
+        return model_results['energy'].cpu().data.numpy()[0]
         
 
     def predict_energies(self, atoms_list):
-        if self.reload_model:
-            self.load_model()
-        return np.array([self.predict_energy(l) for l in atoms_list])
+        self.nnpot.eval()
+        
+        model_inputs = self.converter(atoms_list)
+        model_results = self.nnpot(model_inputs)
+
+        return model_results['energy'].cpu().data.numpy()
             
 
     def predict_uncertainty(self, atoms=None, X=None, k=None):
@@ -250,26 +292,29 @@ class PaiNN(ModelBaseClass):
 
 
     def predict_forces(self, atoms, return_uncertainty=False, **kwargs):
-        if self.reload_model:
-            self.load_model()        
-        a = atoms.copy()
-        a.set_calculator(self.calculator)
-        return a.get_forces(apply_constraint=False)
+        self.nnpot.eval()
+        
+        model_inputs = self.converter(atoms)
+        model_results = self.nnpot(model_inputs)
+
+        return model_results['forces'].cpu().data.numpy()
 
 
     @agox_writer
     def train_model(self, training_data, **kwargs):
         self.writer('Training PaiNN model')
+        
+        self.nnpot.train()
+        
         self.ready_state = True
         self.atoms = None
 
         self.add_data(training_data)
         
         # Dataloader
-        dataset = AtomsDataModule(self.data_path, **self.defaults['dataset'])
+        dataset = AtomsDataModule(self.data_path, **self.dataset_settings)
         dataset.prepare_data()
         dataset.setup()
-
 
         trainer = pl.Trainer(
             accelerator=self.device.type,
@@ -283,8 +328,6 @@ class PaiNN(ModelBaseClass):
         )
         
         trainer.fit(self.task, datamodule=dataset)
-
-        self.reload_model = True
 
             
     @agox_writer
@@ -307,7 +350,6 @@ class PaiNN(ModelBaseClass):
         if (iteration % self.update_period != 0) * (iteration != self.iteration_start_training):
             return
 
-
         all_data = database.get_all_candidates()
         self.writer(f'lenght all data: {len(all_data)}')
         
@@ -328,22 +370,9 @@ class PaiNN(ModelBaseClass):
         
 
     
-    def load_model(self):
-        self.writer('Loading model:', str(self.train_path / Path('best_inference_model')))
-                    
-        model = torch.load(str(self.train_path / Path('best_inference_model')),
-                           map_location=self.device.type)
-        
-        self.calculator = spk.interfaces.SpkCalculator(
-            model_file=str(self.train_path / Path('best_inference_model')),
-            neighbor_list=trn.ASENeighborList(cutoff=self.cutoff),
-            energy_key='energy',
-            force_key='forces',
-            energy_unit='eV',
-            position_unit="Ang",
-            device=self.device.type
-        )
-        self.reload_model = False
+    def load_model(self, path):
+        self.nnpot = torch.load(path, map_location=self.device.type)
+
 
     def add_data(self, data_list):
         if len(data_list) == 0:
@@ -358,4 +387,5 @@ class PaiNN(ModelBaseClass):
             properties = {'energy': np.array([e]), 'forces': f}
             property_list.append(properties)
         self.spk_database.add_systems(property_list, data_list)
+
 
