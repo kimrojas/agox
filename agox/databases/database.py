@@ -1,3 +1,4 @@
+import pickle
 import numpy as np 
 from time import sleep
 from ase import Atoms
@@ -375,7 +376,8 @@ class Database(DatabaseBaseClass):
             elif type(value) == bool:
                 bool_pairs += [(key, value, id)]
             else:
-                other_pairs += [(key, blob(value), id)]
+                value_converted =  pickle.dumps(value, pickle.HIGHEST_PROTOCOL)
+                other_pairs += [(key, value_converted, id)]
         
         cur.executemany('INSERT INTO text_key_values VALUES (?, ?, ?)', text_pairs)
         cur.executemany('INSERT INTO float_key_values VALUES (?, ?, ?)', float_pairs)
@@ -386,7 +388,7 @@ class Database(DatabaseBaseClass):
     def read_key_value_pairs(self, id=0):
         dict_recreation = {}
         tables = ['text_key_values', 'float_key_values', 'int_key_values', 'boolean_key_values', 'other_key_values']
-        functions = [nothing, nothing, nothing, bool, deblob]
+        functions = [nothing, nothing, nothing, bool, pickle.loads]
 
         cur = self.con.cursor()
         for table, func in zip(tables, functions):
@@ -401,7 +403,7 @@ class Database(DatabaseBaseClass):
         cursor = self.con.cursor()
 
         tables = ['text_key_values', 'float_key_values', 'int_key_values', 'boolean_key_values', 'other_key_values']
-        functions = [nothing, nothing, nothing, bool, deblob]
+        functions = [nothing, nothing, nothing, bool, pickle.loads]
 
         dict_of_dicts = {} # Uses the id as the key to the meta information dict for each candidate. (Id from structures table).
 
