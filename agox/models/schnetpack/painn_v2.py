@@ -99,14 +99,14 @@ class PaiNN(ModelBaseClass):
         }
         self.loss_settings = {**loss_settings,
                               **{
-                                  'energy_weight': 0.01
+                                  'energy_weight': 0.01,
                                   'forces_weight': 0.99
                               }
         }
         self.learning_settings = {**learning_settings,
-                                  {
+                                  **{
                                       'optimizer_cls': torch.optim.AdamW,
-                                      'optimizer_args': {"lr": 1e-3},
+                                      'optimizer_args': {"lr": 1e-4},
                                       'scheduler_cls': spk.train.ReduceLROnPlateau,
                                       'scheduler_args': {'factor': 0.5, 'patience': 1000, 'verbose': True},
                                       'scheduler_monitor': 'val_loss',
@@ -151,8 +151,8 @@ class PaiNN(ModelBaseClass):
         
 
         # Model
-        representation = self.representation_cls(**self.representation_defaults)
-        pred_energy = spk.atomistic.Atomwise(n_in=self.representation_defaults.get('n_atom_basis'),
+        representation = self.representation_cls(**self.representation_settings)
+        pred_energy = spk.atomistic.Atomwise(n_in=self.representation_settings.get('n_atom_basis'),
                                              output_key='energy')
         pred_forces = spk.atomistic.Forces(energy_key='energy', force_key='forces')
 
@@ -196,6 +196,8 @@ class PaiNN(ModelBaseClass):
         if self.tensorboard:
             self.logger = pl.loggers.TensorBoardLogger(save_dir=str(self.base_path),
                                                        name=None, version=str(self.version))
+        else:
+            self.logger = False
 
 
         ########## FOR PREDICTION ##########
@@ -203,8 +205,6 @@ class PaiNN(ModelBaseClass):
             neighbor_list=trn.ASENeighborList(cutoff=self.cutoff),
             device=self.device.type,
             dtype=torch.float32,
-            transforms=None,
-            additional_inputs=None,
             
         )
             
