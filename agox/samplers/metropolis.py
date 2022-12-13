@@ -7,7 +7,7 @@ class MetropolisSampler(SamplerBaseClass):
 
     name = 'MetropolisSampler'
 
-    def __init__(self, database=None, temperature=1, gets={'get_key':'evaluated_candidates'},
+    def __init__(self, temperature=1, gets={'get_key':'evaluated_candidates'},
         **kwargs):
         """
         Temperature: The selection temperature in eV. 
@@ -15,9 +15,6 @@ class MetropolisSampler(SamplerBaseClass):
         super().__init__(gets=gets, **kwargs)
 
         self.temperature = temperature
-        assert database is not None
-        self.database = database
-        self.candidate_to_consider = None
 
         self.reset_observer() # We remove observers added by the base-class. 
         self.add_observer_method(self.setup_sampler, gets=self.gets[0], sets=self.sets[0], order=self.order[0], handler_identifier='AGOX')
@@ -33,22 +30,9 @@ class MetropolisSampler(SamplerBaseClass):
     def setup_sampler(self, state):
         if self.do_check():            
             evaled_candidates = state.get_from_cache(self, self.get_key)
-            for candidate in evaled_candidates:
-                self.setup(candidate)
-
-            # This makes sure the 'Accepted' key to meta-information is updated
-            # both on disk and in memory. 
-            # database.update_meta_information(candidate.meta_information, 
-            # database_index=candidate.get_meta_information('database_index'),
-            # memory_index=len(database)-1)
-
-            # self.writer(f'Candidate accepted = {candidate.get_meta_information("accepted")}')
-            # self.writer(f'Memory index: {len(database)-1}')
-            # self.writer(f'Database index: {candidate.get_meta_information("database_index")}')
-
-            # self.writer('DATABASE CHECK')
-            # for i, cand in enumerate(database.candidates):
-            #     self.writer(f'Cand {i}: {cand.get_meta_information("accepted")}')
+            evaled_candidates = list(filter(None, evaled_candidates))
+            best_candidate = evaled_candidates[np.argmin([atoms.get_potential_energy() for atoms in evaled_candidates])]
+            self.setup(best_candidate)
 
     def setup(self, potential_step):
         # If the current sample is not empty
