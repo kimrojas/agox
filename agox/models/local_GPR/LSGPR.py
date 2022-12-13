@@ -26,7 +26,7 @@ class LSGPRModel(ModelBaseClass):
     
     implemented_properties = ['energy', 'forces']
 
-    dynamic_attributes = ['Xm', 'K_inv', 'Kmm_inv', 'alpha', 'single_atom_energies']
+    dynamic_attributes = ['Xm', 'K_inv', 'Kmm_inv', 'alpha']
 
     """ Local GPR model with uniform sparsification
 
