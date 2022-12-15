@@ -22,7 +22,10 @@ from agox.observer import Observer
 
 class PaiNN(ModelBaseClass):
     name = 'PaiNN-model'
+
     implemented_properties = ['energy', 'forces']
+
+    dynamic_attributes = ['nnpot']
 
     """ SchNetPack PaiNN model
 
@@ -44,6 +47,8 @@ class PaiNN(ModelBaseClass):
             max_epochs_per_iteration=10,
             representation_cls=PaiNN,
             base_path='',
+            training_device=None,
+            prediction_device=None,
             db_name='dataset.db',
             transfer_data=None,
             tensorboard=False,
@@ -57,7 +62,15 @@ class PaiNN(ModelBaseClass):
         if seed is not None:
             seed_everything(seed, workers=True)
 
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        if training_device is None:
+            self.training_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        else:
+            self.training_device = torch.device(training_device)
+
+        if prediction_device is None:
+            self.prediction_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        else:
+            self.prediction_device = torch.device(prediction_device)
 
         self.base_path = Path(base_path)
 
@@ -166,7 +179,6 @@ class PaiNN(ModelBaseClass):
                 trn.CastTo64(),
             ]
         )
-        self.nnpot.to(device=self.device.type)
 
         # Output
         output_energy = spk.task.ModelOutput(
@@ -204,7 +216,7 @@ class PaiNN(ModelBaseClass):
         ########## FOR PREDICTION ##########
         self.converter = AtomsConverter(
             neighbor_list=trn.ASENeighborList(cutoff=self.cutoff),
-            device=self.device.type,
+            device=self.prediction_device.type,
             dtype=torch.float32,
             
         )
@@ -243,21 +255,23 @@ class PaiNN(ModelBaseClass):
         self.verbose = verbose
     
     
-    def calculate(self, atoms=None, properties=['energy'], system_changes=all_changes):
+    def calculate(self, atoms=None, properties=['energy', 'forces'], system_changes=all_changes):
         Calculator.calculate(self, atoms, properties, system_changes)
         
         self.nnpot.eval()
-        self.nnpot.to(device=self.device.type)
+        self.nnpot.to(device=self.prediction_device.type)#, dtype=torch.float64)
         
         model_inputs = self.converter(atoms)
         model_results = self.nnpot(model_inputs)
-
         if 'energy' in properties:
             e = model_results['energy'].cpu().data.numpy()[0]
+            # print('Energy pred:', type(e), e, flush=True)
             self.results['energy'] = e
         
         if 'forces' in properties:
-            self.results['forces'] = model_results['forces'].cpu().data.numpy()
+            f = model_results['forces'].cpu().data.numpy()
+            # print('Forces pred:', type(f), f.shape, flush=True)
+            self.results['forces'] = f
 
 
     ####################################################################################################################
@@ -266,7 +280,7 @@ class PaiNN(ModelBaseClass):
 
     def predict_energy(self, atoms=None, X=None, return_uncertainty=False):
         self.nnpot.eval()
-        self.nnpot.to(device=self.device.type)
+        self.nnpot.to(device=self.prediction_device.type)
         
         model_inputs = self.converter(atoms)
         model_results = self.nnpot(model_inputs)
@@ -276,7 +290,7 @@ class PaiNN(ModelBaseClass):
 
     def predict_energies(self, atoms_list):
         self.nnpot.eval()
-        self.nnpot.to(device=self.device.type)        
+        self.nnpot.to(device=self.prediction_device.type)        
         
         model_inputs = self.converter(atoms_list)
         model_results = self.nnpot(model_inputs)
@@ -296,7 +310,7 @@ class PaiNN(ModelBaseClass):
 
     def predict_forces(self, atoms, return_uncertainty=False, **kwargs):
         self.nnpot.eval()
-        self.nnpot.to(device=self.device.type)
+        self.nnpot.to(device=self.prediction_device.type)
         
         model_inputs = self.converter(atoms)
         model_results = self.nnpot(model_inputs)
@@ -309,6 +323,7 @@ class PaiNN(ModelBaseClass):
         self.writer('Training PaiNN model')
         
         self.nnpot.train()
+        self.nnpot.to(device=self.training_device.type)
         
         self.ready_state = True
         self.atoms = None
@@ -321,14 +336,15 @@ class PaiNN(ModelBaseClass):
         dataset.setup()
 
         trainer = pl.Trainer(
-            accelerator=self.device.type,
-            devices=1,
+            accelerator=self.training_device.type,
+            # devices=1,
             callbacks=self.callbacks,
             logger=self.logger,
             default_root_dir=str(self.train_path),
             max_epochs=self.max_epochs_per_iteration,
             max_steps = self.max_steps_per_iteration,
             enable_progress_bar=False,
+            enable_model_summary=False,
         )
         
         trainer.fit(self.task, datamodule=dataset)
@@ -355,7 +371,7 @@ class PaiNN(ModelBaseClass):
             return
 
         all_data = database.get_all_candidates()
-        self.writer(f'lenght all data: {len(all_data)}')
+        self.writer(f'length all data: {len(all_data)}')
         
         if self.ready_state:
             full_update = False
@@ -375,7 +391,7 @@ class PaiNN(ModelBaseClass):
 
     
     def load_model(self, path):
-        self.nnpot = torch.load(path, map_location=self.device.type)
+        self.nnpot = torch.load(path, map_location=self.prediction_device.type)
 
 
     def add_data(self, data_list):
