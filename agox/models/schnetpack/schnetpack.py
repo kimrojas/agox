@@ -20,8 +20,8 @@ from agox.models.ABC_model import ModelBaseClass
 from agox.writer import agox_writer
 from agox.observer import Observer
 
-class PaiNN(ModelBaseClass):
-    name = 'PaiNN-model'
+class SchNetPackModel(ModelBaseClass):
+    name = 'SchNetPack-model'
 
     implemented_properties = ['energy', 'forces']
 
@@ -391,7 +391,9 @@ class PaiNN(ModelBaseClass):
 
     
     def load_model(self, path):
-        self.nnpot = torch.load(path, map_location=self.prediction_device.type)
+        state_dict = torch.load(path, map_location=self.prediction_device.type).state_dict()
+        self.nnpot.load_state_dict(state_dict)
+        
 
 
     def add_data(self, data_list):
