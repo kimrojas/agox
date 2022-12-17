@@ -49,8 +49,9 @@ class ConditionalSinglePointEvaluator(SinglePointEvaluator):
                 else:
                     do_dft_calculation = np.random.rand() < 0.02
                 if do_dft_calculation:
-                    candidate.set_calculator(self.calculator)
-                internal_state = self.evaluate_candidate(candidate)
+                    internal_state = self.evaluate_candidate(candidate)
+                else:
+                    internal_state = True
 
                 if internal_state:
                     self.writer('Succesful calculation of candidate.')
@@ -80,8 +81,6 @@ class ConditionalSinglePointEvaluator(SinglePointEvaluator):
                         sp_calc = SinglePointCalculator(a, energy=E, forces=F)
                         a.set_calculator(sp_calc)
                         new_dft_data.append(a)
-                    else:
-                        self.evaluated_candidates.pop()
 
                     if passed_evaluation_count == self.number_to_evaluate:
                         self.writer('Calculated required number of candidates.')
