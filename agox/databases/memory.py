@@ -25,7 +25,7 @@ class MemoryDatabase(DatabaseBaseClass):
         if dispatch:
             self.dispatch_to_observers(self)
 
-    def get_all_candidates(self, return_preset=True):
+    def get_all_candidates(self, return_preset=True, **kwargs):
         min_index = self.get_minimum_index(return_preset)
         all_candidates = []
         for candidate in self.candidates[min_index:]:
