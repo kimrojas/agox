@@ -1,5 +1,9 @@
 import os
 from pathlib import Path
+
+import io
+from contextlib import redirect_stdout, redirect_stderr
+
 import numpy as np
 
 import torch
@@ -19,6 +23,10 @@ from ase.calculators.calculator import Calculator, all_changes
 from agox.models.ABC_model import ModelBaseClass
 from agox.writer import agox_writer
 from agox.observer import Observer
+
+import logging
+logging.getLogger("pytorch_lightning").setLevel(logging.ERROR)
+
 
 class SchNetPackModel(ModelBaseClass):
     name = 'SchNetPack-model'
@@ -42,7 +50,7 @@ class SchNetPackModel(ModelBaseClass):
             representation_settings={},
             loss_settings={},
             learning_settings={},
-            learning_callbacks=[],
+            trainer_callbacks=[],
             max_steps_per_iteration=100,
             max_epochs_per_iteration=10,
             representation_cls=PaiNN,
@@ -51,7 +59,7 @@ class SchNetPackModel(ModelBaseClass):
             prediction_device=None,
             db_name='dataset.db',
             transfer_data=None,
-            tensorboard=False,
+            tensorboard=True,
             seed=None,
             **kwargs
     ):
@@ -86,6 +94,8 @@ class SchNetPackModel(ModelBaseClass):
 
         self.db_name = Path(db_name)
         self.data_path = self.train_path / self.db_name
+
+        self.trainer_iteration = 1
             
         self.cutoff = cutoff
         self.dataset_settings = {**dataset_settings,
@@ -125,8 +135,9 @@ class SchNetPackModel(ModelBaseClass):
                                       'scheduler_monitor': 'val_loss',
                                   }
         }
-        
-        self.callbacks = learning_callbacks
+
+        self.ckpt_path = self.train_path / 'last.ckpt'
+        self.callbacks = trainer_callbacks + [pl.callbacks.ModelCheckpoint(dirpath=str(self.train_path), filename='last', save_last=True)]
         # self.callbacks = [
         #     spk.train.ModelCheckpoint(
         #         model_path=str(self.train_path / Path('best_inference_model')),
@@ -321,33 +332,38 @@ class SchNetPackModel(ModelBaseClass):
     @agox_writer
     def train_model(self, training_data, **kwargs):
         self.writer('Training PaiNN model')
-        
         self.nnpot.train()
         self.nnpot.to(device=self.training_device.type)
-        
+
         self.ready_state = True
         self.atoms = None
 
         self.add_data(training_data)
-        
+
         # Dataloader
         dataset = AtomsDataModule(self.data_path, **self.dataset_settings)
         dataset.prepare_data()
         dataset.setup()
 
+        
         trainer = pl.Trainer(
             accelerator=self.training_device.type,
             # devices=1,
             callbacks=self.callbacks,
             logger=self.logger,
             default_root_dir=str(self.train_path),
-            max_epochs=self.max_epochs_per_iteration,
-            max_steps = self.max_steps_per_iteration,
+            max_epochs=self.trainer_iteration*self.max_epochs_per_iteration,
+            max_steps = self.trainer_iteration*self.max_steps_per_iteration,
             enable_progress_bar=False,
             enable_model_summary=False,
+            
         )
+        ckpt_path = str(self.ckpt_path) if self.trainer_iteration > 1 else None
+        trainer.fit(self.task, datamodule=dataset, ckpt_path=ckpt_path)
         
-        trainer.fit(self.task, datamodule=dataset)
+        self.trainer_iteration += 1
+
+
 
             
     @agox_writer
