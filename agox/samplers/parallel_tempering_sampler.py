@@ -125,12 +125,4 @@ class ParallelTemperingSampler(MetropolisSampler):
         return candidate
 
     def decide_to_swap(self, database):
-        return (self.get_iteration_counter() % self.swap_frequency == 0) * (database.total_workers > 1)
-
-    def get_candidate_to_consider(self):        
-        candidates = self.get_from_cache(self.get_key)
-
-        if candidates is None or not len(candidates) > 0:
-            return None
-        return candidates[-1]   # take the latest evaluated candidate
-    
+        return (self.get_iteration_counter() % self.swap_frequency == 0) * (database.total_workers > 1)    
