@@ -12,6 +12,12 @@ class DescriptorBaseClass(ABC, Module):
         Module.__init__(self, surname=surname)
         assert np.array([feature_type in all_feature_types for feature_type in self.feature_types]).all(), 'Unknown feature type declared.'
 
+
+    ##########################################################################################################
+    # Create methods - Implemented by classes that inherit from this base-class.
+    # Not called directly by methods of other classes. 
+    ##########################################################################################################
+
     def create_global_features(self, atoms):
         """
         Method to implement on child classes that does the calculate of 
@@ -91,6 +97,10 @@ class DescriptorBaseClass(ABC, Module):
         A single global feature gradient.
         """
         pass
+
+    ##########################################################################################################
+    # Get methods - Ones to use in other scripts.
+    ##########################################################################################################
 
     def get_global_features(self, atoms):
         """
