@@ -170,8 +170,8 @@ class DistanceComparator:
         return self.compare_candidates(candidate_A, candidate_B)
 
     def compare_candidates(self, candidate_A, candidate_B):
-        feature_A = self.get_global_features(candidate_A)
-        feature_B = self.get_global_features(candidate_B)
+        feature_A = self.get_feature(candidate_A)
+        feature_B = self.get_feature(candidate_B)
 
         return np.linalg.norm(feature_A-feature_B) < self.threshold
 
@@ -179,7 +179,7 @@ class DistanceComparator:
         feature = candidate.get_meta_information('population_feature')
 
         if feature is None:
-            feature = self.descriptor.get_feature(candidate)
+            feature = self.descriptor.get_global_features(candidate)[0]
             candidate.add_meta_information('population_feature', feature)
         
         return feature

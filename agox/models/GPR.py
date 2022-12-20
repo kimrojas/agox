@@ -378,7 +378,7 @@ class ModelGPR(ModelBaseClass):
             delta = None
         
         gpr = GPR(kernel=kernel,
-                featureCalculator=descriptor,
+                descriptor=descriptor,
                 delta_function=delta,
                 bias_func=None,
                 optimize=True,
