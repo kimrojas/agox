@@ -406,7 +406,7 @@ class SchNetPackModel(ModelBaseClass):
         
 
     
-    def load_model(self, path):
+    def load(self, path):
         state_dict = torch.load(path, map_location=self.prediction_device.type).state_dict()
         self.nnpot.load_state_dict(state_dict)
         
