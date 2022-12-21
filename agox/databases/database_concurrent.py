@@ -65,7 +65,8 @@ class ConcurrentDatabase(Database):
         self.worker_number = worker_number
         self.total_workers = total_workers
         self.sync_frequency = sync_frequency
-        self.synchronous = synchronous 
+        self.synchronous = synchronous
+        self.sleep_timing = sleep_timing
 
         self.filename_ready = self.filename[:-3] + '_WORKER{}_READY{}'                
         self.filename_done = self.filename[:-3] + '_WORKER{}_DONE{}'
@@ -168,7 +169,6 @@ class ConcurrentDatabase(Database):
                 sleep(self.sleep_timing)
                 state = self.cleanup()                    
 
-        
         self.writer('Number of candidates synced from database {}'.format(len(self)))
 
     def asynchronous_update(self):
