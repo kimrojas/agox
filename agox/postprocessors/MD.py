@@ -25,7 +25,7 @@ class MDPostprocess(PostprocessBaseClass):
             thermostat_kwargs={'timestep':1.*fs, 'temperature_K':10, 'taut':50*fs},
             prepare_candidate_cls=[MaxwellBoltzmannDistribution, ZeroRotation, Stationary],
             prepare_candidate_kwargs=[{'temperature_K':10}, {}, {}],
-            temperature_scheme={10: 20, 30: 50, 5: 20},
+            temperature_scheme=[(10,12), (30,60), (5,20)],
             log=True,
             logging_interval=1,
             constraints=[],
@@ -74,7 +74,7 @@ class MDPostprocess(PostprocessBaseClass):
         if self.log:
             dyn.attach(self.write_observer, interval=self.logging_interval, c=candidate, dyn=dyn)
             
-        for temp, steps in self.temperature_scheme.items():
+        for temp, steps in self.temperature_scheme:
             self.writer(f'MD at {temp}K for {steps} steps.')
             dyn.set_temperature(temperature_K=temp)
             dyn.run(steps)
