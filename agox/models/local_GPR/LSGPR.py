@@ -23,7 +23,10 @@ from agox.observer import Observer
 
 class LSGPRModel(ModelBaseClass):
     name = 'LSGPRModel'
+    
     implemented_properties = ['energy', 'forces']
+
+    dynamic_attributes = ['Xm', 'K_inv', 'Kmm_inv', 'alpha']
 
     """ Local GPR model with uniform sparsification
 
