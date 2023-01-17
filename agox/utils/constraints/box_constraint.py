@@ -20,7 +20,7 @@ class BoxConstraint(Confinement):
         return a*x+b
 
     def adjust_positions(self, atoms, newpositions):
-        inside = self.check_if_inside_box(newpositions[self.indices])
+        inside = self.check_confinement(newpositions[self.indices])
         #newpositions[not inside, :] = atoms.positions[not inside]        
         # New positions of those atoms that are not inside (so outside) the box are set inside the box.
 

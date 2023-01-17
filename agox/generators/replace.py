@@ -27,7 +27,7 @@ class ReplaceGenerator(GeneratorBaseClass):
                 new_position = self.get_new_position_center(candidate, index, indices_to_move) + displacement
 
                 # Check confinement limits:
-                if not self.check_confinement(new_position):
+                if not self.check_confinement(new_position).all():
                     continue
 
                 if self.check_new_position(candidate, new_position, candidate[index].number, skipped_indices=indices_to_move):

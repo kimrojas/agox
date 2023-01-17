@@ -48,7 +48,7 @@ class Confinement:
         positions = positions.reshape(-1, 3)
         return np.linalg.solve(self.effective_confinement_cell.T, (positions-self.confinement_corner)[:, 0:self.dimensionality].T).T.reshape(-1, self.dimensionality)
 
-    def check_if_inside_box(self, positions):
+    def check_confinement(self, positions):
         """
         Finds the fractional coordinates of the atomic positions in terms of the box defined by the constraint. 
         """
@@ -72,7 +72,8 @@ class Confinement:
     def set_confinement_cell(self, cell, confinement_corner):        
         self.confinement_cell = cell
         self.confinement_corner = confinement_corner
-        self.confined = True        
+        self.confined = True
+        self.confined = self.confinement_cell is not None and self.confinement_corner is not None
 
     def set_dimensionality(self, dimensionality):
         self.dimensionality = dimensionality
