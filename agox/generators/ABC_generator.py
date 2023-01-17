@@ -137,19 +137,6 @@ class GeneratorBaseClass(ABC, Observer, Writer, Confinement):
         return self._get_box_vector(self.confinement_cell, self.confinement_corner) # From confinement-class.
 
     ####################################################################################################################
-    # Convenience methods:
-    ####################################################################################################################
-
-    def set_confinement_cell(self, cell, confinement_corner):        
-        self.confinement_cell = cell
-        self.confinement_corner = confinement_corner
-        self.confined = True        
-
-    def set_dimensionality(self, dimensionality):
-        self.dimensionality = dimensionality
-
-
-    ####################################################################################################################
     # Observer functions
     ####################################################################################################################
 

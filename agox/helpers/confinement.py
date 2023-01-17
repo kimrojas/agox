@@ -69,4 +69,12 @@ class Confinement:
     def _get_box_vector(self, cell, corner):
         return cell.T @ np.random.rand(3) + corner
 
+    def set_confinement_cell(self, cell, confinement_corner):        
+        self.confinement_cell = cell
+        self.confinement_corner = confinement_corner
+        self.confined = True        
+
+    def set_dimensionality(self, dimensionality):
+        self.dimensionality = dimensionality
+
     
