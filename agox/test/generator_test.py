@@ -8,28 +8,7 @@ from agox.candidates import CandidateBaseClass
 
 from environment_test import environment_and_dataset
 
-@pytest.fixture
-def simple_settings():
-    return {'cell':np.eye(3) * 10,  'corner':np.zeros(3)}
-
-@pytest.fixture
-def simple_environment(simple_settings):
-    cell = simple_settings['cell']
-    corner = simple_settings['corner']
-    template = Atoms(cell=cell)
-    return Environment(template, symbols='H2C2', confinement_cell=cell, confinement_corner=corner)
-
-@pytest.fixture
-def simple_candidate(simple_environment, simple_settings):
-    return RandomGenerator(**simple_environment.get_confinement())(None, simple_environment)[0]
-
-@pytest.fixture
-def simple_sampler(simple_candidate):
-    sampler = MetropolisSampler()
-    sampler.sample = [simple_candidate]
-    return sampler
-
-@pytest.mark.parametrize('generator_class', [RandomGenerator])#, RattleGenerator, ReplaceGenerator, CenterOfGeometryGenerator])
+@pytest.mark.parametrize('generator_class', [RandomGenerator, RattleGenerator, ReplaceGenerator, CenterOfGeometryGenerator, SamplingGenerator])
 class TestGenerator:
 
     def assertions(self, candidates, environment, sampler):
@@ -57,35 +36,3 @@ class TestGenerator:
             if not candidates[0] == None:
                 break
         self.assertions(candidates, environment, sampler)
-
-
-
-    # def test_random_generator(self, simple_environment, simple_sampler):
-    #     generator = self.setup_generator(RandomGenerator, simple_environment)
-    #     candidates = generator(simple_sampler, simple_environment)
-    #     self.assertions(candidates, simple_environment, simple_sampler)
-
-    # def test_rattle_generator(self, simple_sampler, simple_environment):
-    #     generator = self.setup_generator(RattleGenerator, simple_environment)
-    #     candidates = generator(simple_sampler, simple_environment)
-
-    #     self.assertions(candidates, simple_environment, simple_sampler)
-
-    # def test_replace_generator(self, simple_sampler, simple_environment):
-    #     generator = self.setup_generator(ReplaceGenerator, simple_environment)
-    #     candidates = generator(simple_sampler, simple_environment)
-
-    #     self.assertions(candidates, simple_environment, simple_sampler)
-
-    # def test_cog_generator(self, simple_sampler, simple_environment):
-    #     generator = self.setup_generator(CenterOfGeometryGenerator, simple_environment)
-    #     candidates = generator(simple_sampler, simple_environment)
-
-    #     self.assertions(candidates, simple_environment, simple_sampler)
-
-    # def test_reuse_generator(self, simple_sampler, simple_environment):
-    #     generator = self.setup_generator(ReuseGenerator, simple_environment)
-    #     candidates = generator(simple_sampler, simple_environment)
-
-    #     self.assertions(candidates, simple_environment, simple_sampler)
-
