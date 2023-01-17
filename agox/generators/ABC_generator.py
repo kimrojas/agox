@@ -68,22 +68,6 @@ class GeneratorBaseClass(ABC, Observer, Writer, Confinement):
 
         return candidate
 
-    def check_confinement(self, positions):
-        """
-        Checks that all of the given positions are within the confinement cell. 
-        If B and c have not been specified it always returns True. 
-        """
-        if self.confined:
-            self.check_if_inside_box(positions).all() # From Confinement-inheritance.
-        else:
-            return True
-
-    def check_positions_within_confinement(self, positions):
-        """
-        Returns boolean array indicating which atoms are within the confinement limits. 
-        """
-        return self.check_if_inside_box(positions)
-
     def check_new_position(self, candidate, new_position, number, skipped_indices=[]):
         """
         Checks if new positions is not too close or too far to any other atom. 
