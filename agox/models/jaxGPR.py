@@ -32,17 +32,17 @@ class GPR(ModelBaseClass):
         # F_i = - dE / dr_i = dE/dk dk/df df/dr_i = - alpha dk/df df_dr_i
         f = np.array(self.descriptor.get_global_features(atoms)[0]).reshape(1, -1)
         dfdr = np.array(self.descriptor.get_global_feature_gradient(atoms)[0])
-        dkdf = self.kernel.feature_gradient(self.X, f)
+        dkdf = self.kernel.get_feature_gradient(self.X, f)
         dkdr = np.dot(dkdf, dfdr.T)
         return - np.dot(dkdr.T, self.alpha).reshape(-1,3)
     
     def train_model(self, training_data):
         self.X, self.Y = self.preprocess(training_data)
         self.K = self.kernel(self.X)
-        self.K = self.K.at[np.diag_indices_from(self.K)].add(self.noise**2)
+        #self.K = self.K.at[np.diag_indices_from(self.K)].add(self.noise**2)
         
-        initial_parameters = []
-        initial_parameters.append(self.kernel.theta.copy())
+        #initial_parameters = []
+        #initial_parameters.append(self.kernel.theta.copy())
         if self.n_optimize > 0:
             for _ in range(self.n_optimize-1):
                 self.key, key = random.split(self.key)
@@ -62,7 +62,7 @@ class GPR(ModelBaseClass):
 
 
         self.K = self.kernel(self.X)
-        self.K = self.K.at[np.diag_indices_from(self.K)].add(self.noise**2)            
+        #self.K = self.K.at[np.diag_indices_from(self.K)].add(self.noise**2)            
         self.alpha, _, _ = self._solve(self.K, self.Y)
     
     def hyperparameter_search(self):
@@ -106,7 +106,7 @@ class GPR(ModelBaseClass):
     @partial(jit, static_argnums=(0,))
     def _marginal_log_likelihood(self, theta):
         K = self.kernel(self.X, theta=theta)
-        K = K.at[np.diag_indices_from(self.K)].add(self.noise**2)
+        #K = K.at[np.diag_indices_from(self.K)].add(self.noise**2)
         
         alpha, K_inv, (L, lower) = self._solve(K, self.Y)
 
@@ -120,7 +120,7 @@ class GPR(ModelBaseClass):
     def _marginal_log_likelihood_gradient(self, theta):
         K, K_hp_gradient = self.kernel.theta_gradient(self.X, theta=theta)
         # K = self.kernel(self.X, theta=theta)
-        K = K.at[np.diag_indices_from(self.K)].add(self.noise**2)
+        # K = K.at[np.diag_indices_from(self.K)].add(self.noise**2)
         
         alpha, K_inv, (L, lower) = self._solve(K, self.Y)
 
