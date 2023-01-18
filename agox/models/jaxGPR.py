@@ -9,11 +9,12 @@ from bootcamp2022.gpr.ABC_model import ModelBaseClass
 
 from time import time, sleep
 
+
 class GPR(ModelBaseClass):
     name = 'JaxGPR'
     implemented_properties = ['energy', 'forces']
 
-    def __init__(self, descriptor, kernel, noise=0.1, n_optimize=-1, seed=0, **kwargs):    
+    def __init__(self, descriptor, kernel, noise=0.1, n_optimize=-1, seed=0, optimizer_maxiter=100,**kwargs):    
         ModelBaseClass.__init__(self, **kwargs)
         
         self.descriptor = descriptor
@@ -21,11 +22,12 @@ class GPR(ModelBaseClass):
         self.noise = noise
         self.n_optimize = n_optimize        
         self.key = random.PRNGKey(seed)
+        self.optimizer_maxiter = optimizer_maxiter
         
     def predict_energy(self, atoms):
         x = np.array(self.descriptor.get_global_features(atoms)[0]).reshape(1,-1)
         k = self.kernel(x, self.X)
-        e_pred = k @ self.alpha
+        e_pred = float(k @ self.alpha)
         return self.postprocess(e_pred)
 
     def predict_forces(self, atoms):
@@ -38,18 +40,16 @@ class GPR(ModelBaseClass):
     
     def train_model(self, training_data):
         self.X, self.Y = self.preprocess(training_data)
-        self.K = self.kernel(self.X)
-        #self.K = self.K.at[np.diag_indices_from(self.K)].add(self.noise**2)
+#        self.K = self.kernel(self.X)
         
-        #initial_parameters = []
-        #initial_parameters.append(self.kernel.theta.copy())
+        initial_parameters = []
+        initial_parameters.append(self.kernel.theta.copy())
         if self.n_optimize > 0:
             for _ in range(self.n_optimize-1):
                 self.key, key = random.split(self.key)
                 init_theta = random.uniform(key, shape=(len(self.kernel.bounds),), minval=self.kernel.bounds[:,0], maxval=self.kernel.bounds[:,1])
                 initial_parameters.append(init_theta)
             
-            # Something is wrong with this. Hyperparameter optimization makes the model VERY bad. 
             fmins = []
             thetas = []
             for init_theta in initial_parameters:
@@ -62,15 +62,14 @@ class GPR(ModelBaseClass):
 
 
         self.K = self.kernel(self.X)
-        #self.K = self.K.at[np.diag_indices_from(self.K)].add(self.noise**2)            
-        self.alpha, _, _ = self._solve(self.K, self.Y)
+        self.alpha, _ = self._solve_alpha(self.K, self.Y)
     
     def hyperparameter_search(self):
         pass
 
+    # @partial(jit, static_argnums=(0,))    
     def hyperparameter_optimize(self, init_theta=None):
         def f(theta):
-            # P = self._marginal_log_likelihood(theta)
             P, grad_P = self._marginal_log_likelihood_gradient(theta)
             if np.isnan(P):
                 return np.inf, numpy.zeros_like(theta, dtype='float64')
@@ -83,10 +82,9 @@ class GPR(ModelBaseClass):
             self.key, key = random.split(self.key)
             init_theta = random.uniform(key, shape=(len(bounds),), minval=bounds[:,0], maxval=bounds[:,1])
             
-        # print('initial f:', np.exp(init_theta), f(init_theta))
-        
         theta_min, fmin, conv = fmin_l_bfgs_b(f, numpy.asarray(init_theta, dtype='float64'),
-                                              bounds=numpy.asarray(bounds, dtype='float64'))
+                                              bounds=numpy.asarray(bounds, dtype='float64'),
+                                              maxiter=self.optimizer_maxiter)
 
         return theta_min, fmin
     
@@ -103,10 +101,12 @@ class GPR(ModelBaseClass):
         K_inv = cho_solve((L, lower), np.eye(K.shape[0]))
         return alpha, K_inv, (L, lower)
 
-    @partial(jit, static_argnums=(0,))
+    # @partial(jit, static_argnums=(0,))
     def _marginal_log_likelihood(self, theta):
-        K = self.kernel(self.X, theta=theta)
-        #K = K.at[np.diag_indices_from(self.K)].add(self.noise**2)
+        t = self.kernel.theta.copy()
+        self.kernel.theta = theta        
+        K = self.kernel(self.X)
+        self.kernel.theta = t        
         
         alpha, K_inv, (L, lower) = self._solve(K, self.Y)
 
@@ -116,11 +116,12 @@ class GPR(ModelBaseClass):
 
         return np.sum(log_P)
 
-    # @partial(jit, static_argnums=(0,))    
+    # @partial(jit, static_argnums=(0,))
     def _marginal_log_likelihood_gradient(self, theta):
-        K, K_hp_gradient = self.kernel.theta_gradient(self.X, theta=theta)
-        # K = self.kernel(self.X, theta=theta)
-        # K = K.at[np.diag_indices_from(self.K)].add(self.noise**2)
+        t = self.kernel.theta.copy()
+        self.kernel.theta = theta
+        K, K_hp_gradient = self.kernel(self.X, eval_gradient=True)
+        self.kernel.theta = t
         
         alpha, K_inv, (L, lower) = self._solve(K, self.Y)
 
@@ -128,12 +129,12 @@ class GPR(ModelBaseClass):
             - np.sum(np.log(np.diag(L))) \
             - K.shape[0] / 2 * np.log(2 * np.pi)
         
-        
         inner = np.squeeze(np.einsum("ik,jk->ijk", alpha, alpha), axis=2) - K_inv
         inner = inner[:,:,np.newaxis]
         
         grad_log_P = np.sum(0.5 * np.einsum("ijl,ijk->kl", inner, K_hp_gradient), axis=-1)
         return log_P, grad_log_P
+
     
     def preprocess(self, data):
         Y = np.expand_dims(np.array([d.get_potential_energy() for d in data]), axis=1)
