@@ -36,6 +36,9 @@ class MetropolisSampler(SamplerBaseClass):
                 self.setup(best_candidate)
 
     def setup(self, potential_step):
+        if isinstance(potential_step, list):
+            potential_step = potential_step[-1]
+
         # If the current sample is not empty
         if len(self.sample) > 0:
             chosen_candidate = self.sample[0]
