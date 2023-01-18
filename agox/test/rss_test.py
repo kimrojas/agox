@@ -14,6 +14,7 @@ def test_rss(tmp_path):
 
     d = tmp_path / "rss"
     d.mkdir()
+    start_dir = os.getcwd()
     os.chdir(d)
 
     ##############################################################################
@@ -56,3 +57,5 @@ def test_rss(tmp_path):
     agox = AGOX(random_generator, database, evaluator)
 
     agox.run(N_iterations=10)
+
+    os.chdir(start_dir)
