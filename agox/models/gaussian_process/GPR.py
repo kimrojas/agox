@@ -28,7 +28,7 @@ class GPR(Writer):
     comparator_kwargs:
     Parameters for the compator. This could be the width for the gaussian kernel.
     """
-    def __init__(self, kernel, featureCalculator, delta_function=None, bias_func=None, optimize=True, n_restarts_optimizer=0, constraint_small_kernel_width=False,use_delta_in_training=False, 
+    def __init__(self, kernel, descriptor, delta_function=None, bias_func=None, optimize=True, n_restarts_optimizer=0, constraint_small_kernel_width=False,use_delta_in_training=False, 
                  verbose=True, n_maxiter_optimizer=None):
         Writer.__init__(self, verbose=verbose)
 
@@ -38,7 +38,7 @@ class GPR(Writer):
             print('#'*50)
 
         self.kernel = kernel
-        self.featureCalculator = featureCalculator
+        self.descriptor = descriptor
         self.optimize = optimize
         self.n_restarts_optimizer = n_restarts_optimizer
         self.constraint_small_kernel_width = constraint_small_kernel_width
@@ -58,7 +58,7 @@ class GPR(Writer):
         """
         if K_vec is None:
             if fnew is None:
-                fnew = self.featureCalculator.get_feature(atoms)
+                fnew = self.descriptor.get_global_features(atoms)[0]
             K_vec = self.kernel_.get_kernel(self.featureMat, fnew).reshape(-1)
 
         if delta_value is None:
@@ -96,9 +96,9 @@ class GPR(Writer):
         
         # Calculate features and their gradients if not given
         if fnew is None:
-            fnew = self.featureCalculator.get_feature(atoms)
+            fnew = self.descriptor.get_global_features(atoms)[0]
         if fgrad is None:
-            fgrad = self.featureCalculator.get_featureGradient(atoms)
+            fgrad = self.descriptor.get_global_feature_gradient(atoms)[0]
         dk_df = self.kernel_.get_kernel_jac(self.featureMat, fnew)
         
         # Calculate contribution from delta-function
@@ -199,7 +199,7 @@ class GPR(Writer):
         
         if features is None:
             t = time.time()
-            features = self.featureCalculator.get_featureMat(atoms_list)
+            features = np.array(self.descriptor.get_global_features(atoms_list))
             if self.verbose:
                 self.writer('Feature time: %4.4f' %(time.time()-t))
             
