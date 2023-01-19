@@ -40,12 +40,16 @@ class GPR(ModelBaseClass):
     
     def train_model(self, training_data):
         self.X, self.Y = self.preprocess(training_data)
-#        self.K = self.kernel(self.X)
-        
+        # self.K = self.kernel(self.X)
+        self.hyperparameter_search()
+        self.K = self.kernel(self.X)
+        self.alpha, _ = self._solve_alpha(self.K, self.Y)
+    
+    def hyperparameter_search(self):
         initial_parameters = []
         initial_parameters.append(self.kernel.theta.copy())
         if self.n_optimize > 0:
-            for _ in range(self.n_optimize-1):
+            for _ in range(self.n_optimize):
                 self.key, key = random.split(self.key)
                 init_theta = random.uniform(key, shape=(len(self.kernel.bounds),), minval=self.kernel.bounds[:,0], maxval=self.kernel.bounds[:,1])
                 initial_parameters.append(init_theta)
@@ -58,14 +62,7 @@ class GPR(ModelBaseClass):
                 thetas.append(theta_min)
 
             self.kernel.theta = thetas[np.argmin(np.array(fmins))]
-            print('optimize results:', np.exp(self.kernel.theta), np.argmin(np.array(fmins)))
 
-
-        self.K = self.kernel(self.X)
-        self.alpha, _ = self._solve_alpha(self.K, self.Y)
-    
-    def hyperparameter_search(self):
-        pass
 
     # @partial(jit, static_argnums=(0,))    
     def hyperparameter_optimize(self, init_theta=None):
