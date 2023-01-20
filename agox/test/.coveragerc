@@ -1,5 +1,6 @@
 [run]
 source = ../acquisitors, ../candidates, ../collectors, ../databases, ../environments, ../evaluators, ../generators, ../helpers, ../models, ../postprocessors, ../samplers, ../utils, ../
+parallel = False
 
 [report]
 # Regexes for lines to exclude from consideration
