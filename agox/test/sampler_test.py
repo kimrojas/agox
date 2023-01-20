@@ -5,6 +5,7 @@ from agox.models.descriptors.fingerprint import Fingerprint
 from agox.models import ModelGPR
 
 from agox.candidates.ABC_candidate import CandidateBaseClass
+from agox.test.test_utils import TemporaryFolder
 
 def base_setup(environment, dataset):
 
@@ -41,27 +42,30 @@ def spectral_graph_setup(environment, dataset):
     [SpectralGraphSampler, {}, spectral_graph_setup],
     [KernelSimSampler, {}, kmeans_setup]
 ])
-def test_sampler(sampler_class, setup_kwargs, setup_func, environment_and_dataset):
-    environment, dataset = environment_and_dataset
+def test_sampler(sampler_class, setup_kwargs, setup_func, environment_and_dataset, tmp_path):
 
-    additional_kwargs = setup_func(environment, dataset)
-    args_func = additional_kwargs.pop('args_func')
-    sampler = sampler_class(**setup_kwargs, **additional_kwargs)
-    sampler.iteration_counter = 0
+    with TemporaryFolder(tmp_path):
 
-    candidate = sampler.get_random_member() # Empty sampler should return None.
-    assert candidate is None
+        environment, dataset = environment_and_dataset
 
-    sampler.setup(dataset, *args_func(dataset))
-    member = sampler.get_random_member()
-    all_members = sampler.get_all_members()
-    member_calc = sampler.get_random_member_with_calculator()
+        additional_kwargs = setup_func(environment, dataset)
+        args_func = additional_kwargs.pop('args_func')
+        sampler = sampler_class(**setup_kwargs, **additional_kwargs)
+        sampler.iteration_counter = 0
 
-    assert issubclass(member.__class__, CandidateBaseClass)
-    assert isinstance(all_members, list)
-    assert member_calc.get_potential_energy()
-    assert len(sampler) != 0
-    assert len(sampler) == len(all_members)
+        candidate = sampler.get_random_member() # Empty sampler should return None.
+        assert candidate is None
+
+        sampler.setup(dataset, *args_func(dataset))
+        member = sampler.get_random_member()
+        all_members = sampler.get_all_members()
+        member_calc = sampler.get_random_member_with_calculator()
+
+        assert issubclass(member.__class__, CandidateBaseClass)
+        assert isinstance(all_members, list)
+        assert member_calc.get_potential_energy()
+        assert len(sampler) != 0
+        assert len(sampler) == len(all_members)
 
 
 
