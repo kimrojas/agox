@@ -297,7 +297,7 @@ class ModelGPR(ModelBaseClass):
     @classmethod
     def default(cls, environment=None, database=None, temp_atoms=None, lambda1min=1e-1, lambda1max=1e3, lambda2min=1e-1, lambda2max=1e3, 
                 theta0min=1, theta0max=1e5, beta=0.01, use_delta_func=True, sigma_noise = 1e-2,
-                descriptor=None, kernel=None, max_iterations=None, max_training_data=1000):
+                descriptor=None, kernel=None, max_iterations=None, max_training_data=1000, use_delta_in_training=False):
 
         """
         Creates a GPR model. 
