@@ -6,7 +6,7 @@ def eval_gauss(r, x, width):
 
 class SimpleFingerprint(DescriptorBaseClass):
 
-    feature_types = ['local']
+    feature_types = ['local', 'global']
     name = 'SimpleFingerprint'
 
     def __init__(self, species, Nbins=30, width=0.2, r_cut=3, separate_center_species=True):
@@ -43,3 +43,6 @@ class SimpleFingerprint(DescriptorBaseClass):
                 else:
                     descriptor[i, idx_sym_j] += 0.5*eval_gauss(r_ij, self.r_bins, self.width) / r_ij**2
         return descriptor.reshape(Natoms, -1)
+
+    def create_global_features(self, atoms):
+        return np.sum(self.create_local_features(atoms), axis=0)
