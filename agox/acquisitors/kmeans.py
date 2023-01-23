@@ -37,7 +37,8 @@ class KmeansAcquisitor(AcquisitorBaseClass):
                 k = self.k
 
             # Get features                
-            X = np.array([self.descriptor.get_feature(candidate) for candidate in candidates])
+            #X = np.array([self.descriptor.get_global_feature(candidate) for candidate in candidates])
+            X = np.array(self.descriptor.get_global_features(candidates))
             if X.ndim == 3: # (Structure, atoms, features) -- sum away the atoms dimension to get (structure, features)                
                 X = np.sum(X, axis=1)
 
