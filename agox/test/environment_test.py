@@ -5,15 +5,11 @@ from agox.candidates import StandardCandidate
 from ase import Atoms
 import numpy as np
 
-dataset_params = [
-    {'path':'datasets/AgO-dataset.traj', 'remove':6}, 
-    {'path':'datasets/B12-dataset.traj', 'remove':12},        
-    {'path':'datasets/C30-dataset.traj', 'remove':30},
-    ]
+from agox.test.test_utils import test_data_dicts
 
-@pytest.fixture(params=dataset_params)
+@pytest.fixture(params=test_data_dicts)
 def environment_and_dataset(request):
-    atoms = read(request.param['path'])    
+    atoms = read(request.param['path'])
     cell = atoms.get_cell()
     corner = np.array([0, 0, 0])
     remove = request.param['remove']

@@ -1,18 +1,18 @@
 import pytest
 import numpy as np
-from agox.generators import RandomGenerator
+from agox.generators import RattleGenerator
 from agox.test.generator_tests.generator_utils import generator_test, get_test_environment, get_test_sampler, save_expected_data, load_expected_data, get_test_data
 from agox.test.test_utils import test_data_dicts
 
 seed = 1
 generator_args = []
 generator_base_kwargs = {'c1':0.75, 'c2':1.25, 'dimensionality':3}
-generator_class = RandomGenerator
+generator_class = RattleGenerator
 
 list_of_other_kwargs = [
-    {}, # Tests that defaults havent changed. 
-    {'may_nucleate_at_several_places':False},
-    {'may_nucleate_at_several_places':True},
+    {},
+    {'n_rattle':3, 'rattle_amplitude':3},
+    {'n_rattle':5, 'rattle_amplitude':5}
     ]
 
 for index, dictionary in enumerate(list_of_other_kwargs):
