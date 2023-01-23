@@ -37,7 +37,7 @@ class RandomGenerator(GeneratorBaseClass):
                     vec = self.get_sphere_vector(atomic_number, placed_atom.number) 
                     suggested_position += vec
 
-                if not self.check_confinement(suggested_position):
+                if not self.check_confinement(suggested_position).all():
                     build_succesful = False
                     continue
                 
