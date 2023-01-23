@@ -96,12 +96,12 @@ class AGOXGenerator(GeneratorBaseClass):
         from agox.generators import RandomGenerator, PermutationGenerator, RattleGenerator, SamplingGenerator
         from agox.samplers import KMeansSampler
         from agox.databases.memory import MemoryDatabase
-        from agox.collectors import ParallelCollector
         from agox.acquisitors import LowerConfidenceBoundAcquisitor
-        from agox.postprocessors import ParallelRelaxPostprocess
         from agox.models import ModelGPR
         from agox.postprocessors import WrapperPostprocess
         from agox.evaluators import LocalOptimizationEvaluator
+        from agox.collectors.ray_collector import ParallelCollector
+        from agox.postprocessors.ray_relax import ParallelRelaxPostprocess
 
         if constraints is None:
             constraints = environment.get_constraints()
@@ -177,7 +177,8 @@ class AGOXGenerator(GeneratorBaseClass):
 
         return cls(modules=internal_agox_modules, database=internal_database, 
                    main_database=database, iterations=iterations,
-                   strucs_for_inner_database=strucs_for_inner_database, template=environment.get_template())
+                   strucs_for_inner_database=strucs_for_inner_database, template=environment.get_template(), 
+                   **environment.get_confinement())
 
     @classmethod
     def get_rss_generator(cls, environment, database, calculator, iterations=25, prefix='INNER AGOX ', 
