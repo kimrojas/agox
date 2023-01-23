@@ -1,5 +1,27 @@
 [run]
-source = ../acquisitors, ../candidates, ../collectors, ../databases, ../environments, ../evaluators, ../generators, ../helpers, ../models, ../postprocessors, ../samplers, ../utils, ../
+
+source = 
+        ../acquisitors/
+        ../candidates/
+        ../collectors/
+        ../databases/
+        ../environments/
+        ../evaluators/
+        ../generators/
+        ../helpers/
+        ../models/
+        ../postprocessors/
+        ../samplers/
+        ../utils/
+        ../
+
+omit = 
+        ../utils/notebook_batch_analysis.py
+        ../utils/jupyter_interactive.py
+        ../test/*
+        ../postprocessors/mpi_relax.py
+        ../local/*
+
 parallel = False
 
 [report]
@@ -8,3 +30,6 @@ exclude_lines =
 
     # Don't complain about abstract methods, they aren't run:
     @(abc\.)?abstractmethod
+
+show_missing = True
+skip_empty = True

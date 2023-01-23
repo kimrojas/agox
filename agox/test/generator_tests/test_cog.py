@@ -1,18 +1,18 @@
 import pytest
 import numpy as np
-from agox.generators import RandomGenerator
+from agox.generators import CenterOfGeometryGenerator
 from agox.test.generator_tests.generator_utils import generator_testing
 from agox.test.test_utils import test_data_dicts
 
 seed = 1
 generator_args = []
 generator_base_kwargs = {'c1':0.75, 'c2':1.25, 'dimensionality':3}
-generator_class = RandomGenerator
+generator_class = CenterOfGeometryGenerator
 
 list_of_other_kwargs = [
-    {}, # Tests that defaults havent changed. 
-    {'may_nucleate_at_several_places':False},
-    {'may_nucleate_at_several_places':True},
+    {},
+    {'selection_percentages':{'low':0.25, 'high':0.5}, 'extra_radius_amplitude':1, 'extra_radius_params':{'low':-0.5, 'high':3}},
+    {'selection_percentages':{'low':0.25, 'high':0.75}, 'extra_radius_amplitude':2, 'extra_radius_params':{'low':-0.4, 'high':5}}
     ]
 
 for index, dictionary in enumerate(list_of_other_kwargs):
@@ -40,4 +40,10 @@ if __name__ == '__main__':
             output = generator_testing(generator_class, test_data_dict, generator_args, 
                 generator_base_kwargs, other_kwargs, parameter_index, seed=seed, test_mode=False)
 
-        
+                    
+
+
+
+
+
+

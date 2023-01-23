@@ -1,19 +1,30 @@
 import pytest
 import numpy as np
-from agox.generators import RandomGenerator
+from agox.generators import PermutationGenerator
 from agox.test.generator_tests.generator_utils import generator_testing
 from agox.test.test_utils import test_data_dicts
 
 seed = 1
 generator_args = []
 generator_base_kwargs = {'c1':0.75, 'c2':1.25, 'dimensionality':3}
-generator_class = RandomGenerator
+generator_class = PermutationGenerator
 
 list_of_other_kwargs = [
     {}, # Tests that defaults havent changed. 
-    {'may_nucleate_at_several_places':False},
-    {'may_nucleate_at_several_places':True},
+    {'max_number_of_swaps':1, 'rattle_strength':0.},
+    {'max_number_of_swaps':3, 'rattle_strength':0.5},
     ]
+
+# Because the PermutationGenerator only works for multicompoennt systems we filter abit:
+from ase.io import read, write
+multicomp_test_data_dicts = []
+for test_data_dict in test_data_dicts:
+
+    atoms = read(test_data_dict['path'])
+    numbers = atoms.get_atomic_numbers()[len(atoms)-test_data_dict['remove']:]
+
+    if len(np.unique(numbers)) >= 2:
+        multicomp_test_data_dicts.append(test_data_dict)
 
 for index, dictionary in enumerate(list_of_other_kwargs):
     list_of_other_kwargs[index] = (dictionary, index)
@@ -22,7 +33,7 @@ for index, dictionary in enumerate(list_of_other_kwargs):
 def other_kwargs(request):
     return request.param
 
-@pytest.mark.parametrize('test_data_dict', test_data_dicts)
+@pytest.mark.parametrize('test_data_dict', multicomp_test_data_dicts)
 def test_random(test_data_dict, other_kwargs):
 
     parameter_index = other_kwargs[1]
@@ -33,7 +44,7 @@ def test_random(test_data_dict, other_kwargs):
 
 if __name__ == '__main__':
 
-    for test_data_dict in test_data_dicts:
+    for test_data_dict in multicomp_test_data_dicts:
 
         for other_kwargs, parameter_index in list_of_other_kwargs:
 

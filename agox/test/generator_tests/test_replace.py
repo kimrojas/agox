@@ -1,18 +1,18 @@
 import pytest
 import numpy as np
-from agox.generators import RandomGenerator
+from agox.generators import ReplaceGenerator
 from agox.test.generator_tests.generator_utils import generator_testing
 from agox.test.test_utils import test_data_dicts
 
 seed = 1
 generator_args = []
 generator_base_kwargs = {'c1':0.75, 'c2':1.25, 'dimensionality':3}
-generator_class = RandomGenerator
+generator_class = ReplaceGenerator
 
 list_of_other_kwargs = [
-    {}, # Tests that defaults havent changed. 
-    {'may_nucleate_at_several_places':False},
-    {'may_nucleate_at_several_places':True},
+    {},
+    {'n_replace':5, 'amplitude':3},
+    {'n_replace':10, 'amplitude':5}
     ]
 
 for index, dictionary in enumerate(list_of_other_kwargs):

@@ -13,6 +13,7 @@ class SOAP(DescriptorBaseClass):
                  weight=True, periodic=True, dtype='float64', normalize=False, crossover=True, **kwargs):
         super().__init__(self, **kwargs)
         self.normalize = normalize
+        self.feature_types = self.feature_types.copy()
 
         if periodic:
             self.feature_types.remove('local_gradient')
