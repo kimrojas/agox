@@ -24,7 +24,17 @@ def model_tester(model_maker, model_args, model_kwargs, data, test_mode=True, ex
         E[i] = test_atoms.get_potential_energy()
 
     if test_mode:
+        print(E-expected_energies)
         assert (E == expected_energies).all()
+
+        # # Model parameters:
+        parameters = model.get_model_parameters()
+        recreated_model = model_maker(*model_args, **model_kwargs)
+        recreated_model.set_model_parameters(parameters)
+        recreated_energies = np.array([recreated_model.predict_energy(atoms) for atoms in test_data])
+        assert np.allclose(E, recreated_energies), 'After setting parameter energies dont match!'
+
+        recreated_model.train_model(training_data, energies=training_energies)
 
     return E
 

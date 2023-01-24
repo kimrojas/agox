@@ -21,6 +21,7 @@ omit =
         ../test/*
         ../postprocessors/mpi_relax.py
         ../local/*
+        ../helpers/post_analysis_methods.py
 
 parallel = False
 
