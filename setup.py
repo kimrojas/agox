@@ -21,8 +21,8 @@ extensions = [
         include_dirs=[numpy.get_include()]
         ),
     Extension(
-        "agox.models.descriptors.descriptors.fingerprint_cython.angular_fingerprintFeature_cy",
-        ["agox.models.descriptors.descriptors.fingerprint_cython.angular_fingerprintFeature_cy.pyx"],
+        "agox.models.descriptors.fingerprint_cython.angular_fingerprintFeature_cy",
+        ["agox/models/descriptors/fingerprint_cython/angular_fingerprintFeature_cy.pyx"],
         include_dirs=[numpy.get_include()]
         ),
     ]
