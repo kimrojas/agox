@@ -6,11 +6,10 @@ from agox.models.descriptors.soap import SOAP
 from agox.test.model_tests.model_utils import model_tester
 from agox.test.test_utils import get_test_data, get_test_environment, load_expected_data, save_expected_data, label_dict_list
 from agox.test.test_utils import test_data_dicts, get_name
-
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 
-kernel = C(1)*RBF(length_scale=20)
-
+# Weird kernel specification is because of accurcay in Sklearn that does such a conversion. 
+kernel = C(1.)*RBF(length_scale=np.exp(np.log(20.)))
 model_class = LSGPRModelCUR
 model_maker = LSGPRModelCUR
 model_base_args = []
@@ -42,7 +41,6 @@ def test_model(test_data_dict, update_kwargs):
     # Extra stuff:
     descriptor = SOAP(environment.get_all_species(), periodic=environment.get_template().pbc.any())
     update_kwargs['descriptor'] = descriptor
-
     # Slightly complicated way of building input args & kwargs:
     if 'environment' in update_kwargs.keys():
         update_kwargs['environment'] = environment
