@@ -1,5 +1,5 @@
 import pytest
-from environment_test import environment_and_dataset
+from agox.test.test_utils import environment_and_dataset
 from agox.postprocessors import CenteringPostProcess, WrapperPostprocess, RelaxPostprocess, ParallelRelaxPostprocess, ParallelRemoteRelaxPostprocess
 from agox.models import ModelGPR
 import numpy as np

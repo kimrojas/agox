@@ -4,6 +4,7 @@ from importlib_resources import files
 from agox.candidates import StandardCandidate
 from ase.io import read, write
 import pickle
+import pytest
 
 test_folder_path = os.path.join(files('agox'), 'test/')
 
@@ -95,3 +96,24 @@ def label_dict_list(list_of_dicts):
     for index, dictionary in enumerate(list_of_dicts):
         list_of_dicts[index] = (dictionary, index)
     return list_of_dicts
+
+@pytest.fixture(params=test_data_dicts)
+def environment_and_dataset(request):
+    from agox.environments import Environment
+    from agox.candidates import StandardCandidate
+    
+    atoms = read(request.param['path'])
+    cell = atoms.get_cell()
+    corner = np.array([0, 0, 0])
+    remove = request.param['remove']
+    numbers = atoms.get_atomic_numbers()[len(atoms)-remove:]
+
+    template = read(request.param['path'])
+    del template[len(template)-remove:len(template)]
+    environment = Environment(template=template, numbers=numbers, confinement_cell=cell, 
+            confinement_corner=corner)
+
+    data = read(request.param['path'], ':')
+    candidates = [StandardCandidate.from_atoms(template, a) for a in data]
+
+    return environment, candidates

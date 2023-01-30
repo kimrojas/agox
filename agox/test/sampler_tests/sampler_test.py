@@ -1,6 +1,6 @@
 import pytest 
 from agox.samplers import KMeansSampler, MetropolisSampler, GeneticSampler, DistanceComparator, SpectralGraphSampler, KernelSimSampler
-from agox.test.environment_test import environment_and_dataset
+from agox.test.test_utils import environment_and_dataset
 from agox.models.descriptors.fingerprint import Fingerprint
 from agox.models import ModelGPR
 

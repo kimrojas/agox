@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import os
 from agox.databases import Database
-from environment_test import environment_and_dataset
+from agox.test.test_utils import environment_and_dataset
 
 def test_new_database(tmp_path, environment_and_dataset):
 

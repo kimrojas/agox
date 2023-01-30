@@ -6,7 +6,7 @@ from ase import Atoms
 from agox.generators import RandomGenerator, RattleGenerator, CenterOfGeometryGenerator, ReplaceGenerator, ReuseGenerator, SamplingGenerator, PermutationGenerator
 from agox.candidates import CandidateBaseClass
 
-from environment_test import environment_and_dataset
+from agox.test.test_utils import environment_and_dataset
 
 @pytest.mark.parametrize('generator_class', [RandomGenerator, RattleGenerator, ReplaceGenerator, CenterOfGeometryGenerator, SamplingGenerator])
 class TestGenerator:
