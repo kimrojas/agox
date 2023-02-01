@@ -27,7 +27,7 @@ class LSGPRModelMBKMeans(LSGPRModel):
         self.cluster = MiniBatchKMeans(n_clusters=self.m_points, batch_size=batch_size, random_state=seed)
     
 
-    def _train_sparse(self, atoms_list):
+    def _train_sparse(self, atoms_list, **kwargs):
         if self.Xn.shape[0] < self.m_points:
             self.Xm = self.Xn
             return True
