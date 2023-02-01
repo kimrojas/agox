@@ -35,7 +35,7 @@ calc = EMT()
 ##############################################################################
     
 template = Atoms('', cell=np.eye(3)*12)
-confinement_cell = np.eye(3) * 8
+confinement_cell = np.eye(3) * 6
 confinement_corner = np.array([3, 3, 3])
 environment = Environment(template=template, symbols='Au8Ni8', 
     confinement_cell=confinement_cell, confinement_corner=confinement_corner)
