@@ -73,11 +73,10 @@ class CandidateBaseClass(ABC, Atoms, Module):
             if not equal:
                 return equal
         return equal
-        # return self.get_identifier() == identifier
 
     def get_identifier(self):
         return (self.get_atomic_numbers(), self.get_positions(), self.get_cell())
-        # return hash(str(self.get_atomic_numbers()) + str(self.get_positions()) + str(self.get_cell()))
+
 
     def add_meta_information(self, name, value):
         """

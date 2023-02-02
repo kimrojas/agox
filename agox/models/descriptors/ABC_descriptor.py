@@ -130,9 +130,6 @@ class DescriptorBaseClass(ABC, Module):
             if f is None:
                 f = self.create_global_features(a)
                 self.set_to_cache(a, f, feature_type)
-            #     print('No cache')
-            # else:
-            #     print('using cached feature')
                 
             features.append(f)
             
