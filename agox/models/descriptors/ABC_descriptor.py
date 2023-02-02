@@ -1,6 +1,7 @@
 import numpy as np
 from abc import ABC, abstractmethod
 from agox.module import Module
+from agox.candidates.ABC_candidate import CandidateBaseClass
 
 all_feature_types = ['global', 'local', 'global_gradient', 'local_gradient']
 
@@ -8,9 +9,11 @@ class DescriptorBaseClass(ABC, Module):
 
     feature_types = []
 
-    def __init__(self, surname='', **kwargs):
+    def __init__(self, surname='', use_cache=False, **kwargs):
         Module.__init__(self, surname=surname)
         assert np.array([feature_type in all_feature_types for feature_type in self.feature_types]).all(), 'Unknown feature type declared.'
+        self.use_cache = use_cache
+        self._cache_key = self.name + '/' + str(hash(self))
 
 
     ##########################################################################################################
@@ -116,10 +119,21 @@ class DescriptorBaseClass(ABC, Module):
         list
             Global features for the given atoms.
         """
-        self.feature_type_check('global')
+        feature_type = 'global'
+        self.feature_type_check(feature_type)
         if not (type(atoms) == list):
             atoms = [atoms]
-        return [self.create_global_features(a) for a in atoms]
+            
+        features = []
+        for a in atoms:
+            f = self.get_from_cache(a, feature_type)
+            if f is None:
+                f = self.create_global_features(a)
+                self.set_to_cache(a, f, feature_type)
+                
+            features.append(f)
+            
+        return features
 
     def get_global_feature_gradient(self, atoms):
         """
@@ -135,10 +149,20 @@ class DescriptorBaseClass(ABC, Module):
         list
             Global feature gradients for the given atoms.
         """
-        self.feature_type_check('global_gradient')
+        feature_type = 'global_gradient'
+        self.feature_type_check(feature_type)
         if not (type(atoms) == list):
             atoms = [atoms]
-        return [self.create_global_feature_gradient(a) for a in atoms]
+
+        features = []
+        for a in atoms:
+            f = self.get_from_cache(a, feature_type)
+            if f is None:
+                f = self.create_global_feature_gradient(a)
+                self.set_to_cache(a, f, feature_type)
+            features.append(f)
+            
+        return features
 
     def get_local_features(self, atoms):
         """
@@ -154,10 +178,20 @@ class DescriptorBaseClass(ABC, Module):
         list
             Local features for the given atoms.
         """
-        self.feature_type_check('local')
+        feature_type = 'local'
+        self.feature_type_check(feature_type)
         if not (type(atoms) == list):
             atoms = [atoms]
-        return [self.create_local_features(a) for a in atoms]
+
+        features = []
+        for a in atoms:
+            f = self.get_from_cache(a, feature_type)
+            if f is None:
+                f = self.create_local_features(a)
+                self.set_to_cache(a, f, feature_type)
+            features.append(f)
+            
+        return features
 
     def get_local_feature_gradient(self, atoms):
         """
@@ -173,11 +207,32 @@ class DescriptorBaseClass(ABC, Module):
         list
             Local feature gradients for the given atoms.
         """
-        self.feature_type_check('local_gradient')
+        feature_type = 'local_gradient'
+        self.feature_type_check(feature_type)
         if not (type(atoms) == list):
             atoms = [atoms]
-        return [self.create_local_feature_gradient(a) for a in atoms]
+            
+        features = []
+        for a in atoms:
+            f = self.get_from_cache(a, feature_type)
+            if f is None:
+                f = self.create_local_feature_gradient(a)
+                self.set_to_cache(a, f, feature_type)
+            features.append(f)
+            
+        return features
 
     def feature_type_check(self, feature_type):
         if not feature_type in self.feature_types:
             raise NotImplementedError(f'This descriptor does not support {feature_type} features')
+
+    def get_from_cache(self, atoms, feature_type):
+        if not self.use_cache or not isinstance(atoms, CandidateBaseClass):
+            return None
+        
+        return atoms.get_from_cache(feature_type + '/' + self._cache_key)
+            
+    def set_to_cache(self, atoms, value, feature_type):
+        if self.use_cache and isinstance(atoms, CandidateBaseClass):
+            atoms.cache(feature_type + '/' + self._cache_key, value)
+

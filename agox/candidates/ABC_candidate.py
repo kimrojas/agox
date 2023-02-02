@@ -9,7 +9,7 @@ from agox.module import Module
 
 class CandidateBaseClass(ABC, Atoms, Module):
 
-    def __init__(self, template=None, template_indices=None, **kwargs):
+    def __init__(self, template=None, template_indices=None, use_cache=True, **kwargs):
         """
 
         Initialization method of the Candidate.
@@ -28,6 +28,9 @@ class CandidateBaseClass(ABC, Atoms, Module):
         Atoms.__init__(self, **kwargs) # This means all Atoms-related stuff gets set. 
         Module.__init__(self)
         self.meta_information = dict()
+        
+        self.use_cache = use_cache
+        self._cache = dict()
 
         # Template stuff:        
         if template_indices is not None:
@@ -49,6 +52,31 @@ class CandidateBaseClass(ABC, Atoms, Module):
         # But the check doesnt work as intended at the moment.
         # if len(template) > 0:            
         #     assert (self.positions[:len(template)] == template.positions).all(), 'Template and positions do not match'
+
+    def get_from_cache(self, key):
+        if not self.use_cache:
+            return None
+        
+        identifier, value = self._cache.get(key, (None, None))
+        if identifier is not None:
+            if self.compare_identity(identifier):
+                return value
+        else:
+            return None
+
+    def cache(self, key, value):
+        self._cache[key] = (self.get_identifier(), value)
+
+    def compare_identity(self, identifier):
+        for a,b in zip(identifier, self.get_identifier()):
+            equal = (a == b).all()
+            if not equal:
+                return equal
+        return equal
+
+    def get_identifier(self):
+        return (self.get_atomic_numbers(), self.get_positions(), self.get_cell())
+
 
     def add_meta_information(self, name, value):
         """
