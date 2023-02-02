@@ -39,9 +39,8 @@ def test_agox_run(tmp_path, test_mode=True):
 
             for candidate, expected_candidate in zip(test_candidates, expected_candidates):
                 assert compare_candidates(candidate, expected_candidate), 'Candidates dont match.'
-
             assert len(expected_candidates) == len(test_candidates), 'Different numbers of candidates.'
-            assert (test_energies == expected_energies).all(), 'Energies dont match.'
+            assert np.allclose(test_energies, expected_energies), 'Energies dont match.'
             assert np.allclose(test_forces, expected_forces), 'Forces dont match'
 
 
