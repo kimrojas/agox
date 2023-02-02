@@ -1,6 +1,5 @@
 import numpy as np
 from copy import copy
-from dscribe.descriptors import SOAP as dscribeSOAP
 from agox.models.descriptors import DescriptorBaseClass
 
 class SOAP(DescriptorBaseClass):
@@ -12,6 +11,7 @@ class SOAP(DescriptorBaseClass):
     def __init__(self, species, r_cut=4, nmax=3, lmax=2, sigma=1.0,
                  weight=True, periodic=True, dtype='float64', normalize=False, crossover=True, **kwargs):
         super().__init__(self, **kwargs)
+        from dscribe.descriptors import SOAP as dscribeSOAP
         self.normalize = normalize
 
         if periodic:
