@@ -1,4 +1,5 @@
 import numpy as np
+import os
 from agox.observer import Observer
 from agox.writer import Writer, agox_writer
 from ase.calculators.singlepoint import SinglePointCalculator
@@ -7,11 +8,15 @@ class ModelTrackerBeforeTraining(Observer, Writer):
 
     name = 'ModelTrackerBeforeTraining'
 
-    def __init__(self, model, sets={'set_key':'model_tracker_candidates'}, gets={'get_key':'evaluated_candidates'}, order=5.5):
+    def __init__(self, model, sets={'set_key':'model_tracker_candidates'}, gets={'get_key':'evaluated_candidates'}, order=5.5, 
+                save_path='', save_name='', save=False):
         Observer.__init__(self, sets=sets, gets=gets, order=order)
         Writer.__init__(self)
         self.model = model
         self.add_observer_method(self.cache_old_model_energies, sets=self.sets[0], gets=self.gets[0], order=self.order[0])
+        self.save = save
+        self.save_path = save_path
+        self.save_name = save_name
 
     @agox_writer
     @Observer.observer_method
@@ -24,11 +29,14 @@ class ModelTrackerBeforeTraining(Observer, Writer):
 
         candidates_with_model_energies = []
         candidates = state.get_from_cache(self, self.get_key)
-        for i,cached_candidate in enumerate(candidates):
+        for i, cached_candidate in enumerate(candidates):
             E_dft = cached_candidate.get_potential_energy()
             new_candidate = cached_candidate.copy()
             new_candidate.set_calculator(self.model)
             E_model = new_candidate.get_potential_energy()
+
+            self.writer(f'{i}: {E_dft} - {E_model}')
+
             single_point_calc = SinglePointCalculator(new_candidate, energy=E_dft)
             new_candidate.set_calculator(single_point_calc)
             new_candidate.add_meta_information('model_energy',E_model)
@@ -36,6 +44,17 @@ class ModelTrackerBeforeTraining(Observer, Writer):
 
         state.add_to_cache(self, self.set_key, candidates_with_model_energies, mode='a')
 
+        if self.save:
+            self.save_structures(candidates_with_model_energies)
+            self.save_model()
+        
+    def save_structures(self, candidates):
+        from ase.io import write
+        path = os.path.join(self.save_path, self.save_name+f'candidates_iteration{self.get_iteration_counter()}.traj')
+        write(path, candidates)
+
+    def save_model(self):
+        self.model.save(directory=self.save_path, prefix=self.save_name+f'_model_iteration_{self.get_iteration_counter()}.traj')
             
 class ModelTrackerAfterTraining(Observer, Writer):
 
