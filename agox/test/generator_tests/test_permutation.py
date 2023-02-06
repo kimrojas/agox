@@ -34,21 +34,14 @@ def other_kwargs(request):
     return request.param
 
 @pytest.mark.parametrize('test_data_dict', multicomp_test_data_dicts)
-def test_random(test_data_dict, other_kwargs):
-
+def test_generator(test_data_dict, other_kwargs, cmd_options):
     parameter_index = other_kwargs[1]
     other_kwargs = other_kwargs[0]
 
+    create_mode = cmd_options['create_mode']
+    test_mode = not create_mode
+    tolerance = cmd_options['tolerance']
+
     generator_testing(generator_class, test_data_dict, generator_args, 
-        generator_base_kwargs, other_kwargs, parameter_index, seed=seed)
-
-if __name__ == '__main__':
-
-    for test_data_dict in multicomp_test_data_dicts:
-
-        for other_kwargs, parameter_index in list_of_other_kwargs:
-
-            output = generator_testing(generator_class, test_data_dict, generator_args, 
-                generator_base_kwargs, other_kwargs, parameter_index, seed=seed, test_mode=False)
-
-        
+        generator_base_kwargs, other_kwargs, parameter_index, tolerance, 
+        seed=seed, test_mode=test_mode)

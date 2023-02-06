@@ -33,14 +33,14 @@ class TemporaryFolder:
     def __exit__(self, *args):
         os.chdir(self.start_dir)
 
-def compare_candidates(atoms_1, atoms_2):
+def compare_candidates(atoms_1, atoms_2, tolerance):
 
     if atoms_1 is None and atoms_2 is None:
         return True
 
-    pos_bool = np.allclose(atoms_1.positions, atoms_2.positions)
-    cell_bool = np.allclose(atoms_1.cell, atoms_2.cell)
-    numbers_bool = np.allclose(atoms_1.numbers, atoms_2.numbers)
+    pos_bool = np.allclose(atoms_1.positions, atoms_2.positions, **tolerance)
+    cell_bool = np.allclose(atoms_1.cell, atoms_2.cell, **tolerance)
+    numbers_bool = np.allclose(atoms_1.numbers, atoms_2.numbers, **tolerance)
     return pos_bool * cell_bool * numbers_bool
 
 def get_test_environment(path, remove):
