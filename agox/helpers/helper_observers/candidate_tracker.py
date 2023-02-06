@@ -33,5 +33,6 @@ class CandidateTracker(Observer, Writer):
     def save_candidates(self, candidates):
         if self.save:
             path = os.path.join(self.save_path, f'{self.save_name}_{self.get_iteration_counter()}.traj')
+
             write(path, candidates)
 
