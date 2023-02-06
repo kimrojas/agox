@@ -43,6 +43,10 @@ def ray_relaxation_function(structure, calculator,
         return structure
     structure_copy.add_meta_information('relaxation_steps', 
         optimizer.get_number_of_steps())
+
+    spc = SPC(structure_copy, energy=structure_copy.get_potential_energy())
+    structure_copy.set_calculator(spc)
+
     return structure_copy
 
 class ParallelRelaxPostprocess(PostprocessBaseClass, RayBaseClass):
@@ -103,6 +107,7 @@ class ParallelRelaxPostprocess(PostprocessBaseClass, RayBaseClass):
         # Copy positions over to the input:
         for j, candidate in enumerate(list_of_candidates):
                candidate.positions=post_processed_candidates[j].positions.copy()
+               candidate.calc = post_processed_candidates[j].calc
                candidate.add_meta_information('relaxation_steps', 
                 post_processed_candidates[j].get_meta_information('relaxation_steps'))
         
