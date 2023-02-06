@@ -71,7 +71,7 @@ class Database(DatabaseBaseClass):
 
     name = 'Database'
 
-    def __init__(self, filename='db.db', initialize=False, verbose=False, write_frequency=50, call_initialize=True, 
+    def __init__(self, filename='db.db', initialize=False, verbose=False, write_frequency=1, call_initialize=True, 
                 store_meta_information=True, **kwargs):
         super().__init__(**kwargs)
 
