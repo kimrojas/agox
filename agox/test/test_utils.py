@@ -85,6 +85,7 @@ def get_name(module_name, subfolder, dataset_name, parameter_index):
     return name
 
 def save_expected_data(name, data):
+    check_file_is_deleted(name)
     with open(name, 'wb') as f:
         pickle.dump(data, f)
 
