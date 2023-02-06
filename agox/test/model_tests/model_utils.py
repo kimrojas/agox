@@ -2,7 +2,8 @@ import numpy as np
 from agox.test.test_utils import get_test_environment, get_test_data
 from agox.test.test_utils import test_data_dicts, get_name
 
-def model_tester(model_maker, model_args, model_kwargs, data, test_mode=True, expected_energies=None):
+def model_tester(model_maker, model_args, model_kwargs, data, test_mode=True, expected_energies=None, 
+    tolerance=None):
     seed = 42
     np.random.seed(seed)
 
@@ -24,8 +25,7 @@ def model_tester(model_maker, model_args, model_kwargs, data, test_mode=True, ex
         E[i] = test_atoms.get_potential_energy()
 
     if test_mode:
-        print(E-expected_energies)
-        assert (E == expected_energies).all() 
+        np.testing.assert_allclose(E, expected_energies, **tolerance)
 
         # # Model parameters:
         parameters = model.get_model_parameters()
@@ -33,7 +33,7 @@ def model_tester(model_maker, model_args, model_kwargs, data, test_mode=True, ex
 
         recreated_model.set_model_parameters(parameters)
         recreated_energies = np.array([recreated_model.predict_energy(atoms) for atoms in test_data])
-        assert np.allclose(E, recreated_energies), 'After setting parameter energies dont match!'
+        np.testing.assert_allclose(E, recreated_energies)
 
     return E
 
