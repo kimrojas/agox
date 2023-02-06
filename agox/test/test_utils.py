@@ -5,6 +5,7 @@ from agox.candidates import StandardCandidate
 from ase.io import read, write
 import pickle
 import pytest
+import glob
 
 test_folder_path = os.path.join(files('agox'), 'test/')
 
@@ -117,3 +118,14 @@ def environment_and_dataset(request):
     candidates = [StandardCandidate.from_atoms(template, a) for a in data]
 
     return environment, candidates
+
+def check_folder_is_empty(path):
+
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+    files = glob.glob(str(path) + '/*')
+    assert len(files) == 0, 'Expected path is not empty, delete the files if you are sure you want to remake them!'
+
+def check_file_is_deleted(filepath):
+    assert not os.path.exists(filepath), 'File already exists - manually delete it if youre sure you want to recreate it.'

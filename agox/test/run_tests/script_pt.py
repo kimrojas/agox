@@ -48,7 +48,7 @@ total_workers = 1 # This should be higher for a real run.
 sync_frequency = 10
 database_index = (run_idx-1) // total_workers + 1
 worker_index = (run_idx-1) % total_workers
-db_path = 'con_db{}.db'.format(database_index)
+db_path = 'db{}.db'.format(database_index)
 database = ConcurrentDatabase(filename=db_path, store_meta_information=True, 
     write_frequency=1, worker_number=worker_index, total_workers=total_workers, 
     sync_frequency=sync_frequency, order=4, sleep_timing=0.1)
