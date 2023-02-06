@@ -39,7 +39,7 @@ def compare_runs(database, expected_database, tolerance):
     expected_forces = np.array([atoms.get_forces(apply_constraint=False) for atoms in expected_database.get_all_candidates()])
 
     for candidate, expected_candidate in zip(test_candidates, expected_candidates):
-        assert compare_candidates(candidate, expected_candidate), 'Candidates dont match.'
+        assert compare_candidates(candidate, expected_candidate, tolerance), 'Candidates dont match.'
     assert len(expected_candidates) == len(test_candidates), 'Different numbers of candidates.'
 
     np.testing.assert_allclose(expected_energies, test_energies, **tolerance)

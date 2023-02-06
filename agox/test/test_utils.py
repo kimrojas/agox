@@ -38,10 +38,10 @@ def compare_candidates(atoms_1, atoms_2, tolerance):
     if atoms_1 is None and atoms_2 is None:
         return True
 
-    pos_bool = np.allclose(atoms_1.positions, atoms_2.positions, **tolerance)
-    cell_bool = np.allclose(atoms_1.cell, atoms_2.cell, **tolerance)
-    numbers_bool = np.allclose(atoms_1.numbers, atoms_2.numbers, **tolerance)
-    return pos_bool * cell_bool * numbers_bool
+    np.testing.assert_allclose(atoms_1.positions, atoms_2.positions, **tolerance)
+    np.testing.assert_allclose(atoms_1.cell, atoms_2.cell, **tolerance)
+    np.testing.assert_allclose(atoms_1.numbers, atoms_2.numbers, **tolerance)
+    return True
 
 def get_test_environment(path, remove):
     from agox.environments import Environment
