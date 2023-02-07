@@ -100,8 +100,10 @@ class AGOXGenerator(GeneratorBaseClass):
         from agox.models import ModelGPR
         from agox.postprocessors import WrapperPostprocess
         from agox.evaluators import LocalOptimizationEvaluator
-        from agox.collectors.ray_collector import ParallelCollector
-        from agox.postprocessors.ray_relax import ParallelRelaxPostprocess
+        #from agox.collectors.ray_collector import ParallelCollector
+        #from agox.postprocessors.ray_relax import ParallelRelaxPostprocess
+        from agox.collectors.ray_pool_collector import ParallelCollector
+        from agox.postprocessors.ray_pool_relax import ParallelRelaxPostprocess
 
         if constraints is None:
             constraints = environment.get_constraints()
