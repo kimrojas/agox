@@ -3,8 +3,8 @@ import numpy as np
 class Confinement:
 
     def __init__(self, confinement_cell=None, confinement_corner=None, dimensionality=3, indices=None, pbc=[False]*3):
-        self.confinement_cell = confinement_cell
-        self.confinement_corner = confinement_corner
+        self.confinement_cell = np.array(confinement_cell)
+        self.confinement_corner = np.array(confinement_corner)
         self.dimensionality = dimensionality
 
         if indices is None:
