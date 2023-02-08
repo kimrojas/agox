@@ -14,6 +14,8 @@ class MDgenerator(GeneratorBaseClass):
             calculator,
             thermostat = Langevin,
             thermostat_kwargs = {'timestep':1.*fs, 'temperature_K':10, 'friction':0.05},
+            start_settings = [MaxwellBoltzmannDistribution, ZeroRotation, Stationary],
+            start_setting_kwargs = [{},{},{}]
             temperature_program = [(500,10),(100,10)], 
             constraints=[],
             check_template = False,
@@ -23,8 +25,12 @@ class MDgenerator(GeneratorBaseClass):
         self.calculator = calculator # Calculator for MD simulation
         self.thermostat = thermostat # MD program used
         self.thermostat_kwargs = thermostat_kwargs # Settings for MD program
+        self.set_start_settings = True
+        self.start_settings = start_settings
+        self.start_settings_kwargs = start_settings_kwargs
         self.temperature_program = temperature_program # (temp in kelvin, steps) for MD program if temperature is modifiable during simulation
         self.constraints = constraints # Constraints besides fixed template and 1D/2D constraints
+
 
         self.check_template = check_template # Check if template atoms moved during MD simulation
 
@@ -52,6 +58,10 @@ class MDgenerator(GeneratorBaseClass):
 
     def molecular_dynamics(self, candidate):
         """ Runs the molecular dynamics simulation and applies/removes constraints accordingly """
+
+        if set_start_settings:
+            for setting, kwargs in zip(self.start_settings, self.start_settings_kwargs):
+                setting(candidate, **kwargs)
         
         dyn = self.thermostat(candidate, **self.thermostat_kwargs)
 
