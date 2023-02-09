@@ -28,7 +28,7 @@ class LSGPRModelMBKMeans(LSGPRModel):
                                        init='k-means++', n_init=3)
     
 
-    def _train_sparse(self, atoms_list):
+    def _train_sparse(self, atoms_list, **kwargs):
         if self.Xn.shape[0] < self.m_points:
             self.Xm = self.Xn
             return True

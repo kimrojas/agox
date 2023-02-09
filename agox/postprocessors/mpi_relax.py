@@ -84,6 +84,8 @@ class MPIRelaxPostprocess(PostprocessBaseClass):
                 model_training_mode='primary', mpi_command='mpiexec', **kwargs):
         super().__init__(**kwargs)
 
+        DeprecationWarning('MPIRelaxPostProcess is deprecated and will be removed in a future release. Use one of the Ray parallel relaxers.')
+
         assert type(optimizer) == str, 'Give optimizer as a string of the name, not an instance of the class'
         assert optimizer in optimizers.keys(), 'Invalid optimizer name given'
 

@@ -15,4 +15,4 @@ the script below does the following:
 A key difference in the script below compared to basin-hopping script is that 
 the sampler is not given as an argument to AGOX but rather attached to database. 
 
-.. literalinclude:: scripts/ea.py
+.. literalinclude:: ../../../agox/test/run_tests/script_ea.py

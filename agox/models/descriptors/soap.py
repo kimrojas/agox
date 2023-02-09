@@ -14,6 +14,7 @@ class SOAP(DescriptorBaseClass):
 
         from dscribe.descriptors import SOAP as dscribeSOAP
         self.normalize = normalize
+        self.feature_types = self.feature_types.copy()
 
         if periodic:
             self.feature_types.remove('local_gradient')

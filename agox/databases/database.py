@@ -347,6 +347,7 @@ class Database(DatabaseBaseClass):
         for struc in strucs:            
             candidates.append(self.db_to_candidate(struc, meta_dict=all_meta_info.get(struc['id'], None)))
         self.candidates = candidates
+        self.candidate_energies = [atoms.get_potential_energy() for atoms in candidates]
 
     def restore_to_trajectory(self):
         strucs = self.get_all_structures_data()
