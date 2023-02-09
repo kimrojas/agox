@@ -1,0 +1,1 @@
+from agox.utils.decorators import candidate_list_comprehension

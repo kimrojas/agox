@@ -2,6 +2,8 @@ import numpy as np
 from abc import ABC, abstractmethod
 from agox.module import Module
 from agox.candidates.ABC_candidate import CandidateBaseClass
+from agox.utils import candidate_list_comprehension
+
 
 all_feature_types = ['global', 'local', 'global_gradient', 'local_gradient']
 
@@ -104,6 +106,7 @@ class DescriptorBaseClass(ABC, Module):
     # Get methods - Ones to use in other scripts.
     ##########################################################################################################
 
+    @candidate_list_comprehension
     @CandidateBaseClass.cache('global_features')
     def get_global_features(self, atoms):
         """
@@ -120,15 +123,9 @@ class DescriptorBaseClass(ABC, Module):
             Global features for the given atoms.
         """
         self.feature_type_check('global')
-        if not (type(atoms) == list):
-            atoms = [atoms]
-            
-        features = []
-        for a in atoms:
-            features.append(self.create_global_features(a))
-            
-        return features
-    
+        return self.create_global_features(atoms)
+
+    @candidate_list_comprehension
     @CandidateBaseClass.cache('global_feature_gradient')
     def get_global_feature_gradient(self, atoms):
         """
@@ -145,15 +142,9 @@ class DescriptorBaseClass(ABC, Module):
             Global feature gradients for the given atoms.
         """
         self.feature_type_check('global_gradient')
-        if not (type(atoms) == list):
-            atoms = [atoms]
+        return self.create_global_feature_gradient(atoms)
 
-        features = []
-        for a in atoms:
-            features.append(self.create_global_feature_gradient(a))
-            
-        return features
-
+    @candidate_list_comprehension    
     @CandidateBaseClass.cache('local_features')
     def get_local_features(self, atoms):
         """
@@ -170,15 +161,9 @@ class DescriptorBaseClass(ABC, Module):
             Local features for the given atoms.
         """
         self.feature_type_check('local')
-        if not (type(atoms) == list):
-            atoms = [atoms]
+        return self.create_local_features(atoms)
 
-        features = []
-        for a in atoms:
-            features.append(self.create_local_features(a))
-            
-        return features
-
+    @candidate_list_comprehension    
     @CandidateBaseClass.cache('local_feature_gradient')
     def get_local_feature_gradient(self, atoms):
         """
@@ -195,14 +180,7 @@ class DescriptorBaseClass(ABC, Module):
             Local feature gradients for the given atoms.
         """
         self.feature_type_check('local_gradient')
-        if not (type(atoms) == list):
-            atoms = [atoms]
-            
-        features = []
-        for a in atoms:
-            features.append(self.create_local_feature_gradient(a))
-            
-        return features
+        return self.create_local_feature_gradient(atoms)
 
     def feature_type_check(self, feature_type):
         if not feature_type in self.feature_types:
