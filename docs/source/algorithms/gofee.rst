@@ -28,6 +28,6 @@ in the target potential.
 
 Both step 1 and 2 happen in parallel using `Ray <https://www.ray.io/>`_.
 
-.. literalinclude:: scripts/gofee.py
+.. literalinclude:: ../../../agox/test/run_tests/script_gofee.py
 
 

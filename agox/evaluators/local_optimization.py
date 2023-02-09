@@ -33,7 +33,7 @@ class LocalOptimizationEvaluator(EvaluatorBaseClass):
                 self.store_trajectory = False
 
     def evaluate_candidate(self, candidate):
-        candidate.set_calculator(self.calculator)
+        candidate.calc = self.calculator
 
         try:
             if self.optimizer_run_kwargs['steps'] > 0:
@@ -62,7 +62,7 @@ class LocalOptimizationEvaluator(EvaluatorBaseClass):
         F = candidate.get_forces(apply_constraint=False)
         self.writer(f'Final energy of candidate = {E:5.3f}')
         calc = SinglePointCalculator(candidate, energy=E, forces=F)
-        candidate.set_calculator(calc)
+        candidate.calc = calc
 
         return True
 

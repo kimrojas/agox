@@ -94,18 +94,39 @@ class InteractiveSuccessStats:
         self.selector = widgets.SelectMultiple(options=self.analysis.labels, value=self.analysis.labels, description='Datasets')
         self.xmin = widgets.BoundedIntText(value=0, min=0, max=self.analysis.max_num_iterations, step=1, description='Min iterations:')
         self.xmax = widgets.BoundedIntText(value=self.analysis.max_num_iterations, min=0, max=self.analysis.max_num_iterations, step=1, description='Max iterations:')
-        self.uncertainty_button = widgets.ToggleButton(value=True, description='Uncertainty', button_style='', tooltip='Control whether or not uncertainty margins are plotted', icon='check')
-        self.label_button = widgets.ToggleButton(value=True, description='Legends', button_style='', tooltip='Control whether or not labels are plotted', icon='check')
-        self.rate_button = widgets.ToggleButton(value=False, description='Ep. for rate', button_style='', tooltip='Control whether or not iteration for rate is plotted', icon='check')
+
+        self.uncertainty_button = widgets.ToggleButtons(options={'On':True, 'Off':False}, 
+                description='Uncertainty', 
+                button_style='', 
+                tooltips=['Show uncertainty', 'Hide uncertainty'], 
+                disabled=False)
+
+        self.label_button = widgets.ToggleButtons(
+                options={'On':True, 'Off':False}, 
+                description='Labels', 
+                button_style='', 
+                tooltips=['Show labels', 'Hide labes'], 
+                disabled=False)               
+
+        self.rate_button = widgets.ToggleButtons(
+                options={'On':True, 'Off':False}, 
+                description='Rate', 
+                button_style='', 
+                tooltips=['Show rate', 'Hide rate'], 
+                disabled=False, 
+                value=False)
+
+        print('???')
+
+        #self.rate_button = widgets.ToggleButton(value=False, description='Ep. for rate', button_style='', tooltip='Control whether or not iteration for rate is plotted', icon='check')
         self.rate_input = widgets.BoundedFloatText(value=0.5, min=0, max=1, step=0.01, description='Rate:')
 
         # Save button:        
-        self.save_button = widgets.ToggleButton(value=False, description='Save figure?', button_style='danger')
-        self.save_name = widgets.Text(value='default', description='Figure save name')
+        # self.save_button = widgets.ToggleButton(value=False, description='Save figure?', button_style='danger')
+        # self.save_name = widgets.Text(value='default', description='Figure save name')
 
         self.widget_dict = {'labels':self.selector, 'xmin':self.xmin, 'xmax':self.xmax, 'uncertainty':self.uncertainty_button, 
-                            'plot_labels':self.label_button, 'plot_iteration_for_rate':self.rate_button, 'rate':self.rate_input, 
-                            'save':self.save_button, 'save_name':self.save_name}
+                            'plot_labels':self.label_button, 'plot_iteration_for_rate':self.rate_button, 'rate':self.rate_input}
         self.widget_list = [self.widget_dict[key] for key in self.widget_dict.keys()]
 
     def plot_succes_curve(self, ax, index, uncertainty=True):
@@ -185,27 +206,40 @@ class InteractiveEnergy:
         self.ymin_offset = widgets.BoundedFloatText(value=1, min=0, max=25, description='Min. energy')
         self.ymax_offset = widgets.BoundedFloatText(value=50, min=0, max=1000, description='Max. energy')
         
-        self.mean_button = widgets.ToggleButton(value=True, description='Mean energy', button_style='', tooltip='', icon='check')
-        self.limit_button = widgets.ToggleButton(value=False, description='Limits', button_style='', tooltip='', icon='check')
+        self.mean_button = widgets.ToggleButtons(
+            options={'On':True, 'Off':False},
+            value=True, 
+            description='Mean energy', 
+            button_style='', 
+            tooltips=['Show mean', 'Hide mean'], 
+            icon='check')
+
+        self.limit_button = widgets.ToggleButtons(
+            options={'On':True, 'Off':False},
+            value=False, 
+            description='Energy limits', 
+            button_style='', 
+            tooltips=['Show limits', 'Hide limits'], 
+            icon='check')
+
         self.rolling_average = widgets.BoundedIntText(value=1, min=1, max=500, description='Rolling average #:')
         
-        self.policy_button = widgets.ToggleButton(value=False, description='Policy only', button_style='', tooltip='', icon='check')
-
-        # Save button:        
-        self.save_button = widgets.ToggleButton(value=False, description='Save figure?', button_style='danger')
-        self.save_name = widgets.Text(value='default', description='Figure save name')
+        # # Save button:        
+        # self.save_button = widgets.ToggleButton(value=False, description='Save figure?', button_style='danger')
+        # self.save_name = widgets.Text(value='default', description='Figure save name')
 
         # Widget dict/list
         self.widget_dict = {'labels':self.selector, 'xmin':self.xmin, 'xmax':self.xmax, 'ymin':self.ymin_offset, 'ymax':self.ymax_offset,
-                            'plot_mean':self.mean_button, 'plot_limit':self.limit_button, 'rolling_average':self.rolling_average, 
-                            'policy_only':self.policy_button, 'save':self.save_button, 'save_name':self.save_name}
+                            'plot_mean':self.mean_button, 'plot_limit':self.limit_button, 'rolling_average':self.rolling_average}
         self.widget_list = [self.widget_dict[key] for key in self.widget_dict.keys()]
 
-    def update_plot(self, labels, xmin, xmax, ymin, ymax, plot_mean, plot_limit, rolling_average, policy_only, save, save_name):
+    def update_plot(self, labels, xmin, xmax, ymin, ymax, plot_mean, plot_limit, rolling_average):
         fig, ax = plt.subplots(figsize=self.figsize)
 
         energies = self.analysis.energies
         iterations = np.arange(energies.shape[-1])
+
+        policy_only = False
 
         if policy_only:
             iterations = np.arange(5, energies.shape[-1], 5)
@@ -236,12 +270,6 @@ class InteractiveEnergy:
 
         ax.set_xlabel('iteration [#]', fontsize=self.label_fontsize)
         ax.set_ylabel('Energy [eV]', fontsize=self.label_fontsize)
-
-        if save:
-            folder = make_save_folder()
-            savefig(folder + save_name + '.png', fig)
-            self.save_button.value = False
-
 
     def plot_best_energy(self, ax, index):
         ax.plot(np.mean(self.analysis.best_energies[index, 0:self.analysis.restarts[index], :], axis=0), '-', label=self.analysis.labels[index],
