@@ -24,7 +24,8 @@ class LSGPRModelMBKMeans(LSGPRModel):
         self.exact_points = exact_points
 
 
-        self.cluster = MiniBatchKMeans(n_clusters=self.m_points, batch_size=batch_size, random_state=seed)
+        self.cluster = MiniBatchKMeans(n_clusters=self.m_points, batch_size=batch_size, random_state=seed,
+                                       init='k-means++', n_init=3)
     
 
     def _train_sparse(self, atoms_list):

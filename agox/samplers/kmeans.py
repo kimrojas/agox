@@ -56,7 +56,7 @@ class KMeansSampler(SamplerBaseClass):
 
         n_clusters = 1 + min(self.sample_size-1, int(np.floor(len(e)/5)))
 
-        kmeans = KMeans(n_clusters=n_clusters).fit(f)
+        kmeans = KMeans(n_clusters=n_clusters, init='k-means++', n_init=10).fit(f)
         labels = kmeans.labels_
 
         indices = np.arange(len(e))
