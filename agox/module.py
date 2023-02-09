@@ -5,8 +5,10 @@ class Module:
     dynamic_attributes = []    
     kwargs = ['surname']
 
-    def __init__(self, surname=''):
+    def __init__(self, use_cache=False, surname=''):
         self.surname = surname
+        
+        self.use_cache = use_cache
         self.cache_key = str(id(self))
 
     def get_dynamic_attributes(self):

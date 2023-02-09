@@ -29,7 +29,7 @@ class CandidateBaseClass(ABC, Atoms, Module):
             cell, positions and numbers of ALL atoms - including template atoms. 
         """
         Atoms.__init__(self, **kwargs) # This means all Atoms-related stuff gets set. 
-        Module.__init__(self)
+        Module.__init__(self, use_cache=use_cache)
         self.meta_information = dict()
         
         self.use_cache = use_cache
@@ -62,6 +62,9 @@ class CandidateBaseClass(ABC, Atoms, Module):
         def decorator(func):
             @functools.wraps(func)
             def wrapper(self, atoms, *args, **kwargs):
+                if not self.use_cache:
+                    return func(self, atoms, *args, **kwargs)
+                
                 full_key = self.cache_key + '/' + key
                 if isinstance(atoms, CandidateBaseClass):
                     value = atoms.get_from_cache(full_key)
