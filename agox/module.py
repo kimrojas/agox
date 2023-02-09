@@ -7,6 +7,7 @@ class Module:
 
     def __init__(self, surname=''):
         self.surname = surname
+        self.cache_key = str(id(self))
 
     def get_dynamic_attributes(self):
         return {key:self.__dict__[key] for key in self.dynamic_attributes}
@@ -64,6 +65,4 @@ class Module:
             reference = self.__dict__[key]        
         reference.__dict__[submodule_keys[-1]] = value
         
-
-
 

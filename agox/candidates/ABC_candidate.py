@@ -2,10 +2,13 @@ from abc import ABC, abstractmethod
 from ase import Atoms
 import numpy as np
 
+import functools
 from copy import deepcopy
 from ase.calculators.singlepoint import SinglePointCalculator
 
 from agox.module import Module
+
+
 
 class CandidateBaseClass(ABC, Atoms, Module):
 
@@ -53,6 +56,25 @@ class CandidateBaseClass(ABC, Atoms, Module):
         # if len(template) > 0:            
         #     assert (self.positions[:len(template)] == template.positions).all(), 'Template and positions do not match'
 
+
+    @classmethod
+    def cache(cls, key):
+        def decorator(func):
+            @functools.wraps(func)
+            def wrapper(self, atoms, *args, **kwargs):
+                full_key = self.cache_key + '/' + key
+                if isinstance(atoms, CandidateBaseClass):
+                    value = atoms.get_from_cache(full_key)
+                    if value is None:
+                        value = func(self, atoms, *args, **kwargs)
+                        if atoms.use_cache:
+                            atoms.set_to_cache(full_key, value)
+                else:
+                    value = func(self, atoms, *args, **kwargs)
+                return value
+            return wrapper
+        return decorator
+        
     def get_from_cache(self, key):
         if not self.use_cache:
             return None
@@ -64,7 +86,7 @@ class CandidateBaseClass(ABC, Atoms, Module):
         else:
             return None
 
-    def cache(self, key, value):
+    def set_to_cache(self, key, value):
         self._cache[key] = (self.get_identifier(), value)
 
     def compare_identity(self, identifier):
