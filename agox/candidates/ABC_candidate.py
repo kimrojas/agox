@@ -7,7 +7,10 @@ from copy import deepcopy
 from ase.calculators.singlepoint import SinglePointCalculator
 
 from agox.module import Module
-
+from agox.utils.cache import Cache
+    
+        
+        
 
 
 class CandidateBaseClass(ABC, Atoms, Module):
@@ -33,7 +36,7 @@ class CandidateBaseClass(ABC, Atoms, Module):
         self.meta_information = dict()
         
         self.use_cache = use_cache
-        self._cache = dict()
+        self._cache = Cache()
 
         # Template stuff:        
         if template_indices is not None:
@@ -74,6 +77,7 @@ class CandidateBaseClass(ABC, Atoms, Module):
                             atoms.set_to_cache(full_key, value)
                 else:
                     value = func(self, atoms, *args, **kwargs)
+                    
                 return value
             return wrapper
         return decorator
@@ -90,7 +94,7 @@ class CandidateBaseClass(ABC, Atoms, Module):
             return None
 
     def set_to_cache(self, key, value):
-        self._cache[key] = (self.get_identifier(), value)
+        self._cache.put(key, (self.get_identifier(), value))
 
     def compare_identity(self, identifier):
         for a,b in zip(identifier, self.get_identifier()):

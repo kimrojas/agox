@@ -185,3 +185,10 @@ class DescriptorBaseClass(ABC, Module):
         if not feature_type in self.feature_types:
             raise NotImplementedError(f'This descriptor does not support {feature_type} features')
 
+
+
+
+    @Module.reset_cache_key
+    def change_descriptor_somehow(self):
+        return
+

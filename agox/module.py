@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+import functools
+from uuid import uuid4
 
 class Module:
 
@@ -9,7 +11,7 @@ class Module:
         self.surname = surname
         
         self.use_cache = use_cache
-        self.cache_key = str(id(self))
+        self.cache_key = str(uuid4())
 
     def get_dynamic_attributes(self):
         return {key:self.__dict__[key] for key in self.dynamic_attributes}
@@ -68,3 +70,11 @@ class Module:
         reference.__dict__[submodule_keys[-1]] = value
         
 
+    @classmethod
+    def reset_cache_key(clc, func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            self.cache_key = str(uuid4())            
+            return func(self, *args, **kwargs)
+        return wrapper
+        
