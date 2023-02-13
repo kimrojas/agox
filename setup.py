@@ -39,11 +39,23 @@ for line in lines:
         version = '{}.{}.{}'.format(*result)
         break
 
+# Version Number:
+version_file = 'agox/__version__.py'
+with open(version_file) as f:
+    lines = f.readlines()
+
+for line in lines:
+    if '__version_info__' in line:
+        result = re.findall('\d+', line)
+        result = [int(x) for x in result]
+        version = '{}.{}.{}'.format(*result)
+        break
+
 setup(
     name="agox",
     version=version,
     url="https://gitlab.com/agox/agox",
-    description="Atomistic Global Optimziation X is a framework structure optimization in materials science.",
+    description="Atomistic Global Optimziation X is a framework for structure optimization in materials science.",
     install_requires=[
         "numpy>=1.22.0",
         "ase",
