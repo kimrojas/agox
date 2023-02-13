@@ -12,6 +12,6 @@ involves the following steps in each iteration
 
 The script below implements basin-hopping in AGOX.
 
-.. literalinclude:: scripts/bh.py
+.. literalinclude:: ../../../agox/test/run_tests/script_bh.py
 
     

@@ -10,10 +10,18 @@ class KMeansSampler(SamplerBaseClass):
     name = 'SamplerKMeans'
     parameters = {}
 
-    def __init__(self, feature_calculator, model_calculator=None, sample_size=10, max_energy=5, 
+    def __init__(self, descriptor=None, feature_calculator=None, model_calculator=None, sample_size=10, max_energy=5, 
                         use_saved_features=False, **kwargs):
         super().__init__(**kwargs)
-        self.feature_calculator = feature_calculator
+
+        if descriptor is not None and feature_calculator is None:
+            self.descriptor = descriptor
+        if feature_calculator is not None and descriptor is None:
+            print(DeprecationWarning("'feature_calculator'-argument will be removed in a future release, please use the descriptor argument instead."))
+            self.descriptor = feature_calculator
+        if feature_calculator is not None and descriptor is not None:
+            print(DeprecationWarning("Both feature_calculator and descriptor arguments have been specified, please use only 'descriptor'"))
+
         self.sample_size = sample_size
         self.max_energy = max_energy
         self.sample = []
@@ -42,12 +50,13 @@ class KMeansSampler(SamplerBaseClass):
 
         structures = [all_finished_structures[i] for i in range(len(all_finished_structures)) if filt[i]]
         e = e_all[filt]
-        #f = np.array(self.feature_calculator.get_featureMat(structures))
+
         f = self.get_features(structures)
+        #f = np.array(self.get_global_features(structures))
 
         n_clusters = 1 + min(self.sample_size-1, int(np.floor(len(e)/5)))
 
-        kmeans = KMeans(n_clusters=n_clusters).fit(f)
+        kmeans = KMeans(n_clusters=n_clusters, init='k-means++', n_init=10).fit(f)
         labels = kmeans.labels_
 
         indices = np.arange(len(e))
@@ -98,13 +107,13 @@ class KMeansSampler(SamplerBaseClass):
             return None
         
         # find out what cluster we belong to
-        f_this = self.feature_calculator.get_featureMat([candidate_object])
+        f_this = np.array(self.descriptor.get_global_features(candidate_object))
         distances = cdist(f_this, self.sample_features, metric='euclidean').reshape(-1)
 
 
         self.writer('cdist [',','.join(['{:8.3f}'.format(e) for e in distances]),']')
 
-        d_min_index = np.argmin(distances)
+        d_min_index = int(np.argmin(distances))
 
         cluster_center = self.sample[d_min_index]
         cluster_center.add_meta_information('index_in_sampler_list_used_for_printing_purposes_only',d_min_index)
@@ -127,10 +136,10 @@ class KMeansSampler(SamplerBaseClass):
             for candidate in structures:
                 F = candidate.get_meta_information('kmeans_feature')
                 if F is None:
-                    F = self.feature_calculator.get_feature(candidate)
+                    F = self.descriptor.get_global_features(candidate)[0]
                     candidate.add_meta_information('kmeans_feature', F)
                 features.append(F)
             features = np.array(features)
         else:
-            features = np.array(self.feature_calculator.get_featureMat(structures))
+            features = np.array(self.descriptor.get_global_features(structures))
         return features

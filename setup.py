@@ -9,18 +9,35 @@ extensions = [
         "agox.models.gaussian_process.featureCalculators_multi.angular_fingerprintFeature_cy",
         ["agox/models/gaussian_process/featureCalculators_multi/angular_fingerprintFeature_cy.pyx"],
         include_dirs=[numpy.get_include()]
-    ),
+        ),
     Extension(
         "agox.models.gaussian_process.delta_functions_multi.delta",
         ["agox/models/gaussian_process/delta_functions_multi/delta.pyx"],
         include_dirs=[numpy.get_include()]
-    ),
+        ),
     Extension(
         "agox.models.priors.repulsive",
         ["agox/models/priors/repulsive.pyx"],
         include_dirs=[numpy.get_include()]
-    ),        
-]
+        ),
+    Extension(
+        "agox.models.descriptors.fingerprint_cython.angular_fingerprintFeature_cy",
+        ["agox/models/descriptors/fingerprint_cython/angular_fingerprintFeature_cy.pyx"],
+        include_dirs=[numpy.get_include()]
+        ),
+    ]
+    
+# Version Number:
+version_file = 'agox/__version__.py'
+with open(version_file) as f:
+    lines = f.readlines()
+
+for line in lines:
+    if '__version_info__' in line:
+        result = re.findall('\d+', line)
+        result = [int(x) for x in result]
+        version = '{}.{}.{}'.format(*result)
+        break
 
 # Version Number:
 version_file = 'agox/__version__.py'

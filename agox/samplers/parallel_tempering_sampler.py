@@ -20,20 +20,20 @@ class ParallelTemperingSampler(MetropolisSampler):
     
     name = 'ParallelTemperingSampler'
 
-    def __init__(self, temperatures=[], swap_frequency=10, gets=[{'get_key':'evaluated_candidates'}, {}], 
+    def __init__(self, temperatures=[], database=None, swap_frequency=10, gets=[{'get_key':'evaluated_candidates'}, {}], 
                 sets=[{}, {}], swap_order=2, **kwargs):
         super().__init__(gets=gets, sets=sets, **kwargs)
         self.swap_frequency = swap_frequency
         self.temperatures = temperatures
-        self.temperature = temperatures[self.database.worker_number]
+        self.temperature = temperatures[database.worker_number]
         self.swap_order = swap_order
         self.swap_func = self.metropolis_hastings_swap
-        self.most_recently_accepted = {worker_number:None for worker_number in range(self.database.total_workers)}
-        self.most_recently_accepted_iteration = {worker_number:0 for worker_number in range(self.database.total_workers)}
+        self.most_recently_accepted = {worker_number:None for worker_number in range(database.total_workers)}
+        self.most_recently_accepted_iteration = {worker_number:0 for worker_number in range(database.total_workers)}
 
         self.add_observer_method(self.swap_candidates, sets=self.sets[1], gets=self.gets[1], order=self.swap_order, handler_identifier='database')
 
-        self.attach_to_database(kwargs['database'])
+        self.attach_to_database(database)
 
     @agox_writer
     @Observer.observer_method
@@ -42,7 +42,7 @@ class ParallelTemperingSampler(MetropolisSampler):
         Assumes that the database is synced. 
         """
         
-        if self.decide_to_swap():
+        if self.decide_to_swap(database):
             for candidate in database.candidates:
 
                 worker_number = candidate.get_meta_information('worker_number')
@@ -57,41 +57,21 @@ class ParallelTemperingSampler(MetropolisSampler):
             if self.verbose:
                 energies = [self.most_recently_accepted[c].get_potential_energy() \
                             if self.most_recently_accepted[c] is not None else 0 for c in self.most_recently_accepted]
-                if self.database.worker_number == 0:
+                if database.worker_number == 0:
                     text = 'PARALLEL TEMPERING:'  + f'{self.temperature:8.3f}, ' + ','.join([f'{e:8.3f}' for e in energies])
                 else:
                     text = 'PARALLEL TEMPERING (not main worker):'
                 self.writer(text)
 
-            self.swap_func()
+            self.swap_func(database)
         
-    def swap_down(self):
-        """
-        Swaps candidates 'down' in worker_number:
-
-        So if 4 total workers: 
-        worker 0: Gets from worker 1.
-        worker 1: Gets from worker 2. 
-        worker 2: Gets from worker 3.
-        worker 3: Gets from worker 4. 
-        """
-        
-        total_workers = self.database.total_workers
-        worker_number = self.database.worker_number
-        if worker_number < total_workers-1:
-            self.chosen_candidate = self.most_recently_accepted[worker_number+1]
-        else:
-            self.chosen_candidate = self.most_recently_accepted[total_workers-1]
-
-        self.writer('Finish swapping candidate!')
-
-    def metropolis_hastings_swap(self):
-        worker_number = self.database.worker_number
-        total_workers = self.database.total_workers
+    def metropolis_hastings_swap(self, database):
+        worker_number = database.worker_number
+        total_workers = database.total_workers
         iteration = self.get_iteration_counter()
 
         # I abuse the filenames a bit here: 
-        filename = self.database.filename[:-3] + '_swap_iteration_{}_worker_{}.traj'
+        filename = database.filename[:-3] + '_swap_iteration_{}_worker_{}.traj'
 
         if worker_number == 0:
             # This one does the calculation and 'broadcasts' to the others over disk. 
@@ -121,7 +101,9 @@ class ParallelTemperingSampler(MetropolisSampler):
 
             # Write the candidates:
             for wn in range(1, total_workers):
-                safe_write(filename.format(iteration, wn), self.most_recently_accepted[wn])
+                atoms = self.most_recently_accepted[wn]
+                atoms.info = atoms.meta_information
+                safe_write(filename.format(iteration, wn), atoms)
             self.chosen_candidate = self.most_recently_accepted[worker_number]
 
         else: 
@@ -131,6 +113,7 @@ class ParallelTemperingSampler(MetropolisSampler):
             chosen_atoms = read(filename.format(iteration, worker_number))
             
             self.sample[0] = self.convert_to_candidate_object(chosen_atoms, self.sample[0].template)
+            self.sample[0].meta_information = chosen_atoms.info
             scp = SinglePointCalculator(self.sample[0], energy=chosen_atoms.get_potential_energy(), forces=chosen_atoms.get_forces())
             self.sample[0].set_calculator(scp)
 
@@ -141,13 +124,5 @@ class ParallelTemperingSampler(MetropolisSampler):
                                           cell=atoms_type_object.cell)
         return candidate
 
-    def decide_to_swap(self):
-        return (self.get_iteration_counter() % self.swap_frequency == 0) * (self.database.total_workers > 1)
-
-    def get_candidate_to_consider(self):        
-        candidates = self.get_from_cache(self.get_key)
-
-        if candidates is None or not len(candidates) > 0:
-            return None
-        return candidates[-1]   # take the latest evaluated candidate
-    
+    def decide_to_swap(self, database):
+        return (self.get_iteration_counter() % self.swap_frequency == 0) * (database.total_workers > 1)    
