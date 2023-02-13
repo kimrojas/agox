@@ -77,7 +77,8 @@ class PostprocessBaseClass(ABC, Observer, Writer):
         
         if self.do_check():
             candidates = self.process_list(candidates)
-        
+            candidates = list(filter(None, candidates))
+
         # Add data in write mode - so overwrites! 
         state.add_to_cache(self, self.set_key, candidates, mode='w')
         

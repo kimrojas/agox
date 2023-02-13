@@ -8,4 +8,4 @@ following elemenets in each iteration.
 - Locally optimize that candidate. 
 - Add the fully relaxed candidate to the database. 
 
-.. literalinclude:: scripts/rss.py
+.. literalinclude:: ../../../agox/test/run_tests/script_rss.py

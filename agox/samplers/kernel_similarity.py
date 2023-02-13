@@ -4,14 +4,13 @@ from ase.io import write
 
 class KernelSimSampler(SamplerBaseClass):
 
-    
     name = 'KernelSimSampler'
 
-    def __init__(self, feature_calculator, model_calculator, log_scale=False,
+    def __init__(self, descriptor, model_calculator, log_scale=False,
         similarity_criterion=0.95, sample_size=10, use_saved_features=False,
         **kwargs):
         super().__init__(**kwargs)
-        self.feature_calculator = feature_calculator
+        self.feature_calculator = descriptor
         if log_scale:
             # 0.995 becomes: 0.995, 0.990, 0.980, 0.960, ...
             self.similarity_criteria = [1 - (1 - similarity_criterion) * 2**i for i in range(sample_size)]
@@ -22,16 +21,6 @@ class KernelSimSampler(SamplerBaseClass):
         self.model_calculator = model_calculator
         self.sample = []
         self.use_saved_features = use_saved_features
-
-    def get_random_member(self):
-        index = np.random.randint(low=0, high=len(self.sample))
-        return self.sample[index].copy()
-
-    def get_random_member_with_calculator(self):
-        index = np.random.randint(low=0, high=len(self.sample))
-        member = self.sample[index].copy()
-        self.sample[index].copy_calculator_to(member)
-        return member
 
     def setup(self, all_finished_structures):
         if self.verbose:
@@ -137,5 +126,5 @@ class KernelSimSampler(SamplerBaseClass):
                 features.append(F)
             features = np.array(features)
         else:
-            features = np.array(self.feature_calculator.get_featureMat(structures))
+            features = np.array(self.feature_calculator.get_global_features(structures))
         return features

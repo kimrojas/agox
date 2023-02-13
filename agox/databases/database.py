@@ -1,3 +1,4 @@
+import pickle
 import numpy as np 
 from time import sleep
 from ase import Atoms
@@ -70,7 +71,7 @@ class Database(DatabaseBaseClass):
 
     name = 'Database'
 
-    def __init__(self, filename='db.db', initialize=False, verbose=False, write_frequency=50, call_initialize=True, 
+    def __init__(self, filename='db.db', initialize=False, verbose=False, write_frequency=1, call_initialize=True, 
                 store_meta_information=True, **kwargs):
         super().__init__(**kwargs)
 
@@ -346,6 +347,7 @@ class Database(DatabaseBaseClass):
         for struc in strucs:            
             candidates.append(self.db_to_candidate(struc, meta_dict=all_meta_info.get(struc['id'], None)))
         self.candidates = candidates
+        self.candidate_energies = [atoms.get_potential_energy() for atoms in candidates]
 
     def restore_to_trajectory(self):
         strucs = self.get_all_structures_data()
@@ -375,7 +377,8 @@ class Database(DatabaseBaseClass):
             elif type(value) == bool:
                 bool_pairs += [(key, value, id)]
             else:
-                other_pairs += [(key, blob(value), id)]
+                value_converted =  pickle.dumps(value, pickle.HIGHEST_PROTOCOL)
+                other_pairs += [(key, value_converted, id)]
         
         cur.executemany('INSERT INTO text_key_values VALUES (?, ?, ?)', text_pairs)
         cur.executemany('INSERT INTO float_key_values VALUES (?, ?, ?)', float_pairs)
@@ -386,14 +389,19 @@ class Database(DatabaseBaseClass):
     def read_key_value_pairs(self, id=0):
         dict_recreation = {}
         tables = ['text_key_values', 'float_key_values', 'int_key_values', 'boolean_key_values', 'other_key_values']
-        functions = [nothing, nothing, nothing, bool, deblob]
+        functions = [nothing, nothing, nothing, bool, pickle.loads]
 
         cur = self.con.cursor()
         for table, func in zip(tables, functions):
             cur.execute(f'SELECT * FROM {table} WHERE id=?', (id,))
             A = cur.fetchall()
             for key, value, _ in A:
-                dict_recreation[key] = func(value)
+                try:
+                    converted_value = func(value)
+                except:
+                    converted_value = deblob(value)
+
+                dict_recreation[key] = converted_value
 
         return dict_recreation
 
@@ -401,7 +409,7 @@ class Database(DatabaseBaseClass):
         cursor = self.con.cursor()
 
         tables = ['text_key_values', 'float_key_values', 'int_key_values', 'boolean_key_values', 'other_key_values']
-        functions = [nothing, nothing, nothing, bool, deblob]
+        functions = [nothing, nothing, nothing, bool, pickle.loads]
 
         dict_of_dicts = {} # Uses the id as the key to the meta information dict for each candidate. (Id from structures table).
 
@@ -410,10 +418,15 @@ class Database(DatabaseBaseClass):
             rows = cursor.fetchall()
 
             for key, value, id in rows:
+                try:
+                    converted_value = func(value)
+                except:
+                    converted_value = deblob(value)
+
                 if id in dict_of_dicts.keys():
-                    dict_of_dicts[id][key] = func(value)
+                    dict_of_dicts[id][key] = converted_value
                 else:
-                    dict_of_dicts[id] = {key:func(value)}
+                    dict_of_dicts[id] = {key:converted_value}
 
         return dict_of_dicts
 

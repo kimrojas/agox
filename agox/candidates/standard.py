@@ -12,8 +12,8 @@ class StandardCandidate(CandidateBaseClass):
             if atoms.calc is not None:
                 if 'energy' in atoms.calc.results:
                     if 'forces' in atoms.calc.results:
-                        candidate.set_calculator(SPC(candidate, energy=atoms.get_potential_energy(apply_constraint=False),
-                                                     forces=atoms.get_forces(apply_constraint=False)))
+                        candidate.calc = SPC(candidate, energy=atoms.get_potential_energy(apply_constraint=False), 
+                            forces=atoms.get_forces(apply_constraint=False))
                     else:
-                        candidate.set_calculator(SPC(candidate, energy=atoms.get_potential_energy(apply_constraint=False)))
+                        candidate.calc = SPC(candidate, energy=atoms.get_potential_energy(apply_constraint=False))
         return candidate

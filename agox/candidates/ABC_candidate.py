@@ -61,7 +61,6 @@ class CandidateBaseClass(ABC, Atoms, Module):
         value:
             Value to be set in the dict. 
         """
-        assert type(value) in [str, bool, int, np.ndarray, float, np.array, np.float64, np.float32]
         self.meta_information[name] = value
 
     def get_meta_information(self, name):
