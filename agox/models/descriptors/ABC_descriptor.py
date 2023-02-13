@@ -187,7 +187,6 @@ class DescriptorBaseClass(ABC, Module):
 
 
 
-
     @Module.reset_cache_key
     def change_descriptor_somehow(self):
         return
