@@ -11,10 +11,9 @@ class DescriptorBaseClass(ABC, Module):
 
     feature_types = []
 
-    def __init__(self, surname='', **kwargs):
-        Module.__init__(self, surname=surname)
+    def __init__(self, surname='', use_cache=False, **kwargs):
+        Module.__init__(self, surname=surname, use_cache=use_cache)
         assert np.array([feature_type in all_feature_types for feature_type in self.feature_types]).all(), 'Unknown feature type declared.'
-
 
     ##########################################################################################################
     # Create methods - Implemented by classes that inherit from this base-class.
@@ -186,9 +185,14 @@ class DescriptorBaseClass(ABC, Module):
         if not feature_type in self.feature_types:
             raise NotImplementedError(f'This descriptor does not support {feature_type} features')
 
-
-
     @Module.reset_cache_key
     def change_descriptor_somehow(self):
+        """
+        This is not a real method. 
+
+        This is just to illustrate that if you use the caching capability of the 
+        descriptor-baseclass then you MUST use the @Module.reset_cache_key decorator 
+        on any function that changes the descriptor - e.g. changing parameters. 
+        """
         return
 
