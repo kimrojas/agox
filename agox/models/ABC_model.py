@@ -8,7 +8,7 @@ import numpy as np
 from agox.observer import Observer
 from agox.writer import Writer, agox_writer
 
-class ModelBaseClass(Calculator, Observer, Writer, ABC, Module):
+class ModelBaseClass(Calculator, Observer, Writer, ABC):
     """ Model Base Class implementation
 
     Attributes
@@ -48,7 +48,7 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC, Module):
         Observer.__init__(self, order=order, surname=surname, gets=gets, sets=sets)
         Writer.__init__(self, verbose=verbose, use_counter=use_counter, prefix=prefix)
         Calculator.__init__(self)
-        Module.__init__(self)
+        # Module.__init__(self)
 
         self.verbose = verbose
         self.iteration_start_training = iteration_start_training
@@ -106,7 +106,7 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC, Module):
 
     
     @abstractmethod
-    @Module.reset_cache_key
+    # @Module.reset_cache_key
     def train_model(self, training_data, **kwargs):
         """Method for model training. 
         
