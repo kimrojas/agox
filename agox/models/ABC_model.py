@@ -1,6 +1,6 @@
 import os
 from abc import ABC, abstractmethod
-from agox.module import Module
+# from agox.module import Module
 from ase.calculators.calculator import Calculator, all_changes
 from agox.candidates.ABC_candidate import CandidateBaseClass
 import numpy as np
