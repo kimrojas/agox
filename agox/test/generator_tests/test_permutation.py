@@ -6,7 +6,7 @@ from agox.test.test_utils import test_data_dicts
 
 seed = 1
 generator_args = []
-generator_base_kwargs = {'c1':0.75, 'c2':1.25, 'dimensionality':3}
+generator_base_kwargs = {'c1':0.75, 'c2':1.25}
 generator_class = PermutationGenerator
 
 list_of_other_kwargs = [
