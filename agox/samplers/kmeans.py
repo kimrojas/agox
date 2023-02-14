@@ -136,7 +136,7 @@ class KMeansSampler(SamplerBaseClass):
             for candidate in structures:
                 F = candidate.get_meta_information('kmeans_feature')
                 if F is None:
-                    F = self.descriptor.get_global_features(candidate)[0]
+                    F = self.descriptor.get_global_features(candidate)
                     candidate.add_meta_information('kmeans_feature', F)
                 features.append(F)
             features = np.array(features)

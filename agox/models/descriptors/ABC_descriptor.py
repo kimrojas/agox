@@ -124,6 +124,7 @@ class DescriptorBaseClass(ABC, Module):
         self.feature_type_check('global')
         return self.create_global_features(atoms)
 
+
     @candidate_list_comprehension
     @CandidateBaseClass.cache('global_feature_gradient')
     def get_global_feature_gradient(self, atoms):

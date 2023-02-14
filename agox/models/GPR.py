@@ -116,7 +116,7 @@ class ModelGPR(ModelBaseClass):
                 F = candidate.get_meta_information('GPR_feature')
                 d = candidate.get_meta_information('GPR_delta')
                 if F is None:
-                    F = self.model.descriptor.get_global_features(candidate)[0]
+                    F = self.model.descriptor.get_global_features(candidate)
                     candidate.add_meta_information('GPR_feature', F)
                     d = self.model.delta_function.energy(candidate)
                     candidate.add_meta_information('GPR_delta', d)

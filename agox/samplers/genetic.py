@@ -193,7 +193,7 @@ class DistanceComparator:
         feature = candidate.get_meta_information('population_feature')
 
         if feature is None:
-            feature = self.descriptor.get_global_features(candidate)[0]
+            feature = self.descriptor.get_global_features(candidate)
             candidate.add_meta_information('population_feature', feature)
         
         return feature
