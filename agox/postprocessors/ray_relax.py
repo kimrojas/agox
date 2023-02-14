@@ -2,7 +2,8 @@ import ray
 import numpy as np
 
 from ase.optimize import BFGS
-from ase.calculators.singlepoint import SinglePointCalculator as SPC
+from ase.calculators.calculator import all_properties
+from ase.calculators.singlepoint import SinglePointCalculator
 from ase.constraints import FixAtoms
 
 from agox.postprocessors.ABC_postprocess import PostprocessBaseClass
@@ -100,11 +101,12 @@ class ParallelRelaxPostprocess(PostprocessBaseClass, RayBaseClass):
         # Get the candidates:
         post_processed_candidates = ray.get(post_processed_candidates)
 
-        # Copy positions over to the input:
-        for j, candidate in enumerate(list_of_candidates):
-               candidate.positions=post_processed_candidates[j].positions.copy()
-               candidate.add_meta_information('relaxation_steps', 
-                post_processed_candidates[j].get_meta_information('relaxation_steps'))
+        # Copy properties over to the input:
+        for cand, processed_cand in zip(list_of_candidates, post_processed_candidates):
+            cand.positions = processed_cand.positions.copy()
+            results = {prop: val for prop, val in processed_cand.calc.results.items() if prop in all_properties}
+            cand.calc = SinglePointCalculator(cand, **results)
+            cand.add_meta_information('relaxation_steps', processed_cand.get_meta_information('relaxation_steps'))
         
         # Remove constraints.
         [self.remove_constraints(candidate) for candidate in list_of_candidates]
@@ -141,4 +143,3 @@ class ParallelRelaxPostprocess(PostprocessBaseClass, RayBaseClass):
 
     def get_template_constraint(self, candidate):
         return FixAtoms(indices=np.arange(len(candidate.template)))
-
