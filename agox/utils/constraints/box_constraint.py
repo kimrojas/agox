@@ -6,9 +6,9 @@ from agox.helpers.confinement import Confinement
 class BoxConstraint(Confinement):
 
     def __init__(self, confinement_cell=None, confinement_corner=None, indices=None, 
-        pbc=[False]*3, dimensionality=3, **kwargs):
+        pbc=[False]*3, **kwargs):
         super().__init__(confinement_cell=confinement_cell, confinement_corner=confinement_corner, 
-            indices=indices, pbc=pbc, dimensionality=dimensionality)
+            indices=indices, pbc=pbc)
 
         # Soft boundary & force decay.
         self.lower_soft_boundary = 0.05; self.lower_hard_boundary = 0.001
@@ -26,7 +26,7 @@ class BoxConstraint(Confinement):
 
         if np.invert(inside).any():
             newpositions[self.indices[np.invert(inside)], :] = wrap_positions(newpositions[self.indices[np.invert(inside)], :],
-                                                                              cell=self.effective_confinement_cell, pbc=self.pbc)
+                                                                              cell=self.confinement_cell, pbc=self.pbc)
             for idx in self.indices[np.invert(inside)]:
                 newpositions[idx, self.hard_boundaries] = atoms.positions[idx, self.hard_boundaries]
             

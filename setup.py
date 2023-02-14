@@ -39,18 +39,6 @@ for line in lines:
         version = '{}.{}.{}'.format(*result)
         break
 
-# Version Number:
-version_file = 'agox/__version__.py'
-with open(version_file) as f:
-    lines = f.readlines()
-
-for line in lines:
-    if '__version_info__' in line:
-        result = re.findall('\d+', line)
-        result = [int(x) for x in result]
-        version = '{}.{}.{}'.format(*result)
-        break
-
 setup(
     name="agox",
     version=version,
