@@ -9,10 +9,6 @@ from ase.calculators.singlepoint import SinglePointCalculator
 from agox.module import Module
 from agox.utils.cache import Cache
     
-        
-        
-
-
 class CandidateBaseClass(ABC, Atoms, Module):
 
     def __init__(self, template=None, template_indices=None, use_cache=True, **kwargs):
@@ -322,3 +318,19 @@ class CandidateBaseClass(ABC, Atoms, Module):
             return np.mean(self.positions, axis=0).reshape(1, 3)
         else:
             return np.mean(self.positions[self.get_optimize_indices()], axis=0).reshape(1, 3)
+
+def disable_cache(candidate):
+    # Can be either Candidate or Atoms.
+    if isinstance(candidate, CandidateBaseClass):
+        candidate.use_cache = False
+
+def switch_cache(candidate, state):
+    prev_state = False
+    if isinstance(candidate, CandidateBaseClass):
+        prev_state = candidate.use_cache
+        candidate.use_cache = state
+    return prev_state
+
+
+
+
