@@ -80,9 +80,9 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
         """
         pass    
 
-
-    @abstractmethod
+    
     # @CandidateBaseClass.cache('energy')
+    @abstractmethod
     def predict_energy(self, atoms, **kwargs):
         """Method for energy prediction. 
         
@@ -104,9 +104,9 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
         """        
         pass
 
-    
-    @abstractmethod
+
     # @Module.reset_cache_key
+    @abstractmethod
     def train_model(self, training_data, **kwargs):
         """Method for model training. 
         
