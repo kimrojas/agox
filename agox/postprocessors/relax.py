@@ -1,8 +1,10 @@
 import numpy as np
 from agox.postprocessors.ABC_postprocess import PostprocessBaseClass
+from ase.calculators.calculator import all_properties
+from ase.calculators.singlepoint import SinglePointCalculator
+from ase.constraints import FixAtoms
 from ase.optimize.bfgslinesearch import BFGSLineSearch
 
-from ase.constraints import FixAtoms
 
 class RelaxPostprocess(PostprocessBaseClass):
 
@@ -34,6 +36,9 @@ class RelaxPostprocess(PostprocessBaseClass):
         
         candidate.add_meta_information('relaxation_steps', optimizer.get_number_of_steps())
 
+        results = {prop: val for prop, val in candidate.calc.results.items() if prop in all_properties}
+        candidate.calc = SinglePointCalculator(candidate, **results)
+
         print(f'Relaxed for {optimizer.get_number_of_steps()} steps')
 
         self.remove_constraints(candidate)
@@ -62,9 +67,3 @@ class RelaxPostprocess(PostprocessBaseClass):
 
     def get_template_constraint(self, candidate):
         return FixAtoms(indices=np.arange(len(candidate.template)))
-
-        
-        
-        
-        
-

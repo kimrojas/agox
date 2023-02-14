@@ -2,17 +2,15 @@ import numpy as np
 
 class Confinement:
 
-    def __init__(self, confinement_cell=None, confinement_corner=None, dimensionality=3, indices=None, pbc=[False]*3):
+    def __init__(self, confinement_cell=None, confinement_corner=None, indices=None, pbc=[False]*3):
         self.confinement_cell = np.array(confinement_cell)
         self.confinement_corner = np.array(confinement_corner)
-        self.dimensionality = dimensionality
 
         if indices is None:
             indices = np.array([])
         self.indices = np.array(indices).flatten()
 
         self.periodicity_setup(pbc)
-        assert dimensionality == self.dimensionality, f'Confinement cell does not match dimensionality (Not {dimensionality}D'
         self.confined = self.confinement_cell is not None and self.confinement_corner is not None
 
     def periodicity_setup(self, pbc):
