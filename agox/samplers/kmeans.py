@@ -10,8 +10,7 @@ class KMeansSampler(SamplerBaseClass):
     name = 'SamplerKMeans'
     parameters = {}
 
-    def __init__(self, descriptor=None, feature_calculator=None, model_calculator=None, sample_size=10, max_energy=5, 
-                        use_saved_features=False, **kwargs):
+    def __init__(self, descriptor=None, feature_calculator=None, model_calculator=None, sample_size=10, max_energy=5, **kwargs):
         super().__init__(**kwargs)
 
         if descriptor is not None and feature_calculator is None:
@@ -27,7 +26,6 @@ class KMeansSampler(SamplerBaseClass):
         self.sample = []
         self.sample_features = []
         self.model_calculator = model_calculator
-        self.use_saved_features = use_saved_features
         self.debug = False
 
     def setup(self, all_finished_structures):
@@ -131,15 +129,5 @@ class KMeansSampler(SamplerBaseClass):
               if closest_sample_energy > chosen_candidate_energy else '')
 
     def get_features(self, structures):
-        if self.use_saved_features:
-            features = []
-            for candidate in structures:
-                F = candidate.get_meta_information('kmeans_feature')
-                if F is None:
-                    F = self.descriptor.get_global_features(candidate)
-                    candidate.add_meta_information('kmeans_feature', F)
-                features.append(F)
-            features = np.array(features)
-        else:
-            features = np.array(self.descriptor.get_global_features(structures))
+        features = np.array(self.descriptor.get_global_features(structures))
         return features

@@ -7,10 +7,9 @@ class KernelSimSampler(SamplerBaseClass):
     name = 'KernelSimSampler'
 
     def __init__(self, descriptor, model_calculator, log_scale=False,
-        similarity_criterion=0.95, sample_size=10, use_saved_features=False,
-        **kwargs):
+        similarity_criterion=0.95, sample_size=10, **kwargs):
         super().__init__(**kwargs)
-        self.feature_calculator = descriptor
+        self.descriptor = descriptor
         if log_scale:
             # 0.995 becomes: 0.995, 0.990, 0.980, 0.960, ...
             self.similarity_criteria = [1 - (1 - similarity_criterion) * 2**i for i in range(sample_size)]
@@ -20,7 +19,6 @@ class KernelSimSampler(SamplerBaseClass):
         self.sample_size = sample_size
         self.model_calculator = model_calculator
         self.sample = []
-        self.use_saved_features = use_saved_features
 
     def setup(self, all_finished_structures):
         if self.verbose:
@@ -116,15 +114,5 @@ class KernelSimSampler(SamplerBaseClass):
 
 
     def get_features(self, structures):
-        if self.use_saved_features:
-            features = []
-            for candidate in structures:
-                F = candidate.get_meta_information('kernel_sim_sampler_feature')
-                if F is None:
-                    F = self.feature_calculator.get_feature(candidate)
-                    candidate.add_meta_information('kernel_sim_sampler_feature', F)
-                features.append(F)
-            features = np.array(features)
-        else:
-            features = np.array(self.feature_calculator.get_global_features(structures))
+        features = np.array(self.descriptor.get_global_features(structures))
         return features
