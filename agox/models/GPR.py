@@ -384,7 +384,7 @@ class ModelGPR(ModelBaseClass):
                 optimize=True,
                 n_restarts_optimizer=1,
                 n_maxiter_optimizer = max_iterations,
-                use_delta_in_training=False)
+                  use_delta_in_training=True)
 
         return cls(gpr, database=database, update_interval=1, optimize_loglikelyhood=True, use_saved_features=True, max_training_data=max_training_data)
 
