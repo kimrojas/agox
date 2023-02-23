@@ -3,6 +3,7 @@ from ase.md.langevin import Langevin
 from agox.generators.ABC_generator import GeneratorBaseClass
 import numpy as np
 from ase.constraints import FixAtoms, FixedLine, FixedPlane
+from ase.md.velocitydistribution import MaxwellBoltzmannDistribution, ZeroRotation, Stationary
 from ase.io import read, write
 
 class MDgenerator(GeneratorBaseClass):
@@ -15,7 +16,7 @@ class MDgenerator(GeneratorBaseClass):
             thermostat = Langevin,
             thermostat_kwargs = {'timestep':1.*fs, 'temperature_K':10, 'friction':0.05},
             start_settings = [MaxwellBoltzmannDistribution, ZeroRotation, Stationary],
-            start_settings_kwargs = [{},{},{}]
+            start_settings_kwargs = [{},{},{}],
             temperature_program = [(500,10),(100,10)], 
             constraints=[],
             check_template = False,
@@ -59,7 +60,7 @@ class MDgenerator(GeneratorBaseClass):
     def molecular_dynamics(self, candidate):
         """ Runs the molecular dynamics simulation and applies/removes constraints accordingly """
 
-        if set_start_settings:
+        if self.set_start_settings:
             for setting, kwargs in zip(self.start_settings, self.start_settings_kwargs):
                 setting(candidate, **kwargs)
         
