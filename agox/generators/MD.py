@@ -15,7 +15,7 @@ class MDgenerator(GeneratorBaseClass):
             thermostat = Langevin,
             thermostat_kwargs = {'timestep':1.*fs, 'temperature_K':10, 'friction':0.05},
             start_settings = [MaxwellBoltzmannDistribution, ZeroRotation, Stationary],
-            start_setting_kwargs = [{},{},{}]
+            start_settings_kwargs = [{},{},{}]
             temperature_program = [(500,10),(100,10)], 
             constraints=[],
             check_template = False,
@@ -25,7 +25,7 @@ class MDgenerator(GeneratorBaseClass):
         self.calculator = calculator # Calculator for MD simulation
         self.thermostat = thermostat # MD program used
         self.thermostat_kwargs = thermostat_kwargs # Settings for MD program
-        self.set_start_settings = True
+        self.set_start_settings = False
         self.start_settings = start_settings
         self.start_settings_kwargs = start_settings_kwargs
         self.temperature_program = temperature_program # (temp in kelvin, steps) for MD program if temperature is modifiable during simulation
