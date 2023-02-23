@@ -1,15 +1,16 @@
 import pytest 
 from agox.utils.batch_analysis import Analysis
-from agox.test.test_utils import TemporaryFolder
+from agox.test.test_utils import TemporaryFolder, test_folder_path
 import os
 import shutil
 
 import matplotlib.pyplot as plt
 import glob
 
+
 database_paths = [
-    ['datasets/databases/mos2_databases/']
-    ]
+    [os.path.join(test_folder_path, 'datasets/databases/mos2_databases/')]
+]
 
 @pytest.fixture(params=database_paths)
 def database_paths(request):
