@@ -1,0 +1,5 @@
+recursive-include agox/test *
+include agox/models/gaussian_process/featureCalculators_multi/angular_fingerprintFeature_cy.pyx
+include agox/models/descriptors/fingerprint_cython/angular_fingerprintFeature_cy.pyx
+include agox/models/gaussian_process/delta_functions_multi/delta.pyx
+include agox/models/priors/repulsive.pyx

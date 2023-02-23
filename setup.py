@@ -1,7 +1,7 @@
 import re
 from setuptools import setup, find_packages
 from setuptools.extension import Extension
-from Cython.Build import cythonize
+from Cython.Build import cythonize, build_ext
 import numpy
 
 extensions = [
@@ -42,21 +42,26 @@ for line in lines:
 setup(
     name="agox",
     version=version,
-    url="https://gitlab.com/agox/agox",
+    url="https://agox.gitlab.io/agox/",
     description="Atomistic Global Optimziation X is a framework for structure optimization in materials science.",
     install_requires=[
-        "numpy>=1.22.0",
+        "numpy >=1.18,<1.24",
         "ase",
         "matplotlib",
         "cymem",
         "scikit-learn",
-        "dscribe",
-        "mpi4py",
-        "ray==2.0.0",
-        "jax",
     ],
-    packages=find_packages(),
+    extras_require={
+        'full': [
+            "dscribe",
+            "ray==2.0.0",
+            "pytest",
+            "jax",
+        ]
+    },
     python_requires=">=3.5",
+    packages=find_packages(),
+    include_package_data=True,
     ext_modules=cythonize(extensions),
     entry_points={'console_scripts':['agox-convert=agox.utils.convert_database:convert', 
                                      'agox-analysis=agox.utils.batch_analysis:command_line_analysis']})
