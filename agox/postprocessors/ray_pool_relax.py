@@ -5,10 +5,12 @@ from ase.calculators.calculator import all_properties
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.optimize import BFGS
 from ase.constraints import FixAtoms
+from agox.candidates.ABC_candidate import disable_cache
 
 def relax(model, candidate, optimizer, optimizer_kwargs, optimizer_run_kwargs):
     candidate = candidate.copy()
     candidate.set_calculator(model)
+    disable_cache(candidate)
     optimizer = optimizer(candidate,**optimizer_kwargs)
     try:
         optimizer.run(**optimizer_run_kwargs)

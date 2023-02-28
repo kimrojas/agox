@@ -39,7 +39,7 @@ L_compare = np.eye(4) * 3 - A_compare
 
 assert (L == L_compare).all()
 
-feature = descriptor.get_global_features(atoms)[0]
+feature = descriptor.get_global_features(atoms)
 
 assert np.allclose(feature, np.array([-1., 1., 1., 3.]))
 
