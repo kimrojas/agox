@@ -26,11 +26,23 @@ class UniformSelector(DataSelector):
 
 class SegmentedSelector(DataSelector):
 
+    def __init__(self, replace=False, max_energy=None):
+        super().__init__(replace)
+        self.max_energy = max_energy
+
     def make_probability(self, data, N):
         p = np.zeros(len(data))
         energies = np.array([atoms.get_potential_energy() for atoms in data])
         sorted_indices = np.argsort(energies)
-        interval = int(np.floor(len(data) / N))
+
+        if self.max_energy is not None:
+            valid_data = np.count_nonzero(energies < energies.min() + self.max_energy)
+        else:
+            valid_data = len(data)
+
+        interval = int(np.floor(valid_data / N))
+
+
         p[sorted_indices[0:-1:interval]] = 1
         return p / np.sum(p)
 
