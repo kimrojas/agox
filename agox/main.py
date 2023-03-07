@@ -11,8 +11,6 @@ from agox.observer import ObserverHandler, FinalizationHandler
 from agox.logger import Logger
 from agox.writer import Writer, agox_writer, ICON, header_print
 
-VERSION = "2.0.0"
-
 class AGOX(ObserverHandler, FinalizationHandler, Writer):
     """
     AGO-X
@@ -33,7 +31,7 @@ class AGOX(ObserverHandler, FinalizationHandler, Writer):
         FinalizationHandler.__init__(self)
         Writer.__init__(self, verbose=True, use_counter=False, prefix='')
 
-        print(ICON.format(VERSION))
+        print(ICON)
         header_print('Initialization starting')
 
         self.elements = args

@@ -6,6 +6,7 @@ from ase.geometry import get_distances
 from agox.observer import Observer
 from agox.writer import Writer, agox_writer
 
+from agox.helpers.confinement import Confinement
 
 dimensionality_angles = {
                         3:{'theta':[0, 2*np.pi], 'phi':[0, np.pi]},
@@ -13,9 +14,9 @@ dimensionality_angles = {
                         1:{'theta':[0, 0], 'phi':[np.pi/2, np.pi/2]}
                         }
 
-class GeneratorBaseClass(ABC, Observer, Writer):
+class GeneratorBaseClass(ABC, Observer, Writer, Confinement):
 
-    def __init__(self, confinement_cell=None, confinement_corner=None, c1=0.75, c2=1.25, dimensionality=3, 
+    def __init__(self, confinement_cell=None, confinement_corner=None, c1=0.75, c2=1.25, 
                 use_mic=True, environment=None, sampler=None, gets={}, sets={'set_key':'candidates'}, order=2, 
                 verbose=True, use_counter=True, prefix='', surname=''):
         """
@@ -26,32 +27,14 @@ class GeneratorBaseClass(ABC, Observer, Writer):
         """
         Observer.__init__(self, sets=sets, gets=gets, order=order, surname=surname)
         Writer.__init__(self, verbose=verbose, use_counter=use_counter, prefix=prefix)
+        Confinement.__init__(self, confinement_cell=confinement_cell, confinement_corner=confinement_corner)
 
-        self.confinement_cell = confinement_cell
-        self.confinement_corner = confinement_corner
-        self.confined = confinement_cell is not None and confinement_corner is not None
         self.c1 = c1 # Lower limit on bond lengths. 
         self.c2 = c2 # Upper limit on bond lengths. 
-        self.dimensionality = dimensionality
         self.use_mic = use_mic
         self.environment = environment
         self.sampler = sampler
-
         self.candidate_instanstiator = StandardCandidate
-        if self.confined:
-            # Checks if the confinement cell matches the given dimensionality, this assumes 
-            # that a 2D search happens in the XY plane and a 1D search happens on the X axis.
-            # Thus the z-column of confinement_cell needs to be zero for 2D and z/y columns for 1D. 
-            # Ensures that default methods will generate vectors that obey the dimensionality. 
-            if dimensionality == 3:
-                assert np.all(np.any(self.confinement_cell > 0, axis=1)), 'Confinement cell does not match dimensionality (Not 3D)'
-                self.effective_confinement_cell = self.confinement_cell
-            if dimensionality == 2:
-                assert np.all(self.confinement_cell[:, 2] == 0), 'Confinemnt cell does not match dimensionality (Not 2D)'
-                self.effective_confinement_cell = self.confinement_cell[0:2, 0:2]
-            if dimensionality == 1:
-                assert np.all(self.confinement_cell[:, 2] == 0) and np.all(self.confinement_cell[:, 1] == 0), 'Confinemnt cell does not match dimensionality (Not 1D)'
-                self.effective_confinement_cell = self.confinement_cell[0:1, 0:1]
 
         if self.environment is not None:
             self.plot_confinement(environment)
@@ -83,27 +66,6 @@ class GeneratorBaseClass(ABC, Observer, Writer):
         candidate.add_meta_information('generator', self.name)
 
         return candidate
-
-    def check_confinement(self, positions):
-        """
-        Checks that all of the given positions are within the confinement cell. 
-        If B and c have not been specified it always returns True. 
-        """
-        if self.confined:             
-            return self.check_positions_within_confinement(positions).all()
-        else:
-            return True
-
-    def check_positions_within_confinement(self, positions):
-        """
-        Returns boolean array indicating which atoms are within the confinement limits. 
-        """
-        if self.confined:
-            positions = positions.reshape(-1, 3)
-            C = np.linalg.solve(self.effective_confinement_cell.T, (positions-self.confinement_corner)[:, 0:self.dimensionality].T).T.reshape(-1, self.dimensionality)
-            return np.all((C > 0) * (C < 1), axis=1)
-        else:
-            return np.ones(positions.shape[0]).astype(bool)
 
     def check_new_position(self, candidate, new_position, number, skipped_indices=[]):
         """
@@ -155,20 +117,7 @@ class GeneratorBaseClass(ABC, Observer, Writer):
         return displacement
 
     def get_box_vector(self):
-        return self.confinement_cell @ np.random.rand(3) + self.confinement_corner
-
-    ####################################################################################################################
-    # Convenience methods:
-    ####################################################################################################################
-
-    def set_confinement_cell(self, cell, confinement_corner):        
-        self.confinement_cell = cell
-        self.confinement_corner = confinement_corner
-        self.confined = True        
-
-    def set_dimensionality(self, dimensionality):
-        self.dimensionality = dimensionality
-
+        return self._get_box_vector(self.confinement_cell, self.confinement_corner) # From confinement-class.
 
     ####################################################################################################################
     # Observer functions
@@ -181,7 +130,7 @@ class GeneratorBaseClass(ABC, Observer, Writer):
         """
         from agox.generators import RandomGenerator
         return RandomGenerator(confinement_cell=self.confinement_cell, confinement_corner=self.confinement_corner, 
-                c1=self.c1, c2=self.c2, dimensionality=self.dimensionality, use_mic=self.use_mic)(self.sampler, self.environment)
+                c1=self.c1, c2=self.c2, use_mic=self.use_mic)(self.sampler, self.environment)
 
     @agox_writer
     @Observer.observer_method

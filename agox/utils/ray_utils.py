@@ -336,7 +336,7 @@ class Pool(Observer, Writer, Module):
 
         key = self.get_key(module)
         assert len(self.idle_actors) == self.number_of_actors
-        futures = [actor.delete_module.remote(key) for actor in self.idle_actors]
+        futures = [actor.remove_module.remote(key) for actor in self.idle_actors]
         ray.get(futures) # Block to make sure all the actors do this!
         del self.modules[key]
 

@@ -29,7 +29,7 @@ class RattleGenerator(GeneratorBaseClass):
                 suggested_position = candidate.positions[i] + displacement
 
                 # Check confinement limits:
-                if not self.check_confinement(suggested_position):
+                if not self.check_confinement(suggested_position).all():
                     continue
 
                 # Check that suggested_position is not too close/far to/from other atoms

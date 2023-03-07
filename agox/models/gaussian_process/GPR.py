@@ -28,7 +28,7 @@ class GPR(Writer):
     comparator_kwargs:
     Parameters for the compator. This could be the width for the gaussian kernel.
     """
-    def __init__(self, kernel, featureCalculator, delta_function=None, bias_func=None, optimize=True, n_restarts_optimizer=0, constraint_small_kernel_width=False,use_delta_in_training=False, 
+    def __init__(self, kernel, descriptor, delta_function=None, bias_func=None, optimize=True, n_restarts_optimizer=0, constraint_small_kernel_width=False,use_delta_in_training=False, 
                  verbose=True, n_maxiter_optimizer=None):
         Writer.__init__(self, verbose=verbose)
 
@@ -38,7 +38,7 @@ class GPR(Writer):
             print('#'*50)
 
         self.kernel = kernel
-        self.featureCalculator = featureCalculator
+        self.descriptor = descriptor
         self.optimize = optimize
         self.n_restarts_optimizer = n_restarts_optimizer
         self.constraint_small_kernel_width = constraint_small_kernel_width
@@ -58,7 +58,7 @@ class GPR(Writer):
         """
         if K_vec is None:
             if fnew is None:
-                fnew = self.featureCalculator.get_feature(atoms)
+                fnew = self.descriptor.get_global_features(atoms)
             K_vec = self.kernel_.get_kernel(self.featureMat, fnew).reshape(-1)
 
         if delta_value is None:
@@ -96,9 +96,9 @@ class GPR(Writer):
         
         # Calculate features and their gradients if not given
         if fnew is None:
-            fnew = self.featureCalculator.get_feature(atoms)
+            fnew = self.descriptor.get_global_features(atoms)
         if fgrad is None:
-            fgrad = self.featureCalculator.get_featureGradient(atoms)
+            fgrad = self.descriptor.get_global_feature_gradient(atoms)
         dk_df = self.kernel_.get_kernel_jac(self.featureMat, fnew)
         
         # Calculate contribution from delta-function
@@ -199,7 +199,7 @@ class GPR(Writer):
         
         if features is None:
             t = time.time()
-            features = self.featureCalculator.get_featureMat(atoms_list)
+            features = np.array(self.descriptor.get_global_features(atoms_list))
             if self.verbose:
                 self.writer('Feature time: %4.4f' %(time.time()-t))
             
@@ -404,246 +404,3 @@ class GPR(Writer):
             warnings.warn("fmin_l_bfgs_b terminated abnormally with the "
                           " state: %s" % convergence_dict)
         return theta_opt, func_min
-
-
-if __name__ == '__main__':
-    from ase.io import read
-    from gaussComparator import gaussComparator
-    from featureCalculators.angular_fingerprintFeature_cy import Angular_Fingerprint
-    from ase.visualize import view
-    from ase import Atoms
-
-    from custom_calculators import doubleLJ_calculator
-
-    import matplotlib.pyplot as plt
-
-    def finite_diff(krr, a, dx=1e-5, with_ud=False):
-        pos0 = a.get_positions()
-        Natoms, dim = pos0.shape
-        F = np.zeros((Natoms, dim))
-        vu = np.zeros((Natoms, dim))
-        vd = np.zeros((Natoms, dim))
-        for i in range(Natoms):
-            for j in range(dim):
-                pos_up = np.copy(pos0)
-                pos_up[i,j] += dx/2
-                pos_down = np.copy(pos0)
-                pos_down[i,j] -= dx/2
-
-                
-                a_up = a.copy()
-                a_down = a.copy()
-                a_up.set_positions(pos_up)
-                a_down.set_positions(pos_down)
-                
-                E_up, err_up, _ = krr.predict_energy(a_up, return_error=True)
-                val_up = E_up - err_up
-                E_down, err_down, _ = krr.predict_energy(a_down, return_error=True)
-                val_down = E_down - err_down
-                #print(E_down, E_up)
-                #print(err_down, err_up)
-                #print('val:', val_down - val_up)
-                #print('E  :', E_down - E_up)
-
-                vu[i,j] = val_up
-                vd[i,j] = val_down
-                
-                F[i,j] = (val_down - val_up)/dx
-        if with_ud:
-            return F[0,0], vu[0,0], vd[0,0]
-        else:
-            return F
-    
-    def createData(r):
-        positions = np.array([[0,0,0],[r,0,0]])
-        a = Atoms('2H', positions, cell=[3,3,1], pbc=[0,0,0])
-        calc = doubleLJ_calculator()
-        a.set_calculator(calc)
-        return a
-
-    def test1():
-        a_train = [createData(r) for r in [0.9,1,1.3,2,3]]
-        
-        #traj = read('graphene_data/all_every10th.traj', index='0::5')
-        #a_train = traj[:100]
-        E_train = np.array([a.get_potential_energy() for a in a_train])
-        Natoms = len(a_train[0])
-        #view(a_train)
-        
-        Rc1 = 5
-        binwidth1 = 0.2
-        sigma1 = 0.2
-        
-        Rc2 = 4
-        Nbins2 = 30
-        sigma2 = 0.2
-        
-        gamma = 1
-        eta = 30
-        use_angular = False
-        
-        featureCalculator = Angular_Fingerprint(a_train[0], Rc1=Rc1, Rc2=Rc2, binwidth1=binwidth1, Nbins2=Nbins2, sigma1=sigma1, sigma2=sigma2, gamma=gamma, eta=eta, use_angular=use_angular)
-        
-        
-        # Set up KRR-model
-        comparator = gaussComparator()
-        krr = krr_class(comparator=comparator,
-                        featureCalculator=featureCalculator)
-        
-        GSkwargs = {'reg': [1e-5], 'sigma': [5]}
-        MAE, params = krr.train(atoms_list=a_train, data_values=E_train, k=3, add_new_data=False, **GSkwargs)
-        print(MAE, params)
-        
-        Ntest = 100
-        r_test = np.linspace(0.87, 3.5, Ntest)
-        E_test = np.zeros(Ntest)
-        err_test = np.zeros(Ntest)
-        F_test = np.zeros(Ntest)
-        E_true = np.zeros(Ntest)
-        F_true = np.zeros(Ntest)
-        F_num = np.zeros(Ntest)
-        for i, r in enumerate(r_test):
-            ai = createData(r)
-            E, err, _ = krr.predict_energy(ai, return_error=True)
-            E_test[i] = E
-            err_test[i] = err
-            
-            F_test[i] = krr.predict_force(ai, with_error=True)[0]
-            F_num[i] = finite_diff(krr, ai)[0,0]
-            
-            
-            E_true[i] = ai.get_potential_energy()
-            F_true[i] = ai.get_forces()[0,0]
-            
-            
-        plt.figure()
-        plt.plot(r_test, E_true, label='true')
-        plt.plot(r_test, E_test, label='model')
-        plt.plot(r_test, E_test-err_test, label='model')
-        plt.legend()
-        
-        plt.figure()
-        plt.plot(r_test, F_true, label='true')
-        plt.plot(r_test, F_test, label='model')
-        plt.plot(r_test, F_num, 'k:', label='num')
-        plt.legend()
-
-    
-    def test2():
-        traj = read('graphene_data/all_every10th.traj', index='0::5')
-        a_train = traj[:100]
-        E_train = np.array([a.get_potential_energy() for a in a_train])
-        Natoms = len(a_train[0])
-
-        Rc1 = 5
-        binwidth1 = 0.2
-        sigma1 = 0.2
-        
-        Rc2 = 4
-        Nbins2 = 30
-        sigma2 = 0.2
-        
-        gamma = 1
-        eta = 30
-        use_angular = False
-        
-        featureCalculator = Angular_Fingerprint(a_train[0], Rc1=Rc1, Rc2=Rc2, binwidth1=binwidth1, Nbins2=Nbins2, sigma1=sigma1, sigma2=sigma2, gamma=gamma, eta=eta, use_angular=use_angular)
-        
-        comparator = gaussComparator()
-        krr = krr_class(comparator=comparator,
-                        featureCalculator=featureCalculator)
-        GSkwargs = {'reg': [1e-5], 'sigma': [5]}
-        MAE, params = krr.train(atoms_list=a_train, data_values=E_train, k=3, add_new_data=False, **GSkwargs)
-        print(MAE, params)
-        
-        a_test = traj[99]
-        print(krr.predict_energy(a_test, return_error=True))
-        
-        F = krr.predict_force(a_test, with_error=True).reshape((-1,3))
-        Fnum =  finite_diff(krr, a_test)
-        print(F)
-        print('')
-        print(Fnum)
-        print('')
-        print((F - Fnum)/F)
-
-
-    def test3():
-        traj = read('graphene_data/all_every10th.traj', index='0::5')
-        a_train = traj[:100]
-        E_train = np.array([a.get_potential_energy() for a in a_train])
-        Natoms = len(a_train[0])
-
-        Rc1 = 5
-        binwidth1 = 0.2
-        sigma1 = 0.2
-        
-        Rc2 = 4
-        Nbins2 = 30
-        sigma2 = 0.2
-        
-        gamma = 1
-        eta = 30
-        use_angular = False
-        
-        featureCalculator = Angular_Fingerprint(a_train[0], Rc1=Rc1, Rc2=Rc2, binwidth1=binwidth1, Nbins2=Nbins2, sigma1=sigma1, sigma2=sigma2, gamma=gamma, eta=eta, use_angular=use_angular)
-        
-        comparator = gaussComparator()
-        krr = krr_class(comparator=comparator,
-                        featureCalculator=featureCalculator)
-        GSkwargs = {'reg': [1e-5], 'sigma': [5]}
-        MAE, params = krr.train(atoms_list=a_train, data_values=E_train, k=3, add_new_data=False, **GSkwargs)
-        print(MAE, params)
-        
-        a_test = traj[99]
-        
-        def createData2(a0, r):
-            a = a0.copy()
-            positions = a.get_positions()
-            positions[0,0] += r
-            a.set_positions(positions)
-            return a
-
-        Ntest = 100
-        r_test = np.linspace(-0.3, 0.3, Ntest)
-        E_test = np.zeros(Ntest)
-        err_test = np.zeros(Ntest)
-        
-        F_test = np.zeros(Ntest)
-        F_num = np.zeros(Ntest)
-        val_up = np.zeros(Ntest)
-        val_down = np.zeros(Ntest)
-        for i, r in enumerate(r_test):
-            ai = createData2(a_test, r)
-            E, err, _ = krr.predict_energy(ai, return_error=True)
-            E_test[i] = E
-            err_test[i] = err
-            
-            F_test[i] = krr.predict_force(ai, with_error=True)[0]
-            #F_num[i] = finite_diff(krr, ai)[0,0]
-            F_num[i], val_up[i], val_down[i]  = finite_diff(krr, ai, with_ud=True)
-            
-            
-        plt.figure()
-        plt.plot(r_test, E_test, label='model')
-        plt.plot(r_test, E_test-err_test, label='val')
-        plt.legend()
-
-        plt.figure()
-        val = E_test-err_test
-        plt.plot(r_test, val_up-val, label='val up')
-        plt.plot(r_test, val_down-val, label='val down')
-        plt.legend()
-        
-        plt.figure()
-        plt.plot(r_test, F_test, label='model')
-        plt.plot(r_test, F_num, 'k:', label='num')
-        plt.legend()
-
-    def SOAP_test():
-        pass
-
-        
-    test3()
-    
-    plt.show()

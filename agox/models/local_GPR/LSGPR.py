@@ -23,7 +23,10 @@ from agox.observer import Observer
 
 class LSGPRModel(ModelBaseClass):
     name = 'LSGPRModel'
+    
     implemented_properties = ['energy', 'forces']
+
+    dynamic_attributes = ['Xm', 'K_inv', 'Kmm_inv', 'alpha']
 
     """ Local GPR model with uniform sparsification
 
@@ -174,7 +177,7 @@ class LSGPRModel(ModelBaseClass):
 
     def predict_energy(self, atoms=None, X=None, return_uncertainty=False):
         if X is None:
-            X = self.descriptor.get_local_environments(atoms)
+            X = np.vstack(self.descriptor.get_local_features(atoms))
 
         if self.prior is not None:
             e0 = self.prior.predict_energy(atoms)
@@ -204,7 +207,7 @@ class LSGPRModel(ModelBaseClass):
         Calculate the local energies in the model. 
         """
         if X is None:
-            X = self.descriptor.get_local_environments(atoms)        
+            X = np.vstack(self.descriptor.get_local_features(atoms))
 
         k = self.kernel(self.Xm, X)
         return (k.T@self.alpha).reshape(-1,) + self.single_atom_energies[atoms.get_atomic_numbers()]
@@ -269,7 +272,7 @@ class LSGPRModel(ModelBaseClass):
                 self.writer(f'Training:       {t4-t3-self.kernel_timing:.3f} s')
 
 
-    def _train_sparse(self, atoms_list):
+    def _train_sparse(self, atoms_list, **kwargs):
         """
         sparsification scheme: must set self.Xm
         returns boolean: indicates if training nessesary. 
@@ -381,6 +384,8 @@ class LSGPRModel(ModelBaseClass):
             
     @agox_writer
     def update_model(self, new_data, all_data):
+        self.atoms = None
+        
         t1 = time()
 
         self.L = self._update_L(new_data)
@@ -454,7 +459,7 @@ class LSGPRModel(ModelBaseClass):
 
 
     def _get_X_y(self, atoms_list):
-        X = self.descriptor.get_local_environments(atoms_list)
+        X = np.vstack(self.descriptor.get_local_features(atoms_list))
         y = np.array([atoms.get_potential_energy() - sum(self.single_atom_energies[atoms.get_atomic_numbers()]) \
                       for atoms in atoms_list])
         if self.prior is not None and self.use_prior_in_training:
@@ -467,7 +472,7 @@ class LSGPRModel(ModelBaseClass):
         number_of_new_energies = len(new_atoms_list)
         X = np.zeros((self.Xn.shape[0]+number_of_new_environments, self.Xn.shape[1]))
         X[0:self.Xn.shape[0]] = self.Xn
-        X[self.Xn.shape[0]:] = self.descriptor.get_local_environments(new_atoms_list)
+        X[self.Xn.shape[0]:] = np.vstack(self.descriptor.get_local_features(new_atoms_list))
         y = np.zeros(self.y.shape[0]+number_of_new_energies)
         y[0:self.y.shape[0]] = self.y
         y[-number_of_new_energies:] = [atoms.get_potential_energy() - sum(self.single_atom_energies[atoms.get_atomic_numbers()]) for atoms in new_atoms_list]

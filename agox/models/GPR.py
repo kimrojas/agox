@@ -21,7 +21,7 @@ class ModelGPR(ModelBaseClass):
     
     def __init__(self, model=None, max_training_data=10e8, iteration_start_training=7,
                  update_interval=1, max_energy=1000, max_adapt_iters=0, n_adapt=25, 
-                 force_kappa=0, extrapolate=False, optimize_loglikelyhood=True, use_saved_features=False,
+                 force_kappa=0, extrapolate=False, optimize_loglikelyhood=True,
                  sparsifier=None, **kwargs):
         super().__init__(**kwargs)
         self.model = model
@@ -32,7 +32,6 @@ class ModelGPR(ModelBaseClass):
         self.optimize_loglikelyhood = optimize_loglikelyhood
         self.max_adapt_iters = max_adapt_iters
         self.n_adapt = n_adapt
-        self.use_saved_features = use_saved_features
 
         self.force_kappa = force_kappa
         self.extrapolate = extrapolate
@@ -108,26 +107,11 @@ class ModelGPR(ModelBaseClass):
         training_energies = [energies[i] for i in allowed_idx]
         remaining = [arg for arg in args if arg not in allowed_idx]
         
-        # calculate features
-        if self.use_saved_features:
-            features = []
-            deltas = []
-            for candidate in training_data:
-                F = candidate.get_meta_information('GPR_feature')
-                d = candidate.get_meta_information('GPR_delta')
-                if F is None:
-                    F = self.model.featureCalculator.get_feature(candidate)
-                    candidate.add_meta_information('GPR_feature', F)
-                    d = self.model.delta_function.energy(candidate)
-                    candidate.add_meta_information('GPR_delta', d)
-                features.append(F)
-                deltas.append(d)
-            features = np.array(features)
-            deltas = np.array(deltas)
+        features = np.array(self.model.descriptor.get_global_features(training_data))
+        if self.model.delta_function is not None:
+            deltas = np.array([self.model.delta_function.energy(cand) for cand in training_data]) #np.array([c.get_meta_information('GPR_delta') for c in training_data])
         else:
-            features = self.model.featureCalculator.get_featureMat(training_data)
-            deltas = np.array([c.get_meta_information('GPR_delta') for c in training_data])
-
+            deltas = np.zeros(len(training_data))
         
         if self.max_training_data is not None and self.max_training_data < len(training_data):
             self.writer('Performing structure sparsification using CUR')
@@ -295,9 +279,9 @@ class ModelGPR(ModelBaseClass):
     ####################################################################################################################
 
     @classmethod
-    def default(cls, environment, database, lambda1min=1e-1, lambda1max=1e3, lambda2min=1e-1, lambda2max=1e3, 
+    def default(cls, environment=None, database=None, temp_atoms=None, lambda1min=1e-1, lambda1max=1e3, lambda2min=1e-1, lambda2max=1e3, 
                 theta0min=1, theta0max=1e5, beta=0.01, use_delta_func=True, sigma_noise = 1e-2,
-                feature_calculator=None, kernel=None, max_iterations=None, max_training_data=1000):
+                descriptor=None, kernel=None, max_iterations=None, max_training_data=1000):
 
         """
         Creates a GPR model. 
@@ -330,20 +314,20 @@ class ModelGPR(ModelBaseClass):
             Maximum number of iterations for the hyperparameter optimization during 
             its BFGS optimization through scipy. 
         """
-
         from ase import Atoms
-        from agox.models.gaussian_process.featureCalculators_multi.angular_fingerprintFeature_cy import Angular_Fingerprint
         from agox.models.gaussian_process.delta_functions_multi.delta import delta as deltaFunc
         from agox.models.gaussian_process.kernels import RBF, ConstantKernel as C, WhiteKernel, GeneralAnisotropicRBF
         from agox.models.gaussian_process.GPR import GPR
 
+        assert temp_atoms is not None or environment is not None
 
-        temp_atoms = environment.get_template()
-        temp_atoms += Atoms(environment.get_numbers())
+        if temp_atoms is None:
+            temp_atoms = environment.get_template()
+            temp_atoms += Atoms(environment.get_numbers())
 
-        if feature_calculator is None:
-            feature_calculator = Angular_Fingerprint(temp_atoms, Rc1=6, Rc2=4, binwidth1=0.2, Nbins2=30,
-                                                    sigma1=0.2, sigma2=0.2, gamma=2, eta=20, use_angular=True)
+        if descriptor is None:
+            from agox.models.descriptors import Fingerprint
+            descriptor = Fingerprint(temp_atoms, use_cache=True)
 
         lambda1ini = (lambda1max - lambda1min)/2 + lambda1min
         lambda2ini = (lambda2max - lambda2min)/2 + lambda2min
@@ -361,8 +345,8 @@ class ModelGPR(ModelBaseClass):
             lambda1ini_aniso = np.array([lambda1ini, lambda1ini])
             lambda2ini_aniso = np.array([lambda2ini, lambda2ini])
 
-            length_scale_indices = np.array([0 for _ in range(feature_calculator.Nelements_2body)] 
-                + [1 for _ in range(feature_calculator.Nelements_3body)])
+            length_scale_indices = np.array([0 for _ in range(descriptor.cython_module.Nelements_2body)] 
+                + [1 for _ in range(descriptor.cython_module.Nelements_3body)])
 
             kernel = C(theta0ini, (theta0min, theta0max)) * \
             ( \
@@ -378,7 +362,7 @@ class ModelGPR(ModelBaseClass):
             delta = None
         
         gpr = GPR(kernel=kernel,
-                featureCalculator=feature_calculator,
+                descriptor=descriptor,
                 delta_function=delta,
                 bias_func=None,
                 optimize=True,
@@ -386,7 +370,11 @@ class ModelGPR(ModelBaseClass):
                 n_maxiter_optimizer = max_iterations,
                 use_delta_in_training=False)
 
-        return cls(gpr, database=database, update_interval=1, optimize_loglikelyhood=True, use_saved_features=True, max_training_data=max_training_data)
+        return cls(gpr, database=database, update_interval=1, optimize_loglikelyhood=True, max_training_data=max_training_data)
 
     def get_feature_calculator(self):
-        return self.model.featureCalculator
+        print(DeprecationWarning("The 'get_feature_calculator'-method will be deprecated in a future release, please use 'get_descriptor'-method instead."))
+        return self.model.descriptor
+
+    def get_descriptor(self):
+        return self.model.descriptor

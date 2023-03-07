@@ -42,9 +42,8 @@ class MinimumDistPostProcess(PostprocessBaseClass):
             if np.sum(np.abs(w) < 1e-12) > 1:
                 print('Candidate backbone is fragmented')
                 return None
-                               
-        
-        print('Candidate dist OK')
+                                       
+        self.writer('Candidate dist OK')
         return candidate
 
 
