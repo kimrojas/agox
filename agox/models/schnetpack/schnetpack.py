@@ -23,6 +23,7 @@ from ase.calculators.calculator import Calculator, all_changes
 from agox.models.ABC_model import ModelBaseClass
 from agox.writer import agox_writer
 from agox.observer import Observer
+from ase import Atoms
 
 import logging
 logging.getLogger("pytorch_lightning").setLevel(logging.ERROR)
@@ -271,6 +272,9 @@ class SchNetPackModel(ModelBaseClass):
         
         self.nnpot.eval()
         self.nnpot.to(device=self.prediction_device.type)#, dtype=torch.float64)
+
+        # Something inside schnetpack is checking for atoms objects so converting here. 
+        atoms = Atoms(numbers=atoms.get_atomic_numbers(), positions=atoms.positions, cell=atoms.cell, pbc=atoms.pbc)
         
         model_inputs = self.converter(atoms)
         model_results = self.nnpot(model_inputs)
