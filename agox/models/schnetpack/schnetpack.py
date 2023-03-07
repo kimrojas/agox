@@ -279,12 +279,12 @@ class SchNetPackModel(ModelBaseClass):
         model_inputs = self.converter(atoms)
         model_results = self.nnpot(model_inputs)
         if 'energy' in properties:
-            e = model_results['energy'].cpu().data.numpy()[0]
+            e = model_results['energy'].cpu().data.numpy()[0].astype(np.float64)
             # print('Energy pred:', type(e), e, flush=True)
             self.results['energy'] = e
         
         if 'forces' in properties:
-            f = model_results['forces'].cpu().data.numpy()
+            f = model_results['forces'].cpu().data.numpy().astype(np.float64)
             # print('Forces pred:', type(f), f.shape, flush=True)
             self.results['forces'] = f
 
@@ -300,7 +300,7 @@ class SchNetPackModel(ModelBaseClass):
         model_inputs = self.converter(atoms)
         model_results = self.nnpot(model_inputs)
         
-        return model_results['energy'].cpu().data.numpy()[0]
+        return model_results['energy'].cpu().data.numpy()[0].astype(np.float64)
         
 
     def predict_energies(self, atoms_list):
@@ -310,7 +310,7 @@ class SchNetPackModel(ModelBaseClass):
         model_inputs = self.converter(atoms_list)
         model_results = self.nnpot(model_inputs)
 
-        return model_results['energy'].cpu().data.numpy()
+        return model_results['energy'].cpu().data.numpy().astype(np.float64)
             
 
     def predict_uncertainty(self, atoms=None, X=None, k=None):
