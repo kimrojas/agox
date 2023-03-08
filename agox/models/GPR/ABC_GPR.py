@@ -2,6 +2,7 @@ from abc import abstractmethod
 from agox.models.ABC_model import ModelBaseClass
 from agox.candidates import CandidateBaseClass
 from agox.utils import candidate_list_comprehension
+from agox.models.GPR.sparsifiers.CUR import CUR
 import numpy as np
 
 
@@ -25,6 +26,8 @@ class GPRBaseClass(ModelBaseClass):
         Dictionary of single atom energies.
     use_prior_in_training : bool
         Whether to use prior in training.
+    sparsifier : SparsifierBaseClass
+        Sparsifier object.
     centralize : bool
         Whether to centralize the energy.
     alpha : np.ndarray
@@ -35,7 +38,7 @@ class GPRBaseClass(ModelBaseClass):
         Training targets.
     update : bool
         Whether to update the model.
-    record : dict
+    record : set
         Training record.
     prior_energy : np.ndarray
         Prior energy.
@@ -60,6 +63,7 @@ class GPRBaseClass(ModelBaseClass):
 
     def __init__(self, descriptor, kernel, prior = None, sparsifier = None,
                  single_atom_energies = None, use_prior_in_training = False,
+                 sparsifier_cls=CUR, sparsifier_args=(1000,), sparsifier_kwargs={},
                  centralize = False, **kwargs):
 
         """
@@ -71,12 +75,19 @@ class GPRBaseClass(ModelBaseClass):
             Kernel object.
         prior : ModelBaseClass
             Prior model object.
-        sparsifier : SparsifierBaseClass
-            Sparsifier object.
+        sparsifier_cls : SparsifierBaseClass
+            Sparsifier object
+        sparsifier_args : tuple
+            Arguments for the sparsifier
+        sparsifier_kwargs : dict
+            Keyword arguments for the sparsifier
         single_atom_energies : dict
             Dictionary of single atom energies.
         use_prior_in_training : bool
             Whether to use prior in training.
+        sparsifier : SparsifierBaseClass
+            Sparsifier object
+
         centralize : bool
             Whether to centralize the energy.
 
@@ -89,6 +100,7 @@ class GPRBaseClass(ModelBaseClass):
         self.sparsifier = sparsifier
         self.single_atom_energies = single_atom_energies
         self.use_prior_in_training = use_prior_in_training
+        self.sparsifier = sparsifier_cls(*sparsifier_args, **sparsifier_kwargs)
         self.centralize = centralize
 
         # Initialize all possible model parameters
@@ -97,7 +109,7 @@ class GPRBaseClass(ModelBaseClass):
         self.Y = None
 
         self.update = False
-        self.record = dict()
+        self.record = set()
         
 
     @abstractmethod
@@ -338,7 +350,7 @@ class GPRBaseClass(ModelBaseClass):
             return
 
         for d in data:
-            self.record[d.cache_key] = True
+            self.record.add(d.cache_key)
 
         self.update = True
 
@@ -362,12 +374,12 @@ class GPRBaseClass(ModelBaseClass):
         
         """
         if not all([isinstance(d, CandidateBaseClass) for d in data]):
-            return data
+            return data, []
 
         new_data = []
         old_data = []
         for d in data:
-            if d.cache_key in self.record:
+            if cache_key in self.record:
                 old_data.append(d)
             else:
                 new_data.append(d)

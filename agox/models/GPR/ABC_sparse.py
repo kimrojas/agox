@@ -1,6 +1,5 @@
 from abc import abstractmethod
 from agox.models.GPR.ABC_GPR import GPRBaseClass
-from agox.models.GPR.sparsifiers.CUR import CUR
 
 import numpy as np
 from scipy.linalg import cholesky, cho_solve, qr, lstsq, LinAlgError
@@ -37,8 +36,6 @@ class SparseBaseClass(GPRBaseClass):
         Inverse of K_mm
     L : np.ndarray
         Matrix of ones and zeros indicating which atoms are in which configuration
-    sparsifier : SparsifierBaseClass
-        Sparsifier object
     
 
     Methods
@@ -52,7 +49,7 @@ class SparseBaseClass(GPRBaseClass):
     
 
     def __init__(self, descriptor, kernel, transfer_data=[], noise=0.01,
-                 sparsifier_cls=CUR, sparsifier_args=(1000,), sparsifier_kwargs={},
+                 
                  jitter=1e-8, **kwargs):
 
         """
@@ -70,12 +67,6 @@ class SparseBaseClass(GPRBaseClass):
             List of ase.Atoms objects to transfer to the model
         noise : float
             Noise level
-        sparsifier_cls : SparsifierBaseClass
-            Sparsifier object
-        sparsifier_args : tuple
-            Arguments for the sparsifier
-        sparsifier_kwargs : dict
-            Keyword arguments for the sparsifier
         jitter : float
             Jitter level
         
@@ -84,7 +75,6 @@ class SparseBaseClass(GPRBaseClass):
         self.jitter = jitter
         self.transfer_data = transfer_data
         self.noise = noise
-        self.sparsifier = sparsifier_cls(*sparsifier_args, **sparsifier_kwargs)
 
         self.Xn = None
         self.Xm = None
@@ -276,6 +266,9 @@ class SparseBaseClass(GPRBaseClass):
         
         """
         new, old = self._get_new_data(data)
+        if len(new) == len(data):
+            return self._preprocess(data)
+        
         X_new, Y_new = super()._preprocess(new)
 
         X = np.vstack((self.X, X_new))
@@ -287,7 +280,7 @@ class SparseBaseClass(GPRBaseClass):
         self.sigma_inv = self._make_sigma(self.transfer_data + data)
         self.Xm, _ = self.sparsifier(self.Xn)        
 
-        return X, Y
+        return self.Xm, Y
         
 
     

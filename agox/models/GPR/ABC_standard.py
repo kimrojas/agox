@@ -111,8 +111,8 @@ class StandardBaseClass(GPRBaseClass):
             return self.postprocess_forces(atoms, np.zeros((len(atoms), 3)))
         
         # F_i = - dE / dr_i = dE/dk dk/df df/dr_i = - alpha dk/df df_dr_i
-        x = self.get_features(atoms).reshape(1, -1)
-        dfdr = np.array(self.descriptor.get_global_feature_gradient(atoms)[0])
+        x = self.get_features(atoms)
+        dfdr = np.array(self.descriptor.get_global_feature_gradient(atoms))
         dkdf = self.kernel.get_feature_gradient(self.X, x)
         dkdr = np.dot(dkdf, dfdr.T)
         f_pred = -np.dot(dkdr.T, self.alpha).reshape(-1,3)
@@ -137,9 +137,9 @@ class StandardBaseClass(GPRBaseClass):
         if self.alpha is None:
             return np.zeros((len(atoms), 3))
         
-        x = self.get_features(atoms).reshape(1, -1)
+        x = self.get_features(atoms)
 
-        dfdr = np.array(self.descriptor.get_global_feature_gradient(atoms)[0])
+        dfdr = np.array(self.descriptor.get_global_feature_gradient(atoms))
         dkdf = self.kernel.get_feature_gradient(self.X, x)
         dkdr = np.dot(dkdf, dfdr.T)
         
