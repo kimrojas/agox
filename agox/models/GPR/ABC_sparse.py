@@ -1,8 +1,15 @@
 from abc import abstractmethod
 from agox.models.GPR.ABC_GPR import GPRBaseClass
-from agox.models.GPR.sparsifiers import CUR
+from agox.models.GPR.sparsifiers.CUR import CUR
 
 import numpy as np
+from scipy.linalg import cholesky, cho_solve, qr, lstsq, LinAlgError
+from time import time
+
+from agox.writer import agox_writer
+from agox.observer import Observer
+
+
 
 class SparseBaseClass(GPRBaseClass):
 
@@ -44,8 +51,8 @@ class SparseBaseClass(GPRBaseClass):
     """
     
 
-    def __init__(self, descriptor, kernel, transfer_data=None, noise=0.01,
-                 sparsifier_args=(1000,), sparsifier_kwargs={}, sparsifier_cls=CUR,
+    def __init__(self, descriptor, kernel, transfer_data=[], noise=0.01,
+                 sparsifier_cls=CUR, sparsifier_args=(1000,), sparsifier_kwargs={},
                  jitter=1e-8, **kwargs):
 
         """
@@ -74,11 +81,10 @@ class SparseBaseClass(GPRBaseClass):
         
         """
         super().__init__(descriptor, kernel, **kwargs)
-        self.m_points = m_points
         self.jitter = jitter
         self.transfer_data = transfer_data
         self.noise = noise
-        self.sparsifier = sparsifier(*sparsifier_args, **sparsifier_kwargs)
+        self.sparsifier = sparsifier_cls(*sparsifier_args, **sparsifier_kwargs)
 
         self.Xn = None
         self.Xm = None
@@ -88,6 +94,15 @@ class SparseBaseClass(GPRBaseClass):
         self.K_inv = None
         self.Kmm_inv = None
         self.L = None
+
+
+    @abstractmethod
+    def _make_L(self, data):
+        pass
+
+    @abstractmethod
+    def _update_L(self, data):
+        pass
 
         
     @property
@@ -233,16 +248,14 @@ class SparseBaseClass(GPRBaseClass):
             Energies for the ase.Atoms objects
         
         """
-        X, Y = super()._preprocess(data)
-        X_transfer = self.get_features(self.transfer_data)
-        X = np.vstack((X_transfer, self.X))
+        X, Y = super()._preprocess(self.transfer_data + data)
         self.Xn = X
 
         self.L = self._make_L(self.transfer_data + data)
         self.sigma_inv = self._make_sigma(self.transfer_data + data)
         self.Xm, _ = self.sparsifier(self.Xn)
         
-        return X, Y
+        return self.Xm, Y
 
 
     def _update(self, data):
@@ -276,57 +289,6 @@ class SparseBaseClass(GPRBaseClass):
 
         return X, Y
         
-    def _make_L(self, atoms_list):
-        """
-        Make the L matrix
-
-        Parameters
-        ----------
-        atoms_list : list of ase.Atoms
-            List of ase.Atoms objects
-        
-        Returns
-        -------
-        np.ndarray
-            L matrix
-        
-        """
-        lengths = [len(atoms) for atoms in new_atoms_list]
-        r = len(lengths); c = np.sum(lengths)
-        
-        col = 0
-        L = np.zeros((r,c)
-        for i, atoms in enumerate(atoms_list):
-            L[i,col:col+len(atoms)] = 1.
-            col += len(atoms)
-        return L
-
-    
-    def _update_L(self, new_atoms_list):
-        """
-        Update the L matrix
-
-        Parameters
-        ----------
-        new_atoms_list : list of ase.Atoms
-            List of ase.Atoms objects
-
-        Returns
-        -------
-        np.ndarray
-            L matrix
-        
-        """
-        new_lengths = [len(atoms) for atoms in new_atoms_list]
-        size = len(new_lengths)
-        new_total_length = np.sum(new_lengths)
-        new_L = np.zeros((self.L.shape[0]+size, self.L.shape[1]+new_total_length))
-        new_L[0:self.L.shape[0], 0:self.L.shape[1]] = self.L
-
-        for l in range(size):
-            step = int(np.sum(new_lengths[:l]))
-            new_L[l+self.L.shape[0], (self.L.shape[1]+step):(self.L.shape[1]+step+new_lengths[l])] = 1            
-        return new_L
 
     
     def _make_sigma(self, atoms_list):

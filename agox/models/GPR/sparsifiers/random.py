@@ -1,7 +1,7 @@
 import numpy as np
-from agox.models.GPR.sparsifiers.ABCSparsifier import SparsifierBaseClass
+from agox.models.GPR.sparsifiers.ABC_sparsifier import SparsifierBaseClass
 
-class random(SparsifierBaseClass):
+class Random(SparsifierBaseClass):
     
     def sparsify(self, X):
         if self.m_points > self.Xn.shape[0]:

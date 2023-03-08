@@ -21,4 +21,7 @@ class GlobalGPR(StandardBaseClass):
             Features
         
         """
-        return np.array(self.descriptor.get_global_features(atoms))
+        f = np.array(self.descriptor.get_global_features(atoms))
+        if len(f.shape) == 1:
+            f = f.reshape(1, -1)
+        return f

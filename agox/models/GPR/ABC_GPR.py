@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from agox.models.ABC_model import ModelBaseClass
 from agox.candidates import CandidateBaseClass
+from agox.utils import candidate_list_comprehension
 import numpy as np
 
 
@@ -85,7 +86,6 @@ class GPRBaseClass(ModelBaseClass):
         self.descriptor = descriptor
         self.kernel = kernel
         self.prior = prior
-        self.sparse = sparse
         self.sparsifier = sparsifier
         self.single_atom_energies = single_atom_energies
         self.use_prior_in_training = use_prior_in_training
@@ -149,22 +149,25 @@ class GPRBaseClass(ModelBaseClass):
         self.atoms = None
         self.ready_state = True
 
-    
+
+    @candidate_list_comprehension
     def predict_energy(self, atoms, **kwargs):
         if self.alpha is None:
             return self.postprocess_energy(atoms, 0)
         
-        x = self._features(atoms)
+        x = self.get_features(atoms)
         k = self.kernel(self.X, x)
         e_pred = np.sum(k.T @ self.alpha)
         return self.postprocess_energy(atoms, e_pred)
 
     
+    @candidate_list_comprehension    
     def predict_uncertainty(self, atoms, **kwargs):
         self.writer('Uncertainty not implemented.')
         return 0
 
     
+    @candidate_list_comprehension    
     def predict_forces(self, atoms, return_uncertainty=False, **kwargs):
         f_pred = self.predict_forces_central(atoms, **kwargs)
 
@@ -174,6 +177,7 @@ class GPRBaseClass(ModelBaseClass):
             return self.postprocess_forces(atoms, f_pred)
 
         
+    @candidate_list_comprehension        
     def predict_forces_uncertainty(self, atoms, **kwargs):
         self.writer('Uncertainty not implemented.')
         return np.zeros((len(atoms), 3))

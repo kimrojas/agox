@@ -173,7 +173,7 @@ class StandardBaseClass(GPRBaseClass):
             for _ in range(self.n_optimize-1):
                 init_theta = np.random.uniform(size=(len(self.kernel.bounds),), low=self.kernel.bounds[:,0], high=self.kernel.bounds[:,1])
                 initial_parameters.append(init_theta)
-            
+
             fmins = []
             thetas = []
             for init_theta in initial_parameters:
