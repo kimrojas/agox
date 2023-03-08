@@ -77,10 +77,8 @@ class SparseBaseClass(GPRBaseClass):
 
         self.Xn = None
         self.Xm = None
-
         self.K_mm = None
         self.K_nm = None
-        self.K_inv = None
         self.Kmm_inv = None
         self.L = None
 

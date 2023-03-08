@@ -6,6 +6,7 @@ from functools import partial
 from scipy.linalg import cho_solve, cho_factor
 from scipy.optimize import fmin_l_bfgs_b
 
+from ase.calculators.calculator import all_changes
 
 class StandardBaseClass(GPRBaseClass):
 
@@ -64,6 +65,7 @@ class StandardBaseClass(GPRBaseClass):
                          **kwargs)
         self.n_optimize = n_optimize
         self.optimizer_maxiter = optimizer_maxiter
+
 
         
         
@@ -184,6 +186,14 @@ class StandardBaseClass(GPRBaseClass):
             self.kernel.theta = thetas[np.argmin(np.array(fmins))]
 
 
+    def calculate(self, atoms=None, properties=['energy'], system_changes=all_changes):
+        super().calculate(atoms=atoms, properties=properties, system_changes=system_changes)
+        if 'uncertainty' in properties:
+            self.results['uncertainty'] = self.predict_uncertainty(atoms)
+        if 'force_uncertainty' in properties:
+            self.results['force_uncertainty'] = self.predict_forces_uncertainty(atoms)
+
+    
     def _hyperparameter_optimize(self, init_theta=None):
         """
         Hyperparameter optimization

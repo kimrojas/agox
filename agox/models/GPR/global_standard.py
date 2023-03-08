@@ -28,7 +28,7 @@ class GlobalGPR(StandardBaseClass):
         return f
 
     def get_model_parameters(self):
-        warnings.warn('get_model_parameters is deprecated and will be removed soon.', DeprecationWarning)        
+        warnings.warn('get_model_parameters is deprecated and will be removed in a future release.', DeprecationWarning)        
         parameters = {}
         parameters['feature_mat'] = self.X
         parameters['alpha'] = self.alpha
@@ -39,7 +39,7 @@ class GlobalGPR(StandardBaseClass):
         return parameters
     
     def set_model_parameters(self, parameters):
-        warnings.warn('set_model_parameters is deprecated and will be removed soon.', DeprecationWarning)
+        warnings.warn('set_model_parameters is deprecated and will be removed in a future release.', DeprecationWarning)
         self.X = parameters['feature_mat']
         self.alpha = parameters['alpha']
         self.mean_energy = parameters['bias']
@@ -48,7 +48,12 @@ class GlobalGPR(StandardBaseClass):
         self.kernel.set_params(**parameters['kernel_hyperparameters'])
         self.ready_state = True
 
-    
+
+    def get_feature_calculator(self):
+        warnings.warn("The 'get_feature_calculator'-method will be deprecated in a future release.", DeprecationWarning)
+        return self.descriptor
+
+        
     @classmethod
     def default(cls, environment=None, database=None, temp_atoms=None, lambda1min=1e-1, lambda1max=1e3, lambda2min=1e-1, lambda2max=1e3, 
                 theta0min=1, theta0max=1e5, beta=0.01, use_delta_func=True, sigma_noise=1e-2,

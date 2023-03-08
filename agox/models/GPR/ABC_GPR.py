@@ -104,10 +104,11 @@ class GPRBaseClass(ModelBaseClass):
         self.centralize = centralize
 
         # Initialize all possible model parameters
-        self.alpha = None
         self.X = None
         self.Y = None
-        
+        self.K = None
+        self.K_inv = None        
+        self.alpha = None
         self.mean_energy = 0.
 
 
