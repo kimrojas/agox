@@ -252,7 +252,7 @@ class GPRBaseClass(ModelBaseClass):
         """
         Y = np.expand_dims(np.array([d.get_potential_energy() for d in data]), axis=1)
         
-        if self.prior is None:
+        if self.prior is None or not self.use_prior_in_training:
             self.prior_energy = np.zeros(Y.shape)
         else:
             self.prior_energy = np.expand_dims(np.array([self.prior.predict_energy(d) for d in data]), axis=1)

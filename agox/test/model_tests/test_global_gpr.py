@@ -1,13 +1,13 @@
 import pytest
 import numpy as np
-from agox.models import ModelGPR
+from agox.models.GPR import GlobalGPR
 
 from agox.test.model_tests.model_utils import model_tester
 from agox.test.test_utils import get_test_data, get_test_environment, load_expected_data, save_expected_data, label_dict_list
 from agox.test.test_utils import test_data_dicts, get_name, check_file_is_deleted
 
-model_class = ModelGPR
-model_maker = ModelGPR.default
+model_class = GlobalGPR
+model_maker = GlobalGPR.default
 model_base_args = []
 model_base_kwargs = {}
 
@@ -47,7 +47,7 @@ def test_model(test_data_dict, update_kwargs, cmd_options):
 
     # Where to load/save data. 
     subfolder = 'model_tests/'
-    module_name = model_class.name
+    module_name = 'ModelGPR'
     name = get_name(module_name, subfolder, dataset_name, parameter_index)
     if test_mode:
         expected_data = load_expected_data(name) 

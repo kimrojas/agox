@@ -44,7 +44,7 @@ class StandardBaseClass(GPRBaseClass):
         
     """
     def __init__(self, descriptor, kernel, centralize=True,
-                 n_optimize=-1, optimizer_maxiter=100, **kwargs):
+                 n_optimize=1, optimizer_maxiter=100, **kwargs):
         """
         Parameters
         ----------
