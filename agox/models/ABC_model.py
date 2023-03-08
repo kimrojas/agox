@@ -140,7 +140,7 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
 
     @agox_writer
     @Observer.observer_method        
-    def training_observer(self, database):
+    def training_observer(self, database, state):
         """Observer method for use with on-the-fly training based data in an AGOX database.
         
         Note

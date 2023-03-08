@@ -9,9 +9,9 @@ from agox.evaluators import LocalOptimizationEvaluator
 from agox.generators import RattleGenerator
 from agox.samplers import MetropolisSampler
 from agox.postprocessors import RelaxPostprocess
-from agox.models.local_GPR.LSGPR_CUR import LSGPRModelCUR
+from agox.models.GPR import LocalSparseGPR
 from agox.models.descriptors.soap import SOAP
-from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+from agox.models.GPR.kernels import RBF, Constant as C
 
 from ase import Atoms
 from ase.optimize import BFGS
@@ -57,8 +57,8 @@ database = Database(filename=db_path, order=4, write_frequency=1)
 kernel = C(1)*RBF(length_scale=20)
 descriptor = SOAP(environment.get_all_species(), r_cut=5., nmax=3, lmax=2, sigma=1, 
     weight=True, periodic=False)
-model = LSGPRModelCUR(database=database, kernel=kernel,  descriptor = descriptor, 
-    noise=0.01, prior=None, verbose=True, iteration_start_training=0, use_prior_in_training=True)
+model = LocalSparseGPR(database=database, kernel=kernel,  descriptor=descriptor, 
+    noise=0.01, prior=None, verbose=True, iteration_start_training=0)
 
 # Number of steps is very low - should be set higher for a real search!
 relaxer = RelaxPostprocess(model, optimizer=BFGS, order=2, 

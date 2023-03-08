@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from agox.models.GPR.ABC_GPR import GPRBaseClass
-
+import warnings
 import numpy as np
 from scipy.linalg import cholesky, cho_solve, qr, lstsq, LinAlgError
 from time import time
@@ -49,7 +49,6 @@ class SparseBaseClass(GPRBaseClass):
     
 
     def __init__(self, descriptor, kernel, transfer_data=[], noise=0.05,
-                 
                  jitter=1e-8, **kwargs):
 
         """
@@ -323,5 +322,27 @@ class SparseBaseClass(GPRBaseClass):
         """
         return (A + A.T)/2
         
+
+    def get_model_parameters(self):
+        warnings.warn('get_model_parameters is deprecated and will be removed soon.', DeprecationWarning)
+        parameters = {}
+        parameters['Xm'] = self.Xm
+        parameters['K_inv'] = self.K_inv
+        parameters['Kmm_inv'] = self.Kmm_inv
+        parameters['alpha'] = self.alpha
+        parameters['single_atom_energies'] = self.single_atom_energies
+        parameters['theta'] = self.kernel.theta
+        return parameters
+
+    def set_model_parameters(self, parameters):
+        warnings.warn('set_model_parameters is deprecated and will be removed soon.', DeprecationWarning)
+        self.Xm = parameters['Xm']
+        self.X = parameters['Xm']
+        self.K_inv = parameters['K_inv']
+        self.Kmm_inv = parameters['Kmm_inv']
+        self.alpha = parameters['alpha']
+        self.single_atom_energies = parameters['single_atom_energies']
+        self.kernel.theta = parameters['theta']
+        self.ready_state = True
 
     

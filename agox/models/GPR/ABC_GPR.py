@@ -107,6 +107,9 @@ class GPRBaseClass(ModelBaseClass):
         self.alpha = None
         self.X = None
         self.Y = None
+        
+        self.mean_energy = 0.
+
 
         self.update = False
         self.record = set()
@@ -258,8 +261,6 @@ class GPRBaseClass(ModelBaseClass):
         
         if self.centralize:
             self.mean_energy = np.mean(Y)
-        else:
-            self.mean_energy = 0.
             
         Y -= self.mean_energy
         X = self.get_features(data)
@@ -379,7 +380,7 @@ class GPRBaseClass(ModelBaseClass):
         new_data = []
         old_data = []
         for d in data:
-            if cache_key in self.record:
+            if d.cache_key in self.record:
                 old_data.append(d)
             else:
                 new_data.append(d)
