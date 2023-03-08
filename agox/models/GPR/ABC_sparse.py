@@ -48,7 +48,7 @@ class SparseBaseClass(GPRBaseClass):
     """
     
 
-    def __init__(self, descriptor, kernel, transfer_data=[], noise=0.01,
+    def __init__(self, descriptor, kernel, transfer_data=[], noise=0.05,
                  
                  jitter=1e-8, **kwargs):
 
