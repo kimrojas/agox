@@ -58,7 +58,7 @@ class GPR(Writer):
         """
         if K_vec is None:
             if fnew is None:
-                fnew = self.descriptor.get_global_features(atoms)[0]
+                fnew = self.descriptor.get_global_features(atoms)
             K_vec = self.kernel_.get_kernel(self.featureMat, fnew).reshape(-1)
 
         if delta_value is None:
@@ -96,9 +96,9 @@ class GPR(Writer):
         
         # Calculate features and their gradients if not given
         if fnew is None:
-            fnew = self.descriptor.get_global_features(atoms)[0]
+            fnew = self.descriptor.get_global_features(atoms)
         if fgrad is None:
-            fgrad = self.descriptor.get_global_feature_gradient(atoms)[0]
+            fgrad = self.descriptor.get_global_feature_gradient(atoms)
         dk_df = self.kernel_.get_kernel_jac(self.featureMat, fnew)
         
         # Calculate contribution from delta-function
