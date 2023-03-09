@@ -444,8 +444,8 @@ class GPR(ModelBaseClass, RayPoolUser):
 
         def init_theta():
             return np.random.uniform(size=(len(self.kernel.bounds),), low=self.kernel.bounds[:,0], high=self.kernel.bounds[:,1])
-
-        N_jobs = 4
+        
+        N_jobs = self.cpu_count * self.n_optimize
         modules = [[self.actor_model_key]] * N_jobs # All jobs use the same model that is already on the actor. 
         args = [[init_theta()] for _ in range(N_jobs)] # Each job gets a different initial theta
         kwargs = [{} for _ in range(N_jobs)] # No kwargs
