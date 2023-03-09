@@ -5,7 +5,9 @@ from ase.symbols import Symbols
 
 class Environment(EnvironmentBaseClass):
 
-    def __init__(self, template, numbers=None, symbols=None, **kwargs):
+    def __init__(self, template, numbers=None, symbols=None, print_report=True,
+                 **kwargs):
+        
         super().__init__(**kwargs)
 
         # Both numbers and symbols cannot be specified:
@@ -17,8 +19,9 @@ class Environment(EnvironmentBaseClass):
             self._numbers = symbols2numbers(symbols)
         
         self._template = template
-
-        self.environment_report()
+        
+        if print_report:
+            self.environment_report()
 
 
     def get_template(self):

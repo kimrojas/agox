@@ -53,7 +53,8 @@ class SimpleFingerprint(DescriptorBaseClass):
     def from_species(cls, species, **kwargs):
         from ase import Atoms
         from agox.environments import Environment
-        environment = Environment(template=Atoms(''), symbols=''.join(species))
-        return cls(environment, **kwargs)
+        environment = Environment(template=Atoms(''), symbols=''.join(species), use_box_constraint=False,
+                                  print_report=False)
+        return cls(environment=environment, **kwargs)
         
     
