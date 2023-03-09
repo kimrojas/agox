@@ -132,7 +132,8 @@ class GPR(ModelBaseClass, RayPoolUser):
         self.mean_energy = 0.
 
         # We add self to the pool, it will keep an updated copy of the model on the pool
-        self.actor_model_key = self.pool_add_module(self)
+        if self.use_ray:
+            self.actor_model_key = self.pool_add_module(self)
 
     def get_features(self, atoms):
         """
@@ -161,8 +162,12 @@ class GPR(ModelBaseClass, RayPoolUser):
         """
         Train the model
         
-        """        
-        self.hyperparameter_search()
+        """
+        if self.use_ray:
+            self.hyperparameter_search_parallel(update_actors=False)
+        else:
+            self.hyperparameter_search()
+
         self.K = self.kernel(self.X)
         self.alpha, self.K_inv, _ = self._solve(self.K, self.Y)
         
@@ -181,12 +186,18 @@ class GPR(ModelBaseClass, RayPoolUser):
         else:
             self.X, self.Y = self._preprocess(training_data)
 
+        if len(self.observer_handler_identifiers) == 0 and self.use_ray:
+            self.pool.update_modules()
+
         self._training_record(training_data)
   
         self._train_model()
 
         self.atoms = None
         self.ready_state = True
+
+        if len(self.observer_handler_identifiers) == 0 and self.use_ray:
+            self.pool.update_modules()
 
     @candidate_list_comprehension
     def predict_energy(self, atoms, **kwargs):
@@ -422,7 +433,6 @@ class GPR(ModelBaseClass, RayPoolUser):
         Hyperparameter search
         
         """
-        print('Here here', self.n_optimize)
         initial_parameters = []
         initial_parameters.append(self.kernel.theta.copy())
         if self.n_optimize > 0:
@@ -438,9 +448,8 @@ class GPR(ModelBaseClass, RayPoolUser):
                 thetas.append(theta_min)
 
             self.kernel.theta = thetas[np.argmin(np.array(fmins))]
-        print('theta', self.kernel.theta)
 
-    def hyperparameter_search_parallel(self):
+    def hyperparameter_search_parallel(self, update_actors=True):
 
         def init_theta():
             return np.random.uniform(size=(len(self.kernel.bounds),), low=self.kernel.bounds[:,0], high=self.kernel.bounds[:,1])
@@ -459,6 +468,9 @@ class GPR(ModelBaseClass, RayPoolUser):
         
         # Set the best theta
         self.kernel.theta = best_theta
+
+        if len(self.observer_handler_identifiers) == 0 and update_actors:
+            self.pool.update_modules(writer=print)
 
     def calculate(self, atoms=None, properties=['energy'], system_changes=all_changes):
         super().calculate(atoms=atoms, properties=properties, system_changes=system_changes)
