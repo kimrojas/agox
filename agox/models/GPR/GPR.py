@@ -651,7 +651,7 @@ class GPR(ModelBaseClass):
         """
         
         from ase import Atoms
-        from agox.models.priors.repulsive import Repulsive
+        from agox.models.GPR.priors import Repulsive
         from agox.models.GPR.kernels import RBF, Constant as C, Noise
 
         assert temp_atoms is not None or environment is not None

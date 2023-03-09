@@ -6,18 +6,8 @@ import numpy
 
 extensions = [
     Extension(
-        "agox.models.gaussian_process.featureCalculators_multi.angular_fingerprintFeature_cy",
-        ["agox/models/gaussian_process/featureCalculators_multi/angular_fingerprintFeature_cy.pyx"],
-        include_dirs=[numpy.get_include()]
-        ),
-    Extension(
-        "agox.models.gaussian_process.delta_functions_multi.delta",
-        ["agox/models/gaussian_process/delta_functions_multi/delta.pyx"],
-        include_dirs=[numpy.get_include()]
-        ),
-    Extension(
-        "agox.models.priors.repulsive",
-        ["agox/models/priors/repulsive.pyx"],
+        "agox.models.GPR.priors.repulsive",
+        ["agox/models/GPR/priors/repulsive.pyx"],
         include_dirs=[numpy.get_include()]
         ),
     Extension(
