@@ -21,9 +21,6 @@ def ray_startup(cpu_count, memory, tmp_dir):
         variables are used to guess a suitable amount. 
     """
 
-    if ray.is_initialized():
-        return
-
     # CPU Count:
     if cpu_count is None:
         try:
@@ -48,13 +45,18 @@ def ray_startup(cpu_count, memory, tmp_dir):
             print('USING USER ROOT FOLDER FOR RAY TEMP BECAUSE GIVEN OR DEFAULT GENERATED PATH IS TOO MANY BYTES.')
             print(f'Path: {tmp_dir}')
     
+    if ray.is_initialized():
+        ray_stats = ray.cluster_resources()
+        return int(ray_stats['CPU']), ray_stats['memory'], tmp_dir
+
     ray.init(_memory=memory, object_store_memory=int(memory/4),
             num_cpus=cpu_count, ignore_reinit_error=True, _temp_dir=tmp_dir, 
             include_dashboard=False)
-    print(ray.cluster_resources())
-    return cpu_count, memory, tmp_dir
+    ray_stats = ray.cluster_resources()    
+    print(ray_stats)
+    return int(ray_stats['CPU']), ray_stats['memory'], tmp_dir
 
-ray_kwarg_keys = ('tmp_dir', 'memory', 'cpu_count')
+ray_kwarg_keys = ('tmp_dir', 'memory', 'cpu_count', 'use_ray')
 
 class RayBaseClass:
 
@@ -490,9 +492,13 @@ class RayPoolUser(Observer):
 
     kwargs = ['pool', 'tmp_dir', 'memory', 'cpu_count']
 
-    def __init__(self, pool=None, tmp_dir=None, memory=None, cpu_count=None):
-        self.cpu_count, _, _ = ray_startup(cpu_count, memory, tmp_dir)
-        self.pool = get_ray_pool() if pool is None else pool
+    def __init__(self, pool=None, tmp_dir=None, memory=None, cpu_count=None, use_ray=None):
+        if use_ray is None:
+            use_ray = True
+        if use_ray:
+            self.cpu_count, _, _ = ray_startup(cpu_count, memory, tmp_dir)
+            self.pool = get_ray_pool() if pool is None else pool
+        self.use_ray = use_ray
 
     def pool_add_module(self, module, include_submodules=True):
         """
