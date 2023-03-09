@@ -1,5 +1,5 @@
 import numpy as np
-from agox.models.GPR.ABC_sparse import SparseBaseClass
+from agox.models.GPR.ABC_sGPR import SparseBaseClass
 
 
 class GlobalSparseGPR(SparseBaseClass):

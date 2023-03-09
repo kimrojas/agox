@@ -1,5 +1,5 @@
 import numpy as np
-from agox.models.GPR.ABC_sparse import SparseBaseClass
+from agox.models.GPR.ABC_sGPR import SparseBaseClass
 
 
 class LocalSparseGPR(SparseBaseClass):
@@ -21,7 +21,18 @@ class LocalSparseGPR(SparseBaseClass):
             Features for the ase.Atoms object
         
         """
-        return np.vstack(self.descriptor.get_local_features(atoms))
+        f = self.descriptor.get_local_features(atoms)
+
+        if isinstance(f, np.ndarray) and len(f.shape) == 1:
+            f = f.reshape(1, -1)
+        f = np.vstack(f)
+        return f
+        # try:
+        #     print(self.descriptor.get_local_features(atoms).shape)
+        # except:
+        #     print('first element:', self.descriptor.get_local_features(atoms)[0].shape)
+            
+        # return np.vstack(self.descriptor.get_local_features(atoms))
 
 
     def _make_L(self, atoms_list):

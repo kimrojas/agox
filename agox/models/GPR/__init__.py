@@ -1,4 +1,4 @@
-from .global_standard import GlobalGPR
-from .global_sparse import GlobalSparseGPR
-from .local_sparse import LocalSparseGPR
+from .global_GPR import GlobalGPR
+from .global_sGPR import GlobalSparseGPR
+from .local_sGPR import LocalSparseGPR
 
