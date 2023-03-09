@@ -52,6 +52,7 @@ def ray_startup(cpu_count, memory, tmp_dir):
             num_cpus=cpu_count, ignore_reinit_error=True, _temp_dir=tmp_dir, 
             include_dashboard=False)
     print(ray.cluster_resources())
+    return cpu_count, memory, tmp_dir
 
 ray_kwarg_keys = ('tmp_dir', 'memory', 'cpu_count')
 
@@ -490,7 +491,7 @@ class RayPoolUser(Observer):
     kwargs = ['pool', 'tmp_dir', 'memory', 'cpu_count']
 
     def __init__(self, pool=None, tmp_dir=None, memory=None, cpu_count=None):
-        ray_startup(cpu_count, memory, tmp_dir)
+        self.cpu_count, _, _ = ray_startup(cpu_count, memory, tmp_dir)
         self.pool = get_ray_pool() if pool is None else pool
 
     def pool_add_module(self, module, include_submodules=True):
