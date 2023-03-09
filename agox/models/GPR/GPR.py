@@ -1,71 +1,133 @@
-import numpy as np
 import warnings
+import numpy as np
+
 from scipy.linalg import cho_solve, cho_factor
 from scipy.optimize import fmin_l_bfgs_b
 
 from ase.calculators.calculator import all_changes
-from agox.models.GPR.ABC_GPR import GPRBaseClass
+
+from agox.models.ABC_model import ModelBaseClass
+from agox.utils import candidate_list_comprehension
+
+from agox.models.GPR.sparsifiers.CUR import CUR
 
 
-class GlobalGPR(GPRBaseClass):
+
+class GPR(ModelBaseClass):
     
-    name = 'GlobalGPR'
+    name = 'GPR'
 
     implemented_properties = ['energy', 'forces', 'uncertainty', 'force_uncertainty']
 
     dynamic_attributes = ['alpha', 'K_inv', 'X', 'K']
-    
+
     """
-    Standard GPR Base Class
+    
 
     Attributes
     ----------
-    kernel : Kernel
-        Kernel object
-    descriptor : Descriptor
-        Descriptor object
+    descriptor : DescriptorBaseClass
+        Descriptor object.
+    kernel : KernelBaseClass
+        Kernel object.
+    descriptor_type : string
+        Descriptor type.
+    prior : ModelBaseClass
+        Prior model object.
+    sparsifier : SparsifierBaseClass
+        Sparsifier object.
+    single_atom_energies : dict
+        Dictionary of single atom energies.
+    use_prior_in_training : bool
+        Whether to use prior in training.
+    sparsifier : SparsifierBaseClass
+        Sparsifier object.
     centralize : bool
-        Whether to centralize the data
-    n_optimize : int
-        Number of hyperparameter optimization runs
-    optimizer_maxiter : int
-        Maximum number of iterations for the optimizer
-    X : np.ndarray
-        Training features
-    Y : np.ndarray
-        Training targets
-    K : np.ndarray
-        Kernel matrix
-    K_inv : np.ndarray
-        Inverse of the kernel matrix
+        Whether to centralize the energy.
     alpha : np.ndarray
-        Alpha vector
-
+        Model parameters.
+    X : np.ndarray
+        Training features.
+    Y : np.ndarray
+        Training targets.
+    update : bool
+        Whether to update the model.
+    prior_energy : np.ndarray
+        Prior energy.
+    mean_energy : float
+        Mean energy.
+    
     Methods
     -------
-        
+    train_model(training_data, **kwargs)
+        Train the model.
+    predict_energy(atoms, **kwargs)
+        Predict the energy of a given structure.
+    predict_uncertainty(atoms, **kwargs)
+        Predict the uncertainty of a given structure.
+    predict_forces(atoms, return_uncertainty=False, **kwargs)
+        Predict the forces of a given structure.
+    predict_forces_uncertainty(atoms, **kwargs)
+        Predict the uncertainty of the forces of a given structure.
+
+
     """
-    def __init__(self, descriptor, kernel, centralize=True,
-                 n_optimize=1, optimizer_maxiter=100, **kwargs):
+
+    def __init__(self, descriptor, kernel, descriptor_type='global', prior=None, sparsifier=None,
+                 single_atom_energies=None, use_prior_in_training=False,
+                 sparsifier_cls=CUR, sparsifier_args=(1000,), sparsifier_kwargs={},
+                 n_optimize=1, optimizer_maxiter=100, centralize=True, **kwargs):
+
         """
         Parameters
         ----------
-        descriptor : Descriptor
-            Descriptor object
-        kernel : Kernel
-            Kernel object
+        descriptor : DescriptorBaseClass
+            Descriptor object.
+        kernel : KernelBaseClass
+            Kernel object.
+        feature_method : function
+            Feature method.
+        prior : ModelBaseClass
+            Prior model object.
+        sparsifier_cls : SparsifierBaseClass
+            Sparsifier object
+        sparsifier_args : tuple
+            Arguments for the sparsifier
+        sparsifier_kwargs : dict
+            Keyword arguments for the sparsifier
+        single_atom_energies : dict
+            Dictionary of single atom energies.
+        use_prior_in_training : bool
+            Whether to use prior in training.
+        sparsifier : SparsifierBaseClass
+            Sparsifier object
+
         centralize : bool
-            Whether to centralize the data
-        n_optimize : int
-            Number of hyperparameter optimization runs
-        optimizer_maxiter : int
-            Maximum number of iterations for the optimizer
-        
+            Whether to centralize the energy.
+
         """
-        super().__init__(descriptor, kernel, centralize=centralize,
-                         **kwargs)
+        super().__init__(**kwargs)
+
+        self.descriptor = descriptor
+        self.kernel = kernel
+        self.feature_method = getattr(self.descriptor, 'get_' + descriptor_type + '_features')
+        self.feature_gradient_method = getattr(self.descriptor, 'get_' + descriptor_type + '_feature_gradient')
+        self.prior = prior
+        self.sparsifier = sparsifier
+        self.single_atom_energies = single_atom_energies
+        self.use_prior_in_training = use_prior_in_training
+        self.sparsifier = sparsifier_cls(*sparsifier_args, **sparsifier_kwargs)
         self.n_optimize = n_optimize
         self.optimizer_maxiter = optimizer_maxiter
+        self.centralize = centralize
+
+        # Initialize all possible model parameters
+        self.X = None
+        self.Y = None
+        self.K = None
+        self.K_inv = None        
+        self.alpha = None
+        self.mean_energy = 0.
 
 
     def get_features(self, atoms):
@@ -83,16 +145,62 @@ class GlobalGPR(GPRBaseClass):
             Features
         
         """
-        f = self.descriptor.get_global_features(atoms)
+        f = self.feature_method(atoms)
 
         if isinstance(f, np.ndarray) and len(f.shape) == 1:
             f = f.reshape(1, -1)
         f = np.vstack(f)
         
         return f
-        
-        
 
+
+    def _train_model(self):
+        """
+        Train the model
+        
+        """
+        self.hyperparameter_search()
+        self.K = self.kernel(self.X)
+        self.alpha, self.K_inv, _ = self._solve(self.K, self.Y)
+    
+
+
+    
+    def train_model(self, training_data, **kwargs):
+        """
+        Train the model.
+
+        Parameters
+        ----------
+        training_data : list
+            List of Atoms objects.
+
+        """
+        if self.update:
+            self.X, self.Y = self._update(training_data, **kwargs)
+        else:
+            self.X, self.Y = self._preprocess(training_data)
+
+        self._training_record(training_data)
+  
+        self._train_model()
+
+        self.atoms = None
+        self.ready_state = True
+
+
+    @candidate_list_comprehension
+    def predict_energy(self, atoms, **kwargs):
+        if self.alpha is None:
+            return self.postprocess_energy(atoms, 0)
+        
+        x = self.get_features(atoms)
+        k = self.kernel(self.X, x)
+        e_pred = np.sum(k.T @ self.alpha)
+        return self.postprocess_energy(atoms, e_pred)
+
+
+    @candidate_list_comprehension        
     def predict_uncertainty(self, atoms):
         """
         Predict uncertainty for a given atoms object
@@ -108,7 +216,7 @@ class GlobalGPR(GPRBaseClass):
             Uncertainty
         
         """
-        if self.alpha is None:
+        if 'uncertainty' not in self.implemented_properties or self.alpha is None:
             return 0
         
         x = self.get_features(atoms).reshape(1,-1)
@@ -117,7 +225,8 @@ class GlobalGPR(GPRBaseClass):
         var = float(k0 - k.T @ self.K_inv @ k)
         return np.sqrt(max(var, 0))
 
-    
+
+    @candidate_list_comprehension    
     def predict_forces(self, atoms):
         """
         Predict forces for a given atoms object
@@ -137,13 +246,14 @@ class GlobalGPR(GPRBaseClass):
         
         # F_i = - dE / dr_i = dE/dk dk/df df/dr_i = - alpha dk/df df_dr_i
         x = self.get_features(atoms)
-        dfdr = np.array(self.descriptor.get_global_feature_gradient(atoms))
+        dfdr = np.array(self.feature_gradient_method(atoms))
         dkdf = self.kernel.get_feature_gradient(self.X, x)
         dkdr = np.dot(dkdf, dfdr.T)
         f_pred = -np.dot(dkdr.T, self.alpha).reshape(-1,3)
         return self.postprocess_forces(atoms, f_pred)
 
-    
+
+    @candidate_list_comprehension        
     def predict_forces_uncertainty(self, atoms):
         """
         Predict forces uncertainty for a given atoms object
@@ -159,12 +269,12 @@ class GlobalGPR(GPRBaseClass):
             Forces uncertainty
         
         """
-        if self.alpha is None:
+        if 'forces_uncertainty' not in sel.implemented_proporties or self.alpha is None:
             return np.zeros((len(atoms), 3))
         
         x = self.get_features(atoms)
 
-        dfdr = np.array(self.descriptor.get_global_feature_gradient(atoms))
+        dfdr = np.array(self.feature_gradient_method(atoms))
         dkdf = self.kernel.get_feature_gradient(self.X, x)
         dkdr = np.dot(dkdf, dfdr.T)
         
@@ -177,14 +287,146 @@ class GlobalGPR(GPRBaseClass):
             return 1/np.sqrt(var) * dkdr.T @ self.K_inv @ k
 
 
-    def _train_model(self):
+    
+    @property
+    def single_atom_energies(self):
         """
-        Train the model
+        Get the single atom energies.
+
+        Returns
+        -------
+        np.ndarray
+
+        """
+        return self._single_atom_energies
+
+    
+    @single_atom_energies.setter
+    def single_atom_energies(self, s):
+        """
+        Set the single atom energies.
+        Index number corresponds to the atomic number ie. 1 = H, 2 = He, etc.
+
+        Parameters
+        ----------
+        s : dict or np.ndarray
+            Dictionary/array of single atom energies.
+
+        """
+        if isinstance(s, np.ndarray):
+            self._single_atom_energies = s
+        elif isinstance(s, dict):
+            self._single_atom_energies = np.zeros(100)
+            for i, val in s.items():
+                self._single_atom_energies[i] = val
+        elif s is None:
+            self._single_atom_energies = np.zeros(100)
+
+
+    def _preprocess(self, data):
+        """
+        Preprocess the training data.
+
+        Parameters
+        ----------
+        data : list
+            List of Atoms objects.
+
+        Returns
+        -------
+        np.ndarray
+            Features.
+        np.ndarray
+            Targets.
         
         """
-        self.hyperparameter_search()
-        self.K = self.kernel(self.X)
-        self.alpha, self.K_inv, _ = self._solve(self.K, self.Y)
+        Y = np.expand_dims(np.array([d.get_potential_energy() for d in data]), axis=1)
+        
+        if self.prior is None or not self.use_prior_in_training:
+            self.prior_energy = np.zeros(Y.shape)
+        else:
+            self.prior_energy = np.expand_dims(np.array([self.prior.predict_energy(d) for d in data]), axis=1)
+
+        Y -= self.prior_energy
+        
+        if self.centralize:
+            self.mean_energy = np.mean(Y)
+            
+        Y -= self.mean_energy
+        X = self.get_features(data)
+
+        return X, Y
+
+
+    def _update(self, training_data):
+        """
+        Update the the features and targets.
+        training_data is all the data.
+
+        Parameters
+        ----------
+        training_data : list
+            List of Atoms objects.
+
+        Returns
+        -------
+        np.ndarray
+            Features.
+        np.ndarray
+            Targets.
+        
+        """
+        return self._preprocess(training_data)
+
+        
+    def postprocess_energy(self, atoms, e_pred):
+        """
+        Postprocess the energy.
+
+        Parameters
+        ----------
+        atoms : Atoms
+            Atoms object.
+        e_pred : float
+            Predicted energy.
+
+        Returns
+        -------
+        float
+            Postprocessed energy.
+        """
+        if self.prior is None:
+            prior = 0
+        else:
+            prior = self.prior.predict_energy(atoms)
+            
+        return e_pred + prior + self.mean_energy
+
+    
+    def postprocess_forces(self, atoms, f_pred):
+        """
+        Postprocess the forces.
+
+        Parameters
+        ----------
+        atoms : Atoms
+            Atoms object.
+        f_pred : np.ndarray
+            Predicted forces.
+
+        Returns
+        -------
+        np.ndarray
+            Postprocessed forces.
+        """
+        if self.prior is None:
+            prior = 0
+        else:
+            prior = self.prior.predict_forces(atoms)
+            
+        return f_pred + prior
+            
+
 
 
     def hyperparameter_search(self):
@@ -445,4 +687,4 @@ class GlobalGPR(GPRBaseClass):
 
 
     
-        
+    

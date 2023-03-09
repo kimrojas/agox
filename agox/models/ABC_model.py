@@ -23,6 +23,9 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
     update_period : int
         When model is attached as observer it updates every update_period
         iterations.
+    record : set
+        Training record.
+
     """
     def __init__(self, database=None, order=0, verbose=True, use_counter=True, prefix='',
                  iteration_start_training=0, update_period=1, surname='', gets={}, sets={}):
@@ -55,6 +58,8 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
         self.update_period = update_period
         
         self._ready_state = False
+        self._record = set()
+        self.update = False
 
         self.add_observer_method(self.training_observer,
                                  gets=self.gets[0], sets=self.sets[0], order=self.order[0],
@@ -189,7 +194,7 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
             The force prediction with shape (N,3), where N is len(atoms)
 
         """        
-        return self.forces_predict_central(atoms, **kwargs)
+        return self.predict_forces_central(atoms, **kwargs)
 
 
     def predict_forces_central(self, atoms, acquisition_function=None, d=0.001, **kwargs):
@@ -338,6 +343,56 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
         if 'forces' in properties:
             forces = self.predict_forces(self.atoms)
             self.results['forces'] = forces
+
+
+    def _training_record(self, data):
+        """
+        Record the training data.
+
+        Parameters
+        ----------
+        data : list
+            List of Atoms objects.
+
+        """
+        if not all([isinstance(d, CandidateBaseClass) for d in data]):
+            return
+
+        for d in data:
+            self._record.add(d.cache_key)
+
+        self.update = True
+
+            
+    def _get_new_data(self, data):
+        """
+        Get the new data.
+
+        Parameters
+        ----------
+        data : list
+            List of Atoms objects.
+
+        Returns
+        -------
+        list
+            List of new Atoms objects.
+
+        list
+            List of old Atoms objects.
+        
+        """
+        if not all([isinstance(d, CandidateBaseClass) for d in data]):
+            return data, []
+
+        new_data = []
+        old_data = []
+        for d in data:
+            if d.cache_key in self._record:
+                old_data.append(d)
+            else:
+                new_data.append(d)
+        return new_data, old_data
 
     def save(self, prefix='my-model', directory=''):
         """

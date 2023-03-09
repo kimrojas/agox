@@ -1,16 +1,19 @@
-from abc import abstractmethod
-from agox.models.GPR.ABC_GPR import GPRBaseClass
 import warnings
 import numpy as np
 from scipy.linalg import cholesky, cho_solve, qr, lstsq, LinAlgError
 from time import time
 
+
+from agox.models.GPR.GPR import GPR
+from agox.utils import candidate_list_comprehension
 from agox.writer import agox_writer
 from agox.observer import Observer
 
 
 
-class SparseBaseClass(GPRBaseClass):
+class SparseGPR(GPR):
+
+    name = 'SparseGPR'
 
     implemented_properties = ['energy', 'forces', 'local_energy']
 
@@ -18,7 +21,7 @@ class SparseBaseClass(GPRBaseClass):
 
 
     """
-    Sparse GPR Base Class
+    Sparse GPR Class
 
     Attributes
     ----------
@@ -42,17 +45,14 @@ class SparseBaseClass(GPRBaseClass):
     -------
     predict_local_energy(atoms=None, X=None)
         Calculate the local energies in the model.
-    sparsify(X, atoms_list)
-        Sparsify the training data
     
     """
     
 
     def __init__(self, descriptor, kernel, transfer_data=[], noise=0.05,
-                 jitter=1e-8, **kwargs):
+                 centralize=False, jitter=1e-8, **kwargs):
 
         """
-        Sparse GPR Base Class
 
         Parameters
         ----------
@@ -70,7 +70,8 @@ class SparseBaseClass(GPRBaseClass):
             Jitter level
         
         """
-        super().__init__(descriptor, kernel, **kwargs)
+        super().__init__(descriptor=descriptor, kernel=kernel, centralize=centralize,
+                         **kwargs)
         self.jitter = jitter
         self.transfer_data = transfer_data
         self.noise = noise
@@ -83,15 +84,65 @@ class SparseBaseClass(GPRBaseClass):
         self.L = None
 
 
-    @abstractmethod
-    def _make_L(self, data):
-        pass
+    def _make_L(self, atoms_list, shape_X):
+        """
+        Make the L matrix
 
-    @abstractmethod
-    def _update_L(self, data):
-        pass
-
+        Parameters
+        ----------
+        atoms_list : list of ase.Atoms
+            List of ase.Atoms objects
         
+        Returns
+        -------
+        np.ndarray
+            L matrix
+        
+        """
+        if len(atoms_list) == shape_X[0]:
+            return np.eye(shape_X[0])
+        
+        lengths = [len(atoms) for atoms in atoms_list]
+        r = len(lengths); c = np.sum(lengths)
+        
+        col = 0
+        L = np.zeros((r,c))
+        for i, atoms in enumerate(atoms_list):
+            L[i,col:col+len(atoms)] = 1.
+            col += len(atoms)
+        return L
+
+    
+    def _update_L(self, new_atoms_list, shape_X):
+        """
+        Update the L matrix
+
+        Parameters
+        ----------
+        new_atoms_list : list of ase.Atoms
+            List of ase.Atoms objects
+
+        Returns
+        -------
+        np.ndarray
+            L matrix
+        
+        """
+        if len(atoms_list) == shape_X[0]:
+            new_size = shape_X[0] + self.L.shape[0]
+            return np.eye(new_size)
+        
+        new_lengths = [len(atoms) for atoms in new_atoms_list]
+        size = len(new_lengths)
+        new_total_length = np.sum(new_lengths)
+        new_L = np.zeros((self.L.shape[0]+size, self.L.shape[1]+new_total_length))
+        new_L[0:self.L.shape[0], 0:self.L.shape[1]] = self.L
+
+        for l in range(size):
+            step = int(np.sum(new_lengths[:l]))
+            new_L[l+self.L.shape[0], (self.L.shape[1]+step):(self.L.shape[1]+step+new_lengths[l])] = 1            
+        return new_L
+    
     @property
     def noise(self):
         """
@@ -104,7 +155,7 @@ class SparseBaseClass(GPRBaseClass):
         
         """
         return self._noise
-
+    
     
     @noise.setter
     def noise(self, s):
@@ -133,6 +184,7 @@ class SparseBaseClass(GPRBaseClass):
         """
         return self._transfer_data
 
+    
     @transfer_data.setter
     def transfer_data(self, l):
         """
@@ -192,8 +244,26 @@ class SparseBaseClass(GPRBaseClass):
         self.K_inv = lstsq(R, Q.T)[0]
         self.alpha = lstsq(R, Q.T @ LK_nm.T @ self.sigma_inv @ self.Y)[0]
 
-    
 
+    @candidate_list_comprehension        
+    def predict_forces(self, atoms, **kwargs):
+        """Method for forces prediction. 
+
+        Parameters
+        ----------
+        atoms : ase.Atoms
+            ase.Atoms object to predict forces for
+        
+        Returns
+        ----------
+        np.array 
+            The force prediction with shape (N,3), where N is len(atoms)
+
+        """        
+        return self.predict_forces_central(atoms, **kwargs)
+
+    
+    @candidate_list_comprehension
     def predict_local_energy(self, atoms=None, X=None):
         """
         Calculate the local energies in the model.
@@ -238,7 +308,7 @@ class SparseBaseClass(GPRBaseClass):
         X, Y = super()._preprocess(self.transfer_data + data)
         self.Xn = X
 
-        self.L = self._make_L(self.transfer_data + data)
+        self.L = self._make_L(self.transfer_data + data, X.shape)
         self.sigma_inv = self._make_sigma(self.transfer_data + data)
         self.Xm, _ = self.sparsifier(self.Xn)
         
@@ -273,14 +343,13 @@ class SparseBaseClass(GPRBaseClass):
 
         Y = np.vstack((self.Y, Y_new))
 
-        self.L = self._update_L(new)
+        self.L = self._update_L(new, X_new.shape)
         self.sigma_inv = self._make_sigma(self.transfer_data + data)
         self.Xm, _ = self.sparsifier(self.Xn)        
 
         return self.Xm, Y
         
 
-    
     def _make_sigma(self, atoms_list):
         """
         Make the sigma matrix
