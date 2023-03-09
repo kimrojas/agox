@@ -8,13 +8,17 @@ class SOAP(DescriptorBaseClass):
 
     name = 'SOAP'
 
-    def __init__(self, species, r_cut=4, nmax=3, lmax=2, sigma=1.0,
-                 weight=True, periodic=True, dtype='float64', normalize=False, crossover=True, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, r_cut=4, nmax=3, lmax=2, sigma=1.0,
+                 weight=True, periodic=True, dtype='float64', normalize=False, crossover=True, *args, **kwargs):
+        
+        super().__init__(*args, **kwargs)
 
         from dscribe.descriptors import SOAP as dscribeSOAP
+
         self.normalize = normalize
         self.feature_types = self.feature_types.copy()
+
+        species = list(np.unique(self.environment.get_all_species()))
 
         if periodic:
             self.feature_types.remove('local_gradient')
@@ -62,3 +66,10 @@ class SOAP(DescriptorBaseClass):
     def create_global_features(self, atoms):
         features = self.soap.create(atoms)
         return np.sum(features, axis=0)
+
+    @classmethod
+    def from_species(cls, species, **kwargs):
+        from ase import Atoms
+        from agox.environments import Environment
+        environment = Environment(template=Atoms(''), symbols=''.join(species))
+        return cls(environment=environment, **kwargs)

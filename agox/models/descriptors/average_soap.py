@@ -8,8 +8,13 @@ from dscribe.descriptors import SOAP as dscribeSOAP
 
 class SOAP(DescriptorBaseClass):
 
-    def __init__(self, species, r_cut=4, nmax=3, lmax=2, sigma=1.0,
-                 weight=True, periodic=True, dtype='float64', normalize=False, crossover=True):
+    def __init__(self, r_cut=4, nmax=3, lmax=2, sigma=1.0,
+                 weight=True, periodic=True, dtype='float64', normalize=False,
+                 crossover=True, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+        species = list(np.unique(self.environment.get_all_species()))
+        
         self.normalize = normalize
         self.periodic = periodic
         
@@ -68,6 +73,13 @@ class SOAP(DescriptorBaseClass):
         else:
             return self.soap.derivatives(atoms, return_descriptor=False).reshape(-1,self.lenght)
 
+    @classmethod
+    def from_species(cls, species, **kwargs):
+        from ase import Atoms
+        from agox.environments import Environment
+        environment = Environment(template=Atoms(''), symbols=''.join(species))
+        return cls(environment, **kwargs)        
+        
 
 
 if __name__ == '__main__':

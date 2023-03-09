@@ -9,8 +9,9 @@ class SpectralGraphDescriptor(DescriptorBaseClass):
     feature_types = ['global']
 
     def __init__(self, mode='adjacency', diagonal_mode='atomic_number', number_to_compare='all',
-                 descending=False, scale_factor=1.3, **kwargs):
-        super().__init__(**kwargs)
+                 descending=False, scale_factor=1.3, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
         self.covalent_bond_scale_factor = scale_factor
         assert mode in ['adjacency', 'laplacian']
         self.mode = mode    

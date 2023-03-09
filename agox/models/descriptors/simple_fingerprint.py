@@ -9,10 +9,10 @@ class SimpleFingerprint(DescriptorBaseClass):
     feature_types = ['local', 'global']
     name = 'SimpleFingerprint'
 
-    def __init__(self, species, Nbins=30, width=0.2, r_cut=3, separate_center_species=True, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, Nbins=30, width=0.2, r_cut=3, separate_center_species=True, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         
-        self.species = species
+        self.species = list(np.unique(self.environment.get_all_species()))
         self.Nbins = Nbins
         self.width = width
         self.r_cut = r_cut
@@ -48,3 +48,12 @@ class SimpleFingerprint(DescriptorBaseClass):
 
     def create_global_features(self, atoms):
         return self.create_local_features(atoms).sum(axis=0)
+
+    @classmethod
+    def from_species(cls, species, **kwargs):
+        from ase import Atoms
+        from agox.environments import Environment
+        environment = Environment(template=Atoms(''), symbols=''.join(species))
+        return cls(environment, **kwargs)
+        
+    
