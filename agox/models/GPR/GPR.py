@@ -10,16 +10,16 @@ from agox.models.ABC_model import ModelBaseClass
 from agox.utils import candidate_list_comprehension
 
 from agox.models.GPR.sparsifiers.CUR import CUR
+from agox.utils.ray_utils import RayPoolUser, ray_kwarg_keys
 
 
-
-class GPR(ModelBaseClass):
+class GPR(ModelBaseClass, RayPoolUser):
     
     name = 'GPR'
 
     implemented_properties = ['energy', 'forces', 'uncertainty', 'force_uncertainty']
 
-    dynamic_attributes = ['alpha', 'K_inv', 'X', 'K']
+    dynamic_attributes = ['alpha', 'K_inv', 'X', 'K', 'kernel', 'Y']
 
     """
     
@@ -105,8 +105,10 @@ class GPR(ModelBaseClass):
         centralize : bool
             Whether to centralize the energy.
 
-        """
-        super().__init__(**kwargs)
+        """        
+        ray_kwargs = {key:kwargs.pop(key, None) for key in ray_kwarg_keys}
+        ModelBaseClass.__init__(self, **kwargs)
+        RayPoolUser.__init__(self, **ray_kwargs)
 
         self.descriptor = descriptor
         self.kernel = kernel
@@ -129,6 +131,8 @@ class GPR(ModelBaseClass):
         self.alpha = None
         self.mean_energy = 0.
 
+        # We add self to the pool, it will keep an updated copy of the model on the pool
+        self.actor_model_key = self.pool_add_module(self)
 
     def get_features(self, atoms):
         """
@@ -153,19 +157,15 @@ class GPR(ModelBaseClass):
         
         return f
 
-
     def _train_model(self):
         """
         Train the model
         
-        """
+        """        
         self.hyperparameter_search()
         self.K = self.kernel(self.X)
         self.alpha, self.K_inv, _ = self._solve(self.K, self.Y)
-    
-
-
-    
+        
     def train_model(self, training_data, **kwargs):
         """
         Train the model.
@@ -188,7 +188,6 @@ class GPR(ModelBaseClass):
         self.atoms = None
         self.ready_state = True
 
-
     @candidate_list_comprehension
     def predict_energy(self, atoms, **kwargs):
         if self.alpha is None:
@@ -196,9 +195,9 @@ class GPR(ModelBaseClass):
         
         x = self.get_features(atoms)
         k = self.kernel(self.X, x)
+
         e_pred = np.sum(k.T @ self.alpha)
         return self.postprocess_energy(atoms, e_pred)
-
 
     @candidate_list_comprehension        
     def predict_uncertainty(self, atoms):
@@ -225,7 +224,6 @@ class GPR(ModelBaseClass):
         var = float(k0 - k.T @ self.K_inv @ k)
         return np.sqrt(max(var, 0))
 
-
     @candidate_list_comprehension    
     def predict_forces(self, atoms):
         """
@@ -250,8 +248,8 @@ class GPR(ModelBaseClass):
         dkdf = self.kernel.get_feature_gradient(self.X, x)
         dkdr = np.dot(dkdf, dfdr.T)
         f_pred = -np.dot(dkdr.T, self.alpha).reshape(-1,3)
-        return self.postprocess_forces(atoms, f_pred)
 
+        return self.postprocess_forces(atoms, f_pred)
 
     @candidate_list_comprehension        
     def predict_forces_uncertainty(self, atoms):
@@ -285,8 +283,6 @@ class GPR(ModelBaseClass):
             return np.zeros((len(atoms), 3))
         else:
             return 1/np.sqrt(var) * dkdr.T @ self.K_inv @ k
-
-
     
     @property
     def single_atom_energies(self):
@@ -299,7 +295,6 @@ class GPR(ModelBaseClass):
 
         """
         return self._single_atom_energies
-
     
     @single_atom_energies.setter
     def single_atom_energies(self, s):
@@ -321,7 +316,6 @@ class GPR(ModelBaseClass):
                 self._single_atom_energies[i] = val
         elif s is None:
             self._single_atom_energies = np.zeros(100)
-
 
     def _preprocess(self, data):
         """
@@ -357,7 +351,6 @@ class GPR(ModelBaseClass):
 
         return X, Y
 
-
     def _update(self, training_data):
         """
         Update the the features and targets.
@@ -377,7 +370,6 @@ class GPR(ModelBaseClass):
         
         """
         return self._preprocess(training_data)
-
         
     def postprocess_energy(self, atoms, e_pred):
         """
@@ -402,7 +394,6 @@ class GPR(ModelBaseClass):
             
         return e_pred + prior + self.mean_energy
 
-    
     def postprocess_forces(self, atoms, f_pred):
         """
         Postprocess the forces.
@@ -426,14 +417,12 @@ class GPR(ModelBaseClass):
             
         return f_pred + prior
             
-
-
-
     def hyperparameter_search(self):
         """
         Hyperparameter search
         
         """
+        print('Here here', self.n_optimize)
         initial_parameters = []
         initial_parameters.append(self.kernel.theta.copy())
         if self.n_optimize > 0:
@@ -449,7 +438,27 @@ class GPR(ModelBaseClass):
                 thetas.append(theta_min)
 
             self.kernel.theta = thetas[np.argmin(np.array(fmins))]
+        print('theta', self.kernel.theta)
 
+    def hyperparameter_search_parallel(self):
+
+        def init_theta():
+            return np.random.uniform(size=(len(self.kernel.bounds),), low=self.kernel.bounds[:,0], high=self.kernel.bounds[:,1])
+
+        N_jobs = 4
+        modules = [[self.actor_model_key]] * N_jobs # All jobs use the same model that is already on the actor. 
+        args = [[init_theta()] for _ in range(N_jobs)] # Each job gets a different initial theta
+        kwargs = [{} for _ in range(N_jobs)] # No kwargs
+
+        # Run the jobs in parallel
+        outputs = self.pool_map(ray_hyperparameter_optimize, modules, args, kwargs)
+
+        # Get the best theta
+        likelihood = [output[1] for output in outputs]
+        best_theta = outputs[np.argmin(likelihood)][0]
+        
+        # Set the best theta
+        self.kernel.theta = best_theta
 
     def calculate(self, atoms=None, properties=['energy'], system_changes=all_changes):
         super().calculate(atoms=atoms, properties=properties, system_changes=system_changes)
@@ -458,7 +467,6 @@ class GPR(ModelBaseClass):
         if 'force_uncertainty' in properties:
             self.results['force_uncertainty'] = self.predict_forces_uncertainty(atoms)
 
-    
     def _hyperparameter_optimize(self, init_theta=None):
         """
         Hyperparameter optimization
@@ -493,7 +501,6 @@ class GPR(ModelBaseClass):
 
         return theta_min, fmin
     
-
     def _solve(self, K, Y):
         """
         Solve the linear system
@@ -519,7 +526,6 @@ class GPR(ModelBaseClass):
         alpha = cho_solve((L, lower), Y)
         K_inv = cho_solve((L, lower), np.eye(K.shape[0]))
         return alpha, K_inv, (L, lower)
-
     
     def _marginal_log_likelihood(self, theta):
         """
@@ -549,7 +555,6 @@ class GPR(ModelBaseClass):
 
         return np.sum(log_P)
 
-    
     def _marginal_log_likelihood_gradient(self, theta):
         """
         Marginal log likelihood gradient
@@ -584,8 +589,6 @@ class GPR(ModelBaseClass):
         grad_log_P = np.sum(0.5 * np.einsum("ijl,ijk->kl", inner, K_hp_gradient), axis=-1)
         return log_P, grad_log_P
     
-
-
     def get_model_parameters(self):
         warnings.warn('get_model_parameters is deprecated and will be removed in a future release.', DeprecationWarning)        
         parameters = {}
@@ -606,7 +609,6 @@ class GPR(ModelBaseClass):
         self.set_iteration_counter(parameters['iteration'])
         self.kernel.set_params(**parameters['kernel_hyperparameters'])
         self.ready_state = True
-
 
     def get_feature_calculator(self):
         warnings.warn("The 'get_feature_calculator'-method will be deprecated in a future release.", DeprecationWarning)
@@ -685,6 +687,35 @@ class GPR(ModelBaseClass):
         return cls(database=database, kernel=kernel, descriptor=descriptor, prior=delta,
                    n_optimize=1, optimizer_maxiter=max_iterations)
 
+def ray_hyperparameter_optimize(model, init_theta=None):
+    """
+    Hyperparameter optimization
 
+    Parameters
+    ----------
+    init_theta : np.ndarray
+        Initial theta
+
+    Returns
+    -------
+    np.ndarray
+        Optimal theta
     
+    """
+    def f(theta):
+        P, grad_P = model._marginal_log_likelihood_gradient(theta)
+        if np.isnan(P):
+            return np.inf, np.zeros_like(theta, dtype='float64')
+        P, grad_P = -float(P), -np.asarray(grad_P, dtype='float64')
+        return P, grad_P
+
+    bounds = model.kernel.bounds
     
+    theta_min, fmin, conv = fmin_l_bfgs_b(f, np.asarray(init_theta, dtype='float64'),
+                                            bounds=np.asarray(bounds, dtype='float64'),
+                                            maxiter=model.optimizer_maxiter)
+
+    return theta_min, fmin
+
+
+
