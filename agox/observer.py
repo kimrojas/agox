@@ -308,6 +308,7 @@ class Observer(Module):
         self.order = order
 
         self.observer_methods = {}
+        self.observer_handler_identifiers = []
 
         if len(kwargs) > 0:
             print('Unused key word arguments supplied to {}'.format(self.name))
@@ -404,6 +405,7 @@ class Observer(Module):
         for observer_method in self.observer_methods.values():
             if observer_method.handler_identifier == 'any' or observer_method.handler_identifier == handler.handler_identifier:
                 handler.attach_observer(observer_method)
+                self.observer_handler_identifiers.append(handler.handler_identifier)
 
     def reset_observer(self):
         """
