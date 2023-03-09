@@ -12,7 +12,6 @@ from agox.utils import candidate_list_comprehension
 from agox.models.GPR.sparsifiers.CUR import CUR
 from agox.utils.ray_utils import RayPoolUser, ray_kwarg_keys
 
-
 class GPR(ModelBaseClass, RayPoolUser):
     
     name = 'GPR'
@@ -451,12 +450,12 @@ class GPR(ModelBaseClass, RayPoolUser):
 
     def hyperparameter_search_parallel(self, update_actors=True):
 
-        def init_theta():
-            return np.random.uniform(size=(len(self.kernel.bounds),), low=self.kernel.bounds[:,0], high=self.kernel.bounds[:,1])
+        # def init_theta(bounds):
+        #     return np.random.uniform(size=len(bounds,), low=bounds[:,0], high=bounds[:,1])
         
-        N_jobs = self.cpu_count * self.n_optimize
+        N_jobs = self.cpu_count
         modules = [[self.actor_model_key]] * N_jobs # All jobs use the same model that is already on the actor. 
-        args = [[init_theta()] for _ in range(N_jobs)] # Each job gets a different initial theta
+        args = [[self.n_optimize] for _ in range(N_jobs)] # Each job gets a different initial theta
         kwargs = [{} for _ in range(N_jobs)] # No kwargs
 
         # Run the jobs in parallel
@@ -699,7 +698,7 @@ class GPR(ModelBaseClass, RayPoolUser):
         return cls(database=database, kernel=kernel, descriptor=descriptor, prior=delta,
                    n_optimize=1, optimizer_maxiter=max_iterations)
 
-def ray_hyperparameter_optimize(model, init_theta=None):
+def ray_hyperparameter_optimize(model, n_opt):
     """
     Hyperparameter optimization
 
@@ -721,11 +720,22 @@ def ray_hyperparameter_optimize(model, init_theta=None):
         P, grad_P = -float(P), -np.asarray(grad_P, dtype='float64')
         return P, grad_P
 
-    bounds = model.kernel.bounds
+    def init_theta_func(bounds):
+        return np.random.uniform(size=len(bounds,), low=bounds[:,0], high=bounds[:,1])
     
-    theta_min, fmin, conv = fmin_l_bfgs_b(f, np.asarray(init_theta, dtype='float64'),
-                                            bounds=np.asarray(bounds, dtype='float64'),
-                                            maxiter=model.optimizer_maxiter)
+    bounds = model.kernel.bounds
+
+    fbest = np.inf
+    for _ in range(n_opt):
+
+        init_theta = init_theta_func(bounds)
+
+        theta_min, fmin, conv = fmin_l_bfgs_b(f, np.asarray(init_theta, dtype='float64'),
+                                                bounds=np.asarray(bounds, dtype='float64'),
+                                                maxiter=model.optimizer_maxiter)
+        if fmin < fbest:
+            fbest = fmin
+            theta_min_best = theta_min
 
     return theta_min, fmin
 
