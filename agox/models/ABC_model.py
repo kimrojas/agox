@@ -9,6 +9,7 @@ from agox.observer import Observer
 from agox.writer import Writer, agox_writer
 
 class ModelBaseClass(Calculator, Observer, Writer, ABC):
+
     """ Model Base Class implementation
 
     Attributes
@@ -52,6 +53,8 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
         Writer.__init__(self, verbose=verbose, use_counter=use_counter, prefix=prefix)
         Calculator.__init__(self)
         Module.__init__(self)
+
+        self._save_attributes = ['_ready_state']
 
         self.verbose = verbose
         self.iteration_start_training = iteration_start_training
@@ -142,7 +145,20 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
     def ready_state(self, state):
         self._ready_state = bool(state)
 
+    def add_save_attributes(self, attribute):
+        """Add attribute to save list.
 
+        Parameters
+        ----------
+        attribute : str or list of str
+            Name of attribute to add to save list.
+
+        """
+        if isinstance(attribute, str):
+            self._save_attributes.append(attribute)
+        else:
+            self._save_attributes += attribute
+        
     @agox_writer
     @Observer.observer_method        
     def training_observer(self, database, state):
@@ -317,7 +333,23 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
 
         """                
         return self.predict_forces(atoms, **kwargs), self.predict_forces_uncertainty(atoms, **kwargs)
+
     
+    def converter(self, atoms, **kwargs):
+        """Converts an ASE atoms object to a format that can be used by the model
+        
+        Parameters
+        ----------
+        atoms : ASE Atoms obj or AGOX Candidate object
+            The atoms object for which to predict the energy.
+
+        Returns
+        ----------
+        object
+            The converted object
+
+        """                
+        return {}
     
     def calculate(self, atoms=None, properties=['energy'], system_changes=all_changes):
         """ASE Calculator calculate method
@@ -394,23 +426,29 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
                 new_data.append(d)
         return new_data, old_data
 
-    def save(self, prefix='my-model', directory=''):
+
+    @agox_writer    
+    def save(self, path='model.h5'):
         """
         Save the model as a pickled object. 
 
         Parameters
         ----------
-        prefix : str, optional
-            name-prefix of the saved file, e.g. what comes before the .pkl 
-            extension, by default 'my-model'
-        directory : str, optional
-            The directory to save the model in, by default the current folder.
+        path : str, optional
+            Path to save the model to. The default is 'model.h5'.
         """
-        import pickle
-        with open(os.path.join(directory, prefix+'.pkl'), 'wb') as handle:
-            pickle.dump(self, handle)
-            
-    @classmethod
+        import h5py
+        with h5py.File(path, 'w') as f:
+            for key in self._save_attributes:
+                obj = self
+                for k in key.split('.'):
+                    data = getattr(obj, k)
+                    obj = data
+                f.create_dataset(key, data=data)
+                
+        self.writer('Saving model to {}'.format(path))
+
+    @agox_writer
     def load(self, path):
         """
         Load a pickle 
@@ -425,18 +463,21 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
         model-object
             The loaded model object. 
         """
-        import pickle
-        with open(path, 'rb') as handle:
-            return pickle.load(handle)
+        assert os.path.exists(path), "Path does not exist"
+        import h5py
+        self.writer('Loading model from {}'.format(path))
+        with h5py.File(path, 'r') as f:
+            for key in self._save_attributes:
+                obj = self
+                for k in key.split('.')[:-1]:
+                    obj = getattr(obj, k)
                     
-    def get_model_parameters(self, *args, **kwargs):
-        raise NotImplementedError('''get_model_parameters has not been implemeneted for this type of model. Do so if you need 
-                            functionality that relies on this method''')
+                k = key.split('.')[-1]
+                setattr(obj, k, f[key][()])
+                
+        self.writer('Model loaded')
 
-    def set_model_parameters(self, *args, **kwargs):
-        raise NotImplementedError('''set_model_parameters has not been implemeneted for this type of model. Do so if you need 
-                            functionality that relies on this method''')
-
+    
     def attach_to_database(self, database):
         from agox.databases.ABC_database import DatabaseBaseClass
         assert isinstance(database, DatabaseBaseClass)
@@ -444,5 +485,4 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
         self.attach(database)
 
 
-def load(path):
-    return ModelBaseClass.load(path)
+

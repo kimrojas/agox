@@ -51,8 +51,8 @@ class LowerConfidenceBoundCalculator(AcquisitonCalculatorBaseClass):
 
     implemented_properties = ['energy', 'forces']
 
-    def __init__(self, model_calculator, acquisition_function, acquisition_force, **kwargs):
-        super().__init__(model_calculator, **kwargs)
+    def __init__(self, model, acquisition_function, acquisition_force, **kwargs):
+        super().__init__(model, **kwargs)
         self.acquisition_function = acquisition_function
         self.acquisition_force = acquisition_force
 
@@ -62,11 +62,17 @@ class LowerConfidenceBoundCalculator(AcquisitonCalculatorBaseClass):
         super().calculate(atoms, properties, system_changes)
 
         if 'forces' in properties:
-            E, sigma = self.model_calculator.predict_energy(atoms, return_uncertainty=True)
-            F, sigma_force = self.model_calculator.predict_forces(atoms, return_uncertainty=True, acquisition_function=self.acquisition_function)
+            model_data = self.model.converter(atoms)
+            E = self.model.predict_energy(atoms, **model_data)
+            sigma = self.model.predict_uncertainty(atoms, **model_data)
+            F = self.model.predict_forces(atoms, **model_data)
+            sigma_force = self.model.predict_forces_uncertainty(atoms, **model_data)
+            
             self.results['forces'] = self.acquisition_force(E, F, sigma, sigma_force)
         else:
-            E, sigma = self.model_calculator.predict_energy(atoms, return_uncertainty=True)
+            model_data = self.model.converter(atoms, reduced=True)
+            E = self.model.predict_energy(atoms, **model_data)
+            sigma = self.model.predict_uncertainty(atoms, **model_data)
             
         self.results['energy'] = self.acquisition_function(E, sigma)
 

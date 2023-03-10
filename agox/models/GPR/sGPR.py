@@ -49,7 +49,7 @@ class SparseGPR(GPR):
     """
     
 
-    def __init__(self, descriptor, kernel, transfer_data=[], noise=0.05,
+    def __init__(self, descriptor, kernel, noise=0.05,
                  centralize=False, jitter=1e-8, **kwargs):
 
         """
@@ -72,10 +72,14 @@ class SparseGPR(GPR):
         """
         super().__init__(descriptor=descriptor, kernel=kernel, centralize=centralize,
                          **kwargs)
+        
         self.jitter = jitter
-        self.transfer_data = transfer_data
+
         self.noise = noise
 
+        self.transfer_data = []
+        
+        self.add_save_attributes(['Xn', 'Xm', 'K_mm', 'K_nm', 'Kmm_inv', 'L'])
         self.Xn = None
         self.Xm = None
         self.K_mm = None
@@ -264,7 +268,7 @@ class SparseGPR(GPR):
 
     
     @candidate_list_comprehension
-    def predict_local_energy(self, atoms=None, X=None):
+    def predict_local_energy(self, atoms, **kwargs):
         """
         Calculate the local energies in the model.
 
@@ -281,9 +285,7 @@ class SparseGPR(GPR):
             Local energies
         
         """
-        if X is None:
-            X = self.get_features(atoms)
-
+        X = self.get_features(atoms)
         k = self.kernel(self.Xm, X)
         return (k.T@self.alpha).reshape(-1,) + self.single_atom_energies[atoms.get_atomic_numbers()]
     
@@ -389,27 +391,5 @@ class SparseGPR(GPR):
         """
         return (A + A.T)/2
         
-
-    def get_model_parameters(self):
-        warnings.warn('get_model_parameters is deprecated and will be removed soon.', DeprecationWarning)
-        parameters = {}
-        parameters['Xm'] = self.Xm
-        parameters['K_inv'] = self.K_inv
-        parameters['Kmm_inv'] = self.Kmm_inv
-        parameters['alpha'] = self.alpha
-        parameters['single_atom_energies'] = self.single_atom_energies
-        parameters['theta'] = self.kernel.theta
-        return parameters
-
-    def set_model_parameters(self, parameters):
-        warnings.warn('set_model_parameters is deprecated and will be removed soon.', DeprecationWarning)
-        self.Xm = parameters['Xm']
-        self.X = parameters['Xm']
-        self.K_inv = parameters['K_inv']
-        self.Kmm_inv = parameters['Kmm_inv']
-        self.alpha = parameters['alpha']
-        self.single_atom_energies = parameters['single_atom_energies']
-        self.kernel.theta = parameters['theta']
-        self.ready_state = True
 
     
