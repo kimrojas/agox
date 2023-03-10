@@ -448,15 +448,24 @@ class GPR(ModelBaseClass, RayPoolUser):
 
             self.kernel.theta = thetas[np.argmin(np.array(fmins))]
 
-    def hyperparameter_search_parallel(self, update_actors=True):
+            print('Average likelihood: ', np.mean(fmins), np.min(fmins), len(fmins))
 
-        # def init_theta(bounds):
-        #     return np.random.uniform(size=len(bounds,), low=bounds[:,0], high=bounds[:,1])
-        
+
+    def hyperparameter_search_parallel(self, update_actors=True):
+        """
+        Hyperparameter search in parallel
+
+        Parameters
+        ----------
+        update_actors : bool, optional
+            Update the actors with the new kernel, by default True
+        """
+
         N_jobs = self.cpu_count
         modules = [[self.actor_model_key]] * N_jobs # All jobs use the same model that is already on the actor. 
         args = [[self.n_optimize] for _ in range(N_jobs)] # Each job gets a different initial theta
         kwargs = [{} for _ in range(N_jobs)] # No kwargs
+        kwargs[0]['use_current_theta'] = True # Use the current theta for the first job for one iteration.
 
         # Run the jobs in parallel
         outputs = self.pool_map(ray_hyperparameter_optimize, modules, args, kwargs)
@@ -464,6 +473,8 @@ class GPR(ModelBaseClass, RayPoolUser):
         # Get the best theta
         likelihood = [output[1] for output in outputs]
         best_theta = outputs[np.argmin(likelihood)][0]
+
+        print('Average likelihood: ', np.mean(likelihood), np.min(likelihood), len(likelihood))
         
         # Set the best theta
         self.kernel.theta = best_theta
@@ -624,8 +635,7 @@ class GPR(ModelBaseClass, RayPoolUser):
     def get_feature_calculator(self):
         warnings.warn("The 'get_feature_calculator'-method will be deprecated in a future release.", DeprecationWarning)
         return self.descriptor
-
-        
+      
     @classmethod
     def default(cls, environment=None, database=None, temp_atoms=None, lambda1min=1e-1, lambda1max=1e3, lambda2min=1e-1, lambda2max=1e3, 
                 theta0min=1, theta0max=1e5, beta=0.01, use_delta_func=True, sigma_noise=1e-2,
@@ -698,7 +708,7 @@ class GPR(ModelBaseClass, RayPoolUser):
         return cls(database=database, kernel=kernel, descriptor=descriptor, prior=delta,
                    n_optimize=1, optimizer_maxiter=max_iterations)
 
-def ray_hyperparameter_optimize(model, n_opt):
+def ray_hyperparameter_optimize(model, n_opt, use_current_theta=False):
     """
     Hyperparameter optimization
 
@@ -726,9 +736,13 @@ def ray_hyperparameter_optimize(model, n_opt):
     bounds = model.kernel.bounds
 
     fbest = np.inf
-    for _ in range(n_opt):
-
-        init_theta = init_theta_func(bounds)
+    for i in range(n_opt):
+        
+        if not use_current_theta:
+            init_theta = init_theta_func(bounds)
+        else:
+            init_theta = model.kernel.theta
+            use_current_theta = False
 
         theta_min, fmin, conv = fmin_l_bfgs_b(f, np.asarray(init_theta, dtype='float64'),
                                                 bounds=np.asarray(bounds, dtype='float64'),
