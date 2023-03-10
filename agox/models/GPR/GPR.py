@@ -448,9 +448,6 @@ class GPR(ModelBaseClass, RayPoolUser):
 
             self.kernel.theta = thetas[np.argmin(np.array(fmins))]
 
-            print('Average likelihood: ', np.mean(fmins), np.min(fmins), len(fmins))
-
-
     def hyperparameter_search_parallel(self, update_actors=True):
         """
         Hyperparameter search in parallel
@@ -473,8 +470,6 @@ class GPR(ModelBaseClass, RayPoolUser):
         # Get the best theta
         likelihood = [output[1] for output in outputs]
         best_theta = outputs[np.argmin(likelihood)][0]
-
-        print('Average likelihood: ', np.mean(likelihood), np.min(likelihood), len(likelihood))
         
         # Set the best theta
         self.kernel.theta = best_theta
