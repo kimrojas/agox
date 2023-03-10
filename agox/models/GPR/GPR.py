@@ -489,14 +489,20 @@ class GPR(ModelBaseClass, RayPoolUser):
             self.kernel.theta = thetas[np.argmin(np.array(fmins))]
 
     def hyperparameter_search_parallel(self, update_actors=True):
+        """
+        Hyperparameter search in parallel
 
-        # def init_theta(bounds):
-        #     return np.random.uniform(size=len(bounds,), low=bounds[:,0], high=bounds[:,1])
-        
+        Parameters
+        ----------
+        update_actors : bool, optional
+            Update the actors with the new kernel, by default True
+        """
+
         N_jobs = self.cpu_count
         modules = [[self.actor_model_key]] * N_jobs # All jobs use the same model that is already on the actor. 
         args = [[self.n_optimize] for _ in range(N_jobs)] # Each job gets a different initial theta
         kwargs = [{} for _ in range(N_jobs)] # No kwargs
+        kwargs[0]['use_current_theta'] = True # Use the current theta for the first job for one iteration.
 
         # Run the jobs in parallel
         outputs = self.pool_map(ray_hyperparameter_optimize, modules, args, kwargs)
@@ -644,7 +650,7 @@ class GPR(ModelBaseClass, RayPoolUser):
     
 
     
-def ray_hyperparameter_optimize(model, n_opt):
+def ray_hyperparameter_optimize(model, n_opt, use_current_theta=False):
     """
     Hyperparameter optimization
 
@@ -672,9 +678,13 @@ def ray_hyperparameter_optimize(model, n_opt):
     bounds = model.kernel.bounds
 
     fbest = np.inf
-    for _ in range(n_opt):
-
-        init_theta = init_theta_func(bounds)
+    for i in range(n_opt):
+        
+        if not use_current_theta:
+            init_theta = init_theta_func(bounds)
+        else:
+            init_theta = model.kernel.theta
+            use_current_theta = False
 
         theta_min, fmin, conv = fmin_l_bfgs_b(f, np.asarray(init_theta, dtype='float64'),
                                                 bounds=np.asarray(bounds, dtype='float64'),
