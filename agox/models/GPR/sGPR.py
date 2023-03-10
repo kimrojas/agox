@@ -87,7 +87,31 @@ class SparseGPR(GPR):
         self.Kmm_inv = None
         self.L = None
 
+        
+    def model_info(self, **kwargs):
+        """
+        List of strings with model information
+        """
+        x = '    '
+        sparsifier_name = self.sparsifier.name if self.sparsifier is not None else 'None'
+        sparsifier_mpoints = self.sparsifier.m_points if self.sparsifier is not None else 'None'
+        out =  ['------ Model Info ------',
+                'Descriptor:',
+                x + '{}'.format(self.descriptor.name),
+                'Kernel:',
+                x + '{}'.format(self.kernel),
+                'Sparsifier:',
+                x + '{} selecting {} points'.format(sparsifier_name, sparsifier_mpoints),
+                'Noise:',
+                x + '{}'.format(self.noise),
+                '------ Training Info ------',
+                'Training data size: {}'.format(self.X.shape[0]),
+                'Number of local environments: {}'.format(self.Xn.shape[0]),
+                'Number of inducing points: {}'.format(self.Xm.shape[0]),]
 
+        return out
+
+        
     def _make_L(self, atoms_list, shape_X):
         """
         Make the L matrix

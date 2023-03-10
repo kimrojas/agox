@@ -135,6 +135,27 @@ class GPR(ModelBaseClass, RayPoolUser):
         if self.use_ray:
             self.actor_model_key = self.pool_add_module(self)
 
+
+    def model_info(self, **kwargs):
+        """
+        List of strings with model information
+        """
+        x = '    '
+        sparsifier_name = self.sparsifier.name if self.sparsifier is not None else 'None'
+        sparsifier_mpoints = self.sparsifier.m_points if self.sparsifier is not None else 'None'
+        out =  ['------ Model Info ------',
+                'Descriptor:',
+                x + '{}'.format(self.descriptor.name),
+                'Kernel:',
+                x + '{}'.format(self.kernel),
+                'Sparsifier:',
+                x + '{} selecting {} points'.format(sparsifier_name, sparsifier_mpoints),
+                '------ Training Info ------',
+                'Training data size: {}'.format(self.X.shape[0]),]
+
+        return out
+
+            
     def get_features(self, atoms):
         """
         Get features for a given atoms object
@@ -193,6 +214,9 @@ class GPR(ModelBaseClass, RayPoolUser):
   
         self._train_model()
 
+        validation = self.validate()
+
+        self.print_model_info(validation=validation)
         self.atoms = None
         self.ready_state = True
 

@@ -3,6 +3,8 @@ from agox.models.GPR.sparsifiers.ABC_sparsifier import SparsifierBaseClass
 
 class Random(SparsifierBaseClass):
     
+    name = 'Random'
+    
     def sparsify(self, X):
         if self.m_points > self.Xn.shape[0]:
             m_indices = np.arange(0,self.Xn.shape[0])

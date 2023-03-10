@@ -4,6 +4,8 @@ from scipy.linalg import svd
 
 class CUR(SparsifierBaseClass):
     
+    name = 'CUR'
+    
     def sparsify(self, X):
         if X.shape[0] < self.m_points:
             m_indices = np.arange(0, X.shape[0])
