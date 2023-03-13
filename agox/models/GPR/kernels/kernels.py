@@ -30,6 +30,10 @@ class Kernel():
 
     
 class RBF(Kernel, sklearn_RBF):
+    def __init__(self, length_scale=1.0, length_scale_bounds=(1e-1, 1e3)):
+        sklearn_RBF.__init__(length_scale=length_scale, length_scale_bounds=length_scale_bounds)
+
+    
     def get_feature_gradient(self, X, Y):
         if np.ndim(Y) == 1:
             x = x[np.newaxis, :]
@@ -43,10 +47,17 @@ class RBF(Kernel, sklearn_RBF):
 
         
 class Constant(Kernel, sklearn_ConstantKernel):
+    def __init__(self, constant_value=1.0, constant_value_bounds=(1e-1, 1e5)):
+        sklearn_ConstantKernel.__init__(constant_value=constant_value, constant_value_bounds=constant_value_bounds)
+
+        
     def get_feature_gradient(self, X, Y):
         return 0
 
 class Noise(Kernel, sklearn_WhiteKernel):
+    def __init__(self, noise_level=0.01, noise_level_bounds=(0.01, 0.01)):
+        sklearn_WhiteKernel.__init__(noise_level=noise_level, noise_level_bounds=noise_level_bounds)
+        
     def get_feature_gradient(self, X, Y):
         return 0
 

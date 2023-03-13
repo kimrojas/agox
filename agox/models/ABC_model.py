@@ -419,10 +419,10 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
         E_true = np.array(E_true)
         E_pred = np.array(E_pred)
         
-        return {'MAE [eV]': np.mean(np.abs(E_true - E_pred)),
-                'RMSE [eV]': np.sqrt(np.mean((E_true - E_pred)**2)),
-                'Max absolute error [eV]': np.max(np.abs(E_true - E_pred)),
-                'Max relative error [eV]': np.max(np.abs(E_true - E_pred) / E_true)}
+        return {'Energy MAE [eV]': np.mean(np.abs(E_true - E_pred)),
+                'Energy RMSE [eV]': np.sqrt(np.mean((E_true - E_pred)**2)),
+                'Max absolute energy error [eV]': np.max(np.abs(E_true - E_pred)),
+                'Max relative energy error [eV]': np.max(np.abs(E_true - E_pred) / E_true)}
 
             
     def _training_record(self, data):
