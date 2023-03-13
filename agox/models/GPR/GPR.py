@@ -184,6 +184,10 @@ class GPR(ModelBaseClass, RayPoolUser):
         Train the model
         
         """
+        if self.sparsifier is not None:
+            self.X, m_idx = self.sparsifier(self.X)
+            self.Y = self.Y[m_idx]
+        
         if self.use_ray:
             self.hyperparameter_search_parallel(update_actors=False)
         else:

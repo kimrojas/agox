@@ -281,17 +281,18 @@ class SparseGPR(GPR):
             self.add_transfer_data.append([data])
 
 
-
     def _train_model(self):
         """
         Train the model
 
         """
         assert self.Xn is not None, 'self.Xn must be set prior to call'
-        assert self.Xm is not None, 'self.Xm must be set prior to call'
         assert self.L is not None, 'self.L must be set prior to call'
         assert self.Y is not None, 'self.Y must be set prior to call'
 
+        self.Xm, _ = self.sparsifier(self.Xn)
+        self.X = self.Xm
+        
         self.K_mm = self.kernel(self.Xm)
         self.K_nm = self.kernel(self.Xn, self.Xm)
 
@@ -367,9 +368,8 @@ class SparseGPR(GPR):
 
         self.L = self._make_L(self.transfer_data + data, X.shape)
         self.sigma_inv = self._make_sigma(self.transfer_data + data)
-        self.Xm, _ = self.sparsifier(self.Xn)
         
-        return self.Xm, Y
+        return X, Y
 
 
     def _update(self, data):
@@ -402,9 +402,8 @@ class SparseGPR(GPR):
 
         self.L = self._update_L(new, X_new.shape)
         self.sigma_inv = self._make_sigma(self.transfer_data + data)
-        self.Xm, _ = self.sparsifier(self.Xn)        
 
-        return self.Xm, Y
+        return X, Y
         
 
     def _make_sigma(self, atoms_list):
