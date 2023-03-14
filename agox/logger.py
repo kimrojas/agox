@@ -129,6 +129,8 @@ class LogEntry(Observer, Writer, Module):
 
     name = 'LogEntry'
 
+    tracked_attributes = ['timing']
+
     def __init__(self, observer_method):
         """
         LogEntry class. 
@@ -156,6 +158,8 @@ class LogEntry(Observer, Writer, Module):
         self.sub_entries = {}
         self.recursive_attach(observer_method)
 
+        self.add_tra
+
     def attach(self, main):
         """
         Attachs class methods to the observer loop of main. 
@@ -176,14 +180,14 @@ class LogEntry(Observer, Writer, Module):
         """
         self.timings.append(-dt())
         
-
     def end_timer(self, state, *args, **kwargs):
         """
         Method attached as an observer to end the timing.
         """
         if len(self.timings):
             self.timings[-1] += dt()
-        
+
+        self.timing = self.timings[-1]
 
     def get_current_timing(self):
         """

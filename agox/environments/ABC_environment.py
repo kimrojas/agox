@@ -7,6 +7,9 @@ from ase.constraints import FixAtoms
 from agox.module import Module
 
 class EnvironmentBaseClass(ABC, Module):
+
+    name = 'Environment'
+
     """
     The Environment contains important properties about the envrionment (or conditions) of the global atomisation problem. 
     These are at least: 

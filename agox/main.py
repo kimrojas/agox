@@ -8,8 +8,10 @@
 
 import numpy as np
 from agox.observer import ObserverHandler, FinalizationHandler
-from agox.logger import Logger
+#from agox.logger import Logger
 from agox.writer import Writer, agox_writer, ICON, header_print
+from agox.tracker import Tracker
+from copy import copy
 
 class AGOX(ObserverHandler, FinalizationHandler, Writer):
     """
@@ -48,11 +50,9 @@ class AGOX(ObserverHandler, FinalizationHandler, Writer):
         # This attaches all Observers
         self._update()
 
-        # This happens after because the Logger looks at the current observers.
-        use_log = kwargs.pop('use_log', None)
-        if use_log is not False:
-            logger = Logger()
-            logger.attach(self)
+        # Tracker:
+        tracker_kwargs = kwargs.pop('tracker_kwargs', {})
+        self.tracker = Tracker(self, **tracker_kwargs)
         
         unused_keys = False
         for key, value in kwargs.items():
@@ -65,7 +65,6 @@ class AGOX(ObserverHandler, FinalizationHandler, Writer):
         self.print_observers(hide_log=True)
         self.observer_reports(hide_log=True)
         header_print('Initialization finished')
-
 
     def set_candidate_instanstiator(self, candidate_instanstiator):
         self.candidate_instanstiator = candidate_instanstiator
@@ -179,7 +178,7 @@ class State:
         """
         # Makes sure the module has said it wants to get with this key.
         assert key in observer.get_values  
-        return self.cache.get(key)
+        return copy(self.cache.get(key))
 
     def add_to_cache(self, observer, key, data, mode):
         """        
