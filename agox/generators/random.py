@@ -11,9 +11,10 @@ class RandomGenerator(GeneratorBaseClass):
 
     def __init__(self, may_nucleate_at_several_places=False, **kwargs):
         super().__init__(**kwargs)
-        self.may_nucleate_at_several_places = may_nucleate_at_several_places        
+        self.may_nucleate_at_several_places = may_nucleate_at_several_places
 
     def get_candidates(self, sampler, environment):
+
         template = environment.get_template()
         numbers_list = environment.get_numbers()
         len_of_template = len(template)
