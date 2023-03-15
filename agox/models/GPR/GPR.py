@@ -1,4 +1,3 @@
-import warnings
 import numpy as np
 
 from scipy.linalg import cho_solve, cho_factor
@@ -12,8 +11,9 @@ from agox.utils import candidate_list_comprehension
 from agox.models.GPR.sparsifiers.CUR import CUR
 from agox.utils.ray_utils import RayPoolUser, ray_kwarg_keys
 
+
 class GPR(ModelBaseClass, RayPoolUser):
-    
+
     name = 'GPR'
 
     implemented_properties = ['energy', 'forces', 'uncertainty', 'force_uncertainty']
@@ -21,7 +21,7 @@ class GPR(ModelBaseClass, RayPoolUser):
     dynamic_attributes = ['alpha', 'K_inv', 'X', 'K', 'kernel', 'Y']
 
     """
-    
+
 
     Attributes
     ----------
@@ -311,7 +311,7 @@ class GPR(ModelBaseClass, RayPoolUser):
             Forces uncertainty
         
         """
-        if 'forces_uncertainty' not in sel.implemented_proporties or self.alpha is None:
+        if 'forces_uncertainty' not in self.implemented_proporties or self.alpha is None:
             return np.zeros((len(atoms), 3))
         
         x = self.get_features(atoms)
