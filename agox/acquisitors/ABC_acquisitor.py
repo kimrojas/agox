@@ -144,23 +144,23 @@ class AcquisitonCalculatorBaseClass(Calculator, Module):
 
     name = 'AcqusitionCalculator'
 
-    def __init__(self, model_calculator, **kwargs):
+    def __init__(self, model, **kwargs):
         super().__init__(**kwargs)
-        self.model_calculator = model_calculator
+        self.model = model
     
     @property
     def verbose(self):
-        return self.model_calculator.verbose
+        return self.model.verbose
 
     def get_model_parameters(self):
-        parameters = self.model_calculator.get_model_parameters()
+        parameters = self.model.get_model_parameters()
         return parameters
 
     def set_model_parameters(self, parameters):
-        self.model_calculator.set_model_parameters(parameters)
+        self.model.set_model_parameters(parameters)
 
     def set_verbosity(self, verbose):
-        self.model_calculator.set_verbosity(verbose)
+        self.model.set_verbosity(verbose)
 
     def get_iteration_number(self):
         if hasattr(self, 'get_iteration_counter'):
@@ -170,4 +170,4 @@ class AcquisitonCalculatorBaseClass(Calculator, Module):
 
     @property
     def ready_state(self):
-        return self.model_calculator.ready_state
+        return self.model.ready_state

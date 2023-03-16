@@ -49,5 +49,11 @@ class SparsifierBaseClass(ABC):
         """
         pass
 
+    @property
+    @abstractmethod
+    def name(self):
+        return NotImplementedError
+    
+    
     def __call__(self, X):
         return self.sparsify(X)

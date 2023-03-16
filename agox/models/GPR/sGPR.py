@@ -49,7 +49,7 @@ class SparseGPR(GPR):
     """
     
 
-    def __init__(self, descriptor, kernel, transfer_data=[], noise=0.05,
+    def __init__(self, descriptor, kernel, noise=0.05,
                  centralize=False, jitter=1e-8, **kwargs):
 
         """
@@ -72,10 +72,15 @@ class SparseGPR(GPR):
         """
         super().__init__(descriptor=descriptor, kernel=kernel, centralize=centralize,
                          **kwargs)
+        
         self.jitter = jitter
-        self.transfer_data = transfer_data
+
         self.noise = noise
 
+        self._transfer_data = []
+        self._transfer_noise = np.array([])
+        
+        self.add_save_attributes(['Xn', 'Xm', 'K_mm', 'K_nm', 'Kmm_inv', 'L'])
         self.Xn = None
         self.Xm = None
         self.K_mm = None
@@ -83,7 +88,31 @@ class SparseGPR(GPR):
         self.Kmm_inv = None
         self.L = None
 
+        
+    def model_info(self, **kwargs):
+        """
+        List of strings with model information
+        """
+        x = '    '
+        sparsifier_name = self.sparsifier.name if self.sparsifier is not None else 'None'
+        sparsifier_mpoints = self.sparsifier.m_points if self.sparsifier is not None else 'None'
+        out =  ['------ Model Info ------',
+                'Descriptor:',
+                x + '{}'.format(self.descriptor.name),
+                'Kernel:',
+                x + '{}'.format(self.kernel),
+                'Sparsifier:',
+                x + '{} selecting {} points'.format(sparsifier_name, sparsifier_mpoints),
+                'Noise:',
+                x + '{}'.format(self.noise),
+                '------ Training Info ------',
+                'Training data size: {}'.format(self.X.shape[0]),
+                'Number of local environments: {}'.format(self.Xn.shape[0]),
+                'Number of inducing points: {}'.format(self.Xm.shape[0]),]
 
+        return out
+
+        
     def _make_L(self, atoms_list, shape_X):
         """
         Make the L matrix
@@ -192,35 +221,64 @@ class SparseGPR(GPR):
 
         Parameters
         ----------
-        l : list of ase.Atoms or dict of list with noise as key
+        l : list of ase.Atoms
             ase.Atoms objects to transfer to the model
         
         """
-        if isinstance(l, list):
-            self._transfer_data = l
-            self._transfer_weights = np.ones(len(l))
-        elif isinstance(l, dict):
-            self._transfer_data = []
-            self._transfer_weights = np.array([])
-            for key, val in l.items():
-                self._transfer_data += val
-                self._transfer_weights = np.hstack((self._transfer_weights, float(key) * np.ones(len(val)) ))
-        else:
-            self._transfer_data = []
-            self._trasfer_weights = np.array([])
+        warnings.warn('transfer_data should not be used. Use add_transfer_data instead.')
+        self.add_transfer_data(l)
+            
 
     @property
-    def transfer_weights(self):
+    def transfer_noise(self):
         """
-        Weights for the transfer data
+        Noise level for transfer data
 
         Returns
         -------
-        np.ndarray
-            Weights for the transfer data
+        float
+            Noise level for transfer data
         
         """
-        return self._transfer_weights
+        return self._transfer_noise
+
+
+    @transfer_noise.setter
+    def transfer_noise(self, s):
+        """
+        Noise level for transfer data
+
+        Parameters
+        ----------
+        s : float
+            Noise level for transfer data
+        
+        """
+        warnings.warn('transfer_noise should not be used. Use add_transfer_data instead.')
+        self._transfer_noise = s
+        
+
+    def add_transfer_data(self, data, noise=None):
+        """
+        Add ase.Atoms objects to the transfer data
+
+        Parameters
+        ----------
+        data : list of ase.Atoms
+            List of ase.Atoms objects to add to the transfer data
+        noise : float
+            Noise level for the transfer data
+
+        """
+        if isinstance(data, list):
+            self._transfer_data += data
+            if noise is None:
+                noise = self.noise
+
+            self._transfer_noise = np.append(self._transfer_noise, np.ones(len(data))*noise)
+        
+        else:
+            self.add_transfer_data.append([data])
 
 
     def _train_model(self):
@@ -229,10 +287,12 @@ class SparseGPR(GPR):
 
         """
         assert self.Xn is not None, 'self.Xn must be set prior to call'
-        assert self.Xm is not None, 'self.Xm must be set prior to call'
         assert self.L is not None, 'self.L must be set prior to call'
         assert self.Y is not None, 'self.Y must be set prior to call'
 
+        self.Xm, _ = self.sparsifier(self.Xn)
+        self.X = self.Xm
+        
         self.K_mm = self.kernel(self.Xm)
         self.K_nm = self.kernel(self.Xn, self.Xm)
 
@@ -264,7 +324,7 @@ class SparseGPR(GPR):
 
     
     @candidate_list_comprehension
-    def predict_local_energy(self, atoms=None, X=None):
+    def predict_local_energy(self, atoms, **kwargs):
         """
         Calculate the local energies in the model.
 
@@ -281,9 +341,7 @@ class SparseGPR(GPR):
             Local energies
         
         """
-        if X is None:
-            X = self.get_features(atoms)
-
+        X = self.get_features(atoms)
         k = self.kernel(self.Xm, X)
         return (k.T@self.alpha).reshape(-1,) + self.single_atom_energies[atoms.get_atomic_numbers()]
     
@@ -310,9 +368,8 @@ class SparseGPR(GPR):
 
         self.L = self._make_L(self.transfer_data + data, X.shape)
         self.sigma_inv = self._make_sigma(self.transfer_data + data)
-        self.Xm, _ = self.sparsifier(self.Xn)
         
-        return self.Xm, Y
+        return X, Y
 
 
     def _update(self, data):
@@ -345,9 +402,8 @@ class SparseGPR(GPR):
 
         self.L = self._update_L(new, X_new.shape)
         self.sigma_inv = self._make_sigma(self.transfer_data + data)
-        self.Xm, _ = self.sparsifier(self.Xn)        
 
-        return self.Xm, Y
+        return X, Y
         
 
     def _make_sigma(self, atoms_list):
@@ -365,10 +421,10 @@ class SparseGPR(GPR):
             Sigma matrix
         
         """
-        sigma_inv = np.diag([1/(len(atoms)*self.noise**2) for atoms in atoms_list])
-        weights = np.ones(len(atoms_list))
-        weights[:len(self.transfer_weights)] = self.transfer_weights
-        sigma_inv[np.diag_indices_from(sigma_inv)] *= weights
+        sigmas = np.array([self.noise**2 * len(atoms) for atoms in atoms_list])
+        sigmas[:len(self.transfer_data)] = self.transfer_noise**2 * np.array([len(atoms) for atoms in self.transfer_data])
+
+        sigma_inv = np.diag(1/sigmas)
         return sigma_inv
 
 
@@ -389,27 +445,5 @@ class SparseGPR(GPR):
         """
         return (A + A.T)/2
         
-
-    def get_model_parameters(self):
-        warnings.warn('get_model_parameters is deprecated and will be removed soon.', DeprecationWarning)
-        parameters = {}
-        parameters['Xm'] = self.Xm
-        parameters['K_inv'] = self.K_inv
-        parameters['Kmm_inv'] = self.Kmm_inv
-        parameters['alpha'] = self.alpha
-        parameters['single_atom_energies'] = self.single_atom_energies
-        parameters['theta'] = self.kernel.theta
-        return parameters
-
-    def set_model_parameters(self, parameters):
-        warnings.warn('set_model_parameters is deprecated and will be removed soon.', DeprecationWarning)
-        self.Xm = parameters['Xm']
-        self.X = parameters['Xm']
-        self.K_inv = parameters['K_inv']
-        self.Kmm_inv = parameters['Kmm_inv']
-        self.alpha = parameters['alpha']
-        self.single_atom_energies = parameters['single_atom_energies']
-        self.kernel.theta = parameters['theta']
-        self.ready_state = True
 
     

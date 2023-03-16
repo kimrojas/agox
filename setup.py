@@ -40,6 +40,7 @@ setup(
         "matplotlib",
         "cymem",
         "scikit-learn",
+        "h5py",
     ],
     extras_require={
         'full': [
