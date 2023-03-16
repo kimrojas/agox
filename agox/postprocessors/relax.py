@@ -3,16 +3,17 @@ from agox.postprocessors.ABC_postprocess import PostprocessBaseClass
 from ase.calculators.calculator import all_properties
 from ase.calculators.singlepoint import SinglePointCalculator
 from ase.constraints import FixAtoms
-from ase.optimize.bfgslinesearch import BFGSLineSearch
-
+from ase.optimize import BFGS
 
 class RelaxPostprocess(PostprocessBaseClass):
 
     name = 'PostprocessRelax'
     
-    def __init__(self, model=None, optimizer=None, optimizer_run_kwargs={'fmax':0.05, 'steps':200}, optimizer_kwargs={'logfile':None}, constraints=[], fix_template=True, start_relax=1, **kwargs):
+    def __init__(self, model=None, optimizer=None, fix_template=True,
+        optimizer_run_kwargs={'fmax':0.05, 'steps':200}, constraints=[],
+        optimizer_kwargs={'logfile':None}, start_relax=1, **kwargs):
         super().__init__(**kwargs)
-        self.optimizer = BFGSLineSearch if optimizer is None else optimizer
+        self.optimizer = BFGS if optimizer is None else optimizer
         self.optimizer_kwargs = optimizer_kwargs
         self.optimizer_run_kwargs = optimizer_run_kwargs
         self.start_relax = start_relax
@@ -45,7 +46,7 @@ class RelaxPostprocess(PostprocessBaseClass):
         return candidate
 
     def do_check(self, **kwargs):
-        return (self.get_iteration_counter() > self.start_relax) * self.model.ready_state
+        return self.check_iteration_counter(self.start_relax) * self.model.ready_state
 
     ####################################################################################################################
     # Constraints
