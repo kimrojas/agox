@@ -636,6 +636,11 @@ class RayPoolUser(Observer):
             The observer handler to attach to. 
         """
         super().attach(handler)
+
+        # Check if has pool:
+        if not hasattr(self, 'pool'):
+            return
+
         if hash(handler) not in self.pool.attached_handlers:
             self.pool.attach(handler)
             header_print('Parallel Pool Initialization')
