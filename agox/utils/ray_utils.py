@@ -393,11 +393,10 @@ class Pool(Observer, Writer, Module):
         tab = '   '
         for i, module in enumerate(self.modules.values()):
             if not module.self_synchronizing:
-                #attribute_dict = module.get_dynamic_attributes()
                 t0 = dt()
                 # if len(attribute_dict) > 0:
-                #     self.set_module_attributes(module, attribute_dict.keys(), attribute_dict.values())
-                self.synchronize_module(module, verbose=False)
+                #     self.set_module_attributes(module, attribute_dict.keys(), attribute_dict.values())                
+                attribute_dict = self.synchronize_module(module, verbose=False)
                 t1 = dt()
                 writer(tab + f'{i}: {module.name} -> {len(attribute_dict)} updates in {t1-t0:04.2f} s')
                 for j, attribute_name in enumerate(attribute_dict.keys()):
@@ -522,8 +521,10 @@ class Pool(Observer, Writer, Module):
                 self.set_module_attributes(module, attribute_dict.keys(), attribute_dict.values())
                 t1 = dt()
                 writer(f'Updated {len(attribute_dict)} attributes on Ray Actors in {t1-t0:04.2f} s.')
+            return attribute_dict
         else:
             self.add_module(module)
+            return {}
 
 class RayPoolUser(Observer):
 
