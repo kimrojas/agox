@@ -392,14 +392,17 @@ class Pool(Observer, Writer, Module):
 
         tab = '   '
         for i, module in enumerate(self.modules.values()):
-            attribute_dict = module.get_dynamic_attributes()
-            t0 = dt()
-            if len(attribute_dict) > 0:
-                self.set_module_attributes(module, attribute_dict.keys(), attribute_dict.values())
-            t1 = dt()
-            writer(tab + f'{i}: {module.name} -> {len(attribute_dict)} updates in {t1-t0:04.2f} s')
-            for j, attribute_name in enumerate(attribute_dict.keys()):
-                writer(2 * tab + f'{j}: {attribute_name}')
+            if not module.self_synchronizing:
+                t0 = dt()
+                # if len(attribute_dict) > 0:
+                #     self.set_module_attributes(module, attribute_dict.keys(), attribute_dict.values())                
+                attribute_dict = self.synchronize_module(module, verbose=False)
+                t1 = dt()
+                writer(tab + f'{i}: {module.name} -> {len(attribute_dict)} updates in {t1-t0:04.2f} s')
+                for j, attribute_name in enumerate(attribute_dict.keys()):
+                    writer(2 * tab + f'{j}: {attribute_name}')
+            else:
+                self.writer(f'{module.name} handles its own synchronization')
 
     def update_module_interconnections(self):
         """
@@ -488,6 +491,41 @@ class Pool(Observer, Writer, Module):
         
         self.execute_on_actors(set_attributes, [self.get_key(module)], [attributes, values], {})
       
+    def synchronize_module(self, module, attributes='all', writer=None, verbose=True):
+        """
+        Synchronizes a single module so that its dynamic attributes are the same 
+        on both the main process and the actors. 
+
+        If the module is not already on the actors it will be added and subsequent
+        calls will synchronize. 
+
+        Parameters
+        ----------
+        module : AGOX module
+            Module to synchronize. 
+        """
+        if writer is None:
+            writer = self.writer
+        if not verbose:
+            writer = lambda x: None
+
+        key = self.get_key(module)
+        if key in self.modules.keys():
+            if attributes == 'all':
+                attribute_dict = module.get_dynamic_attributes()
+            else:
+                attribute_dict = {attribute:getattr(module, attribute) for attribute in attributes}
+            writer(f'Updating attributes: {[key for key in attribute_dict.keys()]}')
+            if len(attribute_dict) > 0:
+                t0 = dt()
+                self.set_module_attributes(module, attribute_dict.keys(), attribute_dict.values())
+                t1 = dt()
+                writer(f'Updated {len(attribute_dict)} attributes on Ray Actors in {t1-t0:04.2f} s.')
+            return attribute_dict
+        else:
+            self.add_module(module)
+            return {}
+
 class RayPoolUser(Observer):
 
     kwargs = ['pool', 'tmp_dir', 'memory', 'cpu_count']
@@ -651,6 +689,9 @@ class RayPoolUser(Observer):
 
     def get_pool(self):
         return self.pool
+
+    def pool_synchronize(self, attributes='all', writer=None):
+        self.pool.synchronize_module(self, attributes=attributes, writer=writer)
 
 global ray_pool_instance
 ray_pool_instance = None

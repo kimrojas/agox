@@ -134,6 +134,7 @@ class GPR(ModelBaseClass, RayPoolUser):
         # We add self to the pool, it will keep an updated copy of the model on the pool
         if self.use_ray:
             self.actor_model_key = self.pool_add_module(self)
+            self.self_synchronizing = True # Defaults to False, inherited from Module.
 
 
     def model_info(self, **kwargs):
@@ -189,12 +190,16 @@ class GPR(ModelBaseClass, RayPoolUser):
             self.Y = self.Y[m_idx]
         
         if self.use_ray:
-            self.hyperparameter_search_parallel(update_actors=False)
+            self.pool_synchronize(attributes=['X', 'Y'], writer=self.writer)
+            self.hyperparameter_search_parallel()
         else:
             self.hyperparameter_search()
 
         self.K = self.kernel(self.X)
         self.alpha, self.K_inv, _ = self._solve(self.K, self.Y)
+
+        if self.use_ray:
+            self.pool_synchronize(attributes=['alpha', 'K_inv', 'kernel', 'K'], writer=self.writer)
         
     def train_model(self, training_data, **kwargs):
         """
@@ -211,9 +216,6 @@ class GPR(ModelBaseClass, RayPoolUser):
         else:
             self.X, self.Y = self._preprocess(training_data)
 
-        if len(self.observer_handler_identifiers) == 0 and self.use_ray:
-            self.pool.update_modules()
-
         self._training_record(training_data)
   
         self._train_model()
@@ -223,9 +225,6 @@ class GPR(ModelBaseClass, RayPoolUser):
         self.print_model_info(validation=validation)
         self.atoms = None
         self.ready_state = True
-
-        if len(self.observer_handler_identifiers) == 0 and self.use_ray:
-            self.pool.update_modules()
 
     @candidate_list_comprehension
     def predict_energy(self, atoms, k=None, **kwargs):
@@ -516,7 +515,7 @@ class GPR(ModelBaseClass, RayPoolUser):
 
             self.kernel.theta = thetas[np.argmin(np.array(fmins))]
 
-    def hyperparameter_search_parallel(self, update_actors=True):
+    def hyperparameter_search_parallel(self):
         """
         Hyperparameter search in parallel
 
@@ -541,9 +540,6 @@ class GPR(ModelBaseClass, RayPoolUser):
         
         # Set the best theta
         self.kernel.theta = best_theta
-
-        if len(self.observer_handler_identifiers) == 0 and update_actors:
-            self.pool.update_modules(writer=print)
 
     def calculate(self, atoms=None, properties=['energy'], system_changes=all_changes):
         super().calculate(atoms=atoms, properties=properties, system_changes=system_changes)

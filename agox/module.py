@@ -12,6 +12,7 @@ class Module:
         
         self.use_cache = use_cache
         self.cache_key = str(uuid4())
+        self.self_synchronizing = False
 
     def get_dynamic_attributes(self):
         return {key:self.__dict__[key] for key in self.dynamic_attributes}
