@@ -310,7 +310,7 @@ class GPR(ModelBaseClass, RayPoolUser):
             Forces uncertainty
         
         """
-        if 'forces_uncertainty' not in self.implemented_proporties or self.alpha is None:
+        if 'forces_uncertainty' not in self.implemented_properties or self.alpha is None:
             return np.zeros((len(atoms), 3))
         
         x = self.get_features(atoms)
