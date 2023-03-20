@@ -6,17 +6,17 @@ class LowerConfidenceBoundAcquisitor(AcquisitorBaseClass):
 
     name = 'LCBAcquisitor'
 
-    def __init__(self, model_calculator, kappa=1, **kwargs):
+    def __init__(self, model, kappa=1, **kwargs):
         super().__init__(**kwargs)
         self.kappa = kappa
-        self.model_calculator = model_calculator
+        self.model = model
 
     def calculate_acquisition_function(self, candidates):
         fitness = np.zeros(len(candidates))
         
         # Attach calculator and get model_energy
         for i, candidate in enumerate(candidates):
-            candidate.set_calculator(self.model_calculator)
+            candidate.set_calculator(self.model)
             E = candidate.get_potential_energy()
             sigma = candidate.get_uncertainty()
             fitness[i] = self.acquisition_function(E, sigma)
@@ -28,7 +28,7 @@ class LowerConfidenceBoundAcquisitor(AcquisitorBaseClass):
         return fitness
 
     def print_information(self, candidates, acquisition_values):
-        if self.model_calculator.ready_state:
+        if self.model.ready_state:
             for i, candidate in enumerate(candidates):
                 fitness = acquisition_values[i]
                 Emodel = candidate.get_meta_information('model_energy')
@@ -36,7 +36,7 @@ class LowerConfidenceBoundAcquisitor(AcquisitorBaseClass):
                 self.writer('Candidate: E={:8.3f}, s={:8.3f}, F={:8.3f}'.format(Emodel, sigma, fitness))
 
     def get_acquisition_calculator(self):
-        return LowerConfidenceBoundCalculator(self.model_calculator, self.acquisition_function, self.acquisition_force)
+        return LowerConfidenceBoundCalculator(self.model, self.acquisition_function, self.acquisition_force)
 
     def acquisition_function(self, E, sigma):
         return E - self.kappa * sigma
@@ -45,7 +45,7 @@ class LowerConfidenceBoundAcquisitor(AcquisitorBaseClass):
         return F - self.kappa*sigma_force
 
     def do_check(self, **kwargs):
-        return self.model_calculator.ready_state
+        return self.model.ready_state
 
 class LowerConfidenceBoundCalculator(AcquisitonCalculatorBaseClass):
 
