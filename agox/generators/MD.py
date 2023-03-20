@@ -16,7 +16,7 @@ class MDgenerator(GeneratorBaseClass):
             thermostat = Langevin,
             thermostat_kwargs = {'timestep':1.*fs, 'temperature_K':10, 'friction':0.05},
             start_settings = [MaxwellBoltzmannDistribution, ZeroRotation, Stationary],
-            start_settings_kwargs = [{},{},{}],
+            start_settings_kwargs = [{'temperature_K':100},{},{}],
             temperature_program = [(500,10),(100,10)], 
             constraints=[],
             check_template = False,
@@ -46,6 +46,11 @@ class MDgenerator(GeneratorBaseClass):
         candidate.set_calculator(self.calculator)
 
         self.remove_constraints(candidate) # All constraints are removed from candidate before applying self.constraints to ensure only constraints set by user are present during MD simulation
+
+        if self.set_start_settings:
+            for setting, kwargs in zip(self.start_settings, self.start_settings_kwargs):
+                setting(candidate, **kwargs)
+
         self.apply_constraints(candidate)
         self.molecular_dynamics(candidate)
         self.remove_constraints(candidate) # All constraints are removed after MD simulation to not interfere with other AGOX modules
@@ -59,10 +64,6 @@ class MDgenerator(GeneratorBaseClass):
 
     def molecular_dynamics(self, candidate):
         """ Runs the molecular dynamics simulation and applies/removes constraints accordingly """
-
-        if self.set_start_settings:
-            for setting, kwargs in zip(self.start_settings, self.start_settings_kwargs):
-                setting(candidate, **kwargs)
         
         dyn = self.thermostat(candidate, **self.thermostat_kwargs)
 
