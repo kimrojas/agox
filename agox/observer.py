@@ -72,6 +72,15 @@ class ObserverHandler:
         orders = [self.observers[key]['order'] for key in keys]
         self.execution_sort_idx = np.argsort(orders)
 
+    def get_max_order(self):
+        """
+        Returns
+        --------
+        int
+            The maximum order of the observers. 
+        """
+        return max([obs['order'] for obs in self.observers.values()])
+
     def get_observers_in_execution_order(self):
         """
         Returns
@@ -112,11 +121,14 @@ class ObserverHandler:
             If True then the LogEntry observers are not printed. Keeps the 
             report more clean. 
         """
+        from agox.tracker import TimerEntry
+
         order_indexs = self.execution_sort_idx
         keys = [key for key in self.observers.keys()]
         names = [obs['name'] for obs in self.observers.values()]
         methods = [obs['method'] for obs in self.observers.values()]
         orders = [obs['order'] for obs in self.observers.values()]
+        class_references = [obs['class_reference'] for obs in self.observers.values()]
         
         base_string = '{}: order = {} - name = {} - method - {}'
         if include_observer:
@@ -126,7 +138,7 @@ class ObserverHandler:
         header_print('Observers')
         for idx in order_indexs:
             
-            if hide_log and 'LogEntry.' in names[idx]:
+            if isinstance(class_references[idx], TimerEntry):
                 continue
 
             pretty_print('  Order {} - Name: {}'.format(orders[idx], names[idx]))
@@ -146,8 +158,9 @@ class ObserverHandler:
         hide_log: bool
             Whether or not to print the LogEntry observers. 
         """
-        dicts_out_of_order = [value for value in  self.observers.values()]
+        from agox.tracker import TimerEntry
 
+        dicts_out_of_order = [value for value in  self.observers.values()]
         
         header_print('Observers set/get reports')
 
@@ -156,8 +169,10 @@ class ObserverHandler:
         for i in self.execution_sort_idx:
 
             observer_method = dicts_out_of_order[i]
-            if 'LogEntry' in observer_method.name and hide_log:
+            if isinstance(observer_method.class_reference, TimerEntry) and hide_log:
                 continue
+            # if 'Timer' in observer_method.name and hide_log:
+            #     continue
 
             pretty_print(base_offset + observer_method.name)
             report = observer_method.report(offset=extra_offset, report_key=report_key, print_report=False, return_report=True)
@@ -200,7 +215,7 @@ class ObserverHandler:
         all_sets = set(all_sets)
         all_gets = set(all_gets)
 
-        return all_gets, all_sets
+        return all_gets, all_sets        
             
 class FinalizationHandler:
     """

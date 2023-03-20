@@ -39,8 +39,9 @@ def ray_startup(cpu_count, memory, tmp_dir):
         tmp_dir = os.path.join(path, 'ray')
 
         number_of_bytes = len(tmp_dir.encode('utf-8')) + 61
+        print(number_of_bytes)
 
-        if number_of_bytes > 107:
+        if number_of_bytes >= 107:
             tmp_dir = os.path.expanduser('~') + '/tmp/ray'
             print('USING USER ROOT FOLDER FOR RAY TEMP BECAUSE GIVEN OR DEFAULT GENERATED PATH IS TOO MANY BYTES.')
             print(f'Path: {tmp_dir}')
