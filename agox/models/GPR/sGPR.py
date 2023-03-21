@@ -157,7 +157,7 @@ class SparseGPR(GPR):
             L matrix
         
         """
-        if len(atoms_list) == shape_X[0]:
+        if len(new_atoms_list) == shape_X[0]: # this probably doesn't work
             new_size = shape_X[0] + self.L.shape[0]
             return np.eye(new_size)
         
