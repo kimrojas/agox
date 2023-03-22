@@ -1,6 +1,6 @@
 import numpy as np
 from abc import ABC, abstractmethod
-from agox.module import Module
+from agox.module import Module, register_modules
 from agox.observer import Observer
 from agox.writer import Writer, agox_writer
 
@@ -46,6 +46,9 @@ class CollectorBaseClass(ABC, Observer, Writer):
             for observer_method in observer_methods:
                 if observer_method.method_name == 'generate':
                     generator.remove_observer_method(observer_method)
+
+        # Register the generators as attributes of the collector, so that they can be tracked.
+        register_modules(self, self.generators, 'generator')
 
     @abstractmethod
     def make_candidates(self):

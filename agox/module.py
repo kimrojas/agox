@@ -93,4 +93,26 @@ class Module:
             self.cache_key = str(uuid4())            
             return func(self, *args, **kwargs)
         return wrapper
-        
+
+def register_modules(object, modules, name):
+    """
+    Registers modules as attributes of an object. Used to let Tracker track 
+    modules as attributes of modules that are only attributes of other modules.
+
+    Parameters
+    ----------
+    object : object
+        Object to register modules as attributes of.
+    modules : list
+        List of modules to register.
+    name : str
+        Name of the modules.
+
+    Returns
+    -------
+    None.
+    """
+    for i, module in enumerate(modules):
+        setattr(object, f'{name}_{i}', module)
+
+    
