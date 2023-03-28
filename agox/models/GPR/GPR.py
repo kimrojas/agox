@@ -1,14 +1,17 @@
-import numpy as np
+from typing import Dict, List, Tuple, Union
 
-from scipy.linalg import cho_solve, cho_factor
+import numpy as np
+from ase import Atoms
+from ase.calculators.calculator import all_changes
+from scipy.linalg import cho_factor, cho_solve
 from scipy.optimize import fmin_l_bfgs_b
 
-from ase.calculators.calculator import all_changes
-
 from agox.models.ABC_model import ModelBaseClass
-from agox.utils import candidate_list_comprehension
-
+from agox.models.descriptors import DescriptorBaseClass
+from agox.models.GPR.kernels import Kernel
+from agox.models.GPR.sparsifiers import SparsifierBaseClass
 from agox.models.GPR.sparsifiers.CUR import CUR
+from agox.utils import candidate_list_comprehension
 from agox.utils.ray_utils import RayPoolUser, ray_kwarg_keys
 
 
@@ -20,8 +23,6 @@ class GPR(ModelBaseClass, RayPoolUser):
     dynamic_attributes = ["alpha", "K_inv", "X", "K", "kernel", "Y"]
 
     """
-
-
     Attributes
     ----------
     descriptor : DescriptorBaseClass
@@ -67,27 +68,33 @@ class GPR(ModelBaseClass, RayPoolUser):
         Predict the forces of a given structure.
     predict_forces_uncertainty(atoms, **kwargs)
         Predict the uncertainty of the forces of a given structure.
-
+    converter(atoms)
+        Convert the atoms object features for the model
+    model_info()
+        Print model information.
+    hyperparameter_optimization(training_data, **kwargs)
+        Optimize the hyperparameters of the model.
+    hyperparameter_optimization_parallel(theta, training_data, **kwargs)
+        Optimize the hyperparameters of the model in parallel.
 
     """
 
     def __init__(
         self,
-        descriptor,
-        kernel,
-        descriptor_type="global",
-        prior=None,
-        sparsifier=None,
-        single_atom_energies=None,
-        use_prior_in_training=False,
-        sparsifier_cls=CUR,
-        sparsifier_args=(1000,),
-        sparsifier_kwargs={},
-        n_optimize=1,
-        optimizer_maxiter=100,
-        centralize=True,
+        descriptor: DescriptorBaseClass,
+        kernel: Kernel,
+        descriptor_type: str = "global",
+        prior: ModelBaseClass = None,
+        single_atom_energies: Union[List[float], Dict[str, float]] = None,
+        use_prior_in_training: bool = False,
+        sparsifier_cls: SparsifierBaseClass = CUR,
+        sparsifier_args: Tuple[...] = (1000,),
+        sparsifier_kwargs: Dict = {},
+        n_optimize: int = 1,
+        optimizer_maxiter: int = 100,
+        centralize: bool = True,
         **kwargs
-    ):
+    ) -> None:
         """
         Parameters
         ----------
@@ -129,7 +136,6 @@ class GPR(ModelBaseClass, RayPoolUser):
             self.descriptor, "get_" + descriptor_type + "_feature_gradient"
         )
         self.prior = prior
-        self.sparsifier = sparsifier
         self.single_atom_energies = single_atom_energies
         self.use_prior_in_training = use_prior_in_training
         self.sparsifier = sparsifier_cls(*sparsifier_args, **sparsifier_kwargs)
@@ -153,79 +159,7 @@ class GPR(ModelBaseClass, RayPoolUser):
             self.actor_model_key = self.pool_add_module(self)
             self.self_synchronizing = True  # Defaults to False, inherited from Module.
 
-    def model_info(self, **kwargs):
-        """
-        List of strings with model information
-        """
-        x = "    "
-        sparsifier_name = (
-            self.sparsifier.name if self.sparsifier is not None else "None"
-        )
-        sparsifier_mpoints = (
-            self.sparsifier.m_points if self.sparsifier is not None else "None"
-        )
-        out = [
-            "------ Model Info ------",
-            "Descriptor:",
-            x + "{}".format(self.descriptor.name),
-            "Kernel:",
-            x + "{}".format(self.kernel),
-            "Sparsifier:",
-            x + "{} selecting {} points".format(sparsifier_name, sparsifier_mpoints),
-            "------ Training Info ------",
-            "Training data size: {}".format(self.X.shape[0]),
-            "Neg. log marginal likelihood.: {:.2f}".format(self.nlml),
-        ]
-
-        return out
-
-    def get_features(self, atoms):
-        """
-        Get features for a given atoms object
-
-        Parameters
-        ----------
-        atoms : ase.Atoms
-            Atoms object
-
-        Returns
-        -------
-        np.ndarray
-            Features
-
-        """
-        f = self.feature_method(atoms)
-
-        if isinstance(f, np.ndarray) and len(f.shape) == 1:
-            f = f.reshape(1, -1)
-        f = np.vstack(f)
-
-        return f
-
-    def _train_model(self):
-        """
-        Train the model
-
-        """
-        if self.sparsifier is not None:
-            self.X, m_idx = self.sparsifier(self.X)
-            self.Y = self.Y[m_idx]
-
-        if self.use_ray:
-            self.pool_synchronize(attributes=["X", "Y"], writer=self.writer)
-            self.hyperparameter_search_parallel()
-        else:
-            self.hyperparameter_search()
-
-        self.K = self.kernel(self.X)
-        self.alpha, self.K_inv, _ = self._solve(self.K, self.Y)
-
-        if self.use_ray:
-            self.pool_synchronize(
-                attributes=["alpha", "K_inv", "kernel", "K"], writer=self.writer
-            )
-
-    def train_model(self, training_data, **kwargs):
+    def train_model(self, training_data: List(Atoms), **kwargs) -> None:
         """
         Train the model.
 
@@ -251,19 +185,21 @@ class GPR(ModelBaseClass, RayPoolUser):
         self.ready_state = True
 
     @candidate_list_comprehension
-    def predict_energy(self, atoms, k=None, **kwargs):
+    def predict_energy(self, atoms: Atoms, k: np.ndarray = None, **kwargs) -> float:
         if self.alpha is None:
-            return self.postprocess_energy(atoms, 0)
+            return self._postprocess_energy(atoms, 0)
 
-        x = self.get_features(atoms)
+        x = self._get_features(atoms)
         if k is None:
             k = self.kernel(self.X, x)
 
         e_pred = np.sum(k.T @ self.alpha)
-        return self.postprocess_energy(atoms, e_pred)
+        return self._postprocess_energy(atoms, e_pred)
 
     @candidate_list_comprehension
-    def predict_uncertainty(self, atoms, k=None, k0=None, **kwargs):
+    def predict_uncertainty(
+        self, atoms: Atoms, k: np.ndarray = None, k0: np.ndarray = None, **kwargs
+    ) -> float:
         """
         Predict uncertainty for a given atoms object
 
@@ -281,7 +217,7 @@ class GPR(ModelBaseClass, RayPoolUser):
         if "uncertainty" not in self.implemented_properties or self.alpha is None:
             return 0
 
-        x = self.get_features(atoms)
+        x = self._get_features(atoms)
         if k is None:
             k = self.kernel(self.X, x)
         if k0 is None:
@@ -290,7 +226,9 @@ class GPR(ModelBaseClass, RayPoolUser):
         return np.sqrt(max(var, 0))
 
     @candidate_list_comprehension
-    def predict_forces(self, atoms, dkdr=None, **kwargs):
+    def predict_forces(
+        self, atoms: Atoms, dkdr: np.ndarray = None, **kwargs
+    ) -> np.ndarray:
         """
         Predict forces for a given atoms object
 
@@ -305,10 +243,10 @@ class GPR(ModelBaseClass, RayPoolUser):
             Forces
         """
         if self.alpha is None:
-            return self.postprocess_forces(atoms, np.zeros((len(atoms), 3)))
+            return self._postprocess_forces(atoms, np.zeros((len(atoms), 3)))
 
         # F_i = - dE / dr_i = dE/dk dk/df df/dr_i = - alpha dk/df df_dr_i
-        x = self.get_features(atoms)
+        x = self._get_features(atoms)
         if dkdr is None:
             dfdr = np.array(self.feature_gradient_method(atoms))
             dkdf = self.kernel.get_feature_gradient(self.X, x)
@@ -316,10 +254,17 @@ class GPR(ModelBaseClass, RayPoolUser):
 
         f_pred = -np.dot(dkdr.T, self.alpha).reshape(-1, 3)
 
-        return self.postprocess_forces(atoms, f_pred)
+        return self._postprocess_forces(atoms, f_pred)
 
     @candidate_list_comprehension
-    def predict_forces_uncertainty(self, atoms, dkdr=None, **kwargs):
+    def predict_forces_uncertainty(
+        self,
+        atoms: Atoms,
+        k: np.ndarray = None,
+        k0: np.ndarray = None,
+        dkdr: np.ndarray = None,
+        **kwargs
+    ) -> np.ndarray:
         """
         Predict forces uncertainty for a given atoms object
 
@@ -340,7 +285,7 @@ class GPR(ModelBaseClass, RayPoolUser):
         ):
             return np.zeros((len(atoms), 3))
 
-        x = self.get_features(atoms)
+        x = self._get_features(atoms)
 
         if dkdr is None:
             dfdr = np.array(self.feature_gradient_method(atoms))
@@ -358,7 +303,9 @@ class GPR(ModelBaseClass, RayPoolUser):
         else:
             return 1 / np.sqrt(var) * dkdr.T @ self.K_inv @ k
 
-    def converter(self, atoms, reduced=False, **kwargs):
+    def converter(
+        self, atoms: Atoms, reduced: bool = False, **kwargs
+    ) -> Dict(str, np.ndarray):
         """
         Precompute all necessary quantities for the model
 
@@ -373,7 +320,7 @@ class GPR(ModelBaseClass, RayPoolUser):
             Dictionary with all necessary quantities
 
         """
-        x = self.get_features(atoms)
+        x = self._get_features(atoms)
         k = self.kernel(self.X, x)
         k0 = self.kernel(x, x)
         if reduced:
@@ -390,7 +337,7 @@ class GPR(ModelBaseClass, RayPoolUser):
         return {"x": x, "k": k, "k0": k0, "dkdr": dkdr}
 
     @property
-    def single_atom_energies(self):
+    def single_atom_energies(self) -> np.ndarray:
         """
         Get the single atom energies.
 
@@ -402,7 +349,7 @@ class GPR(ModelBaseClass, RayPoolUser):
         return self._single_atom_energies
 
     @single_atom_energies.setter
-    def single_atom_energies(self, s):
+    def single_atom_energies(self, s: Union[Dict, np.ndarray]) -> None:
         """
         Set the single atom energies.
         Index number corresponds to the atomic number ie. 1 = H, 2 = He, etc.
@@ -422,109 +369,47 @@ class GPR(ModelBaseClass, RayPoolUser):
         elif s is None:
             self._single_atom_energies = np.zeros(100)
 
-    def _preprocess(self, data):
+    def model_info(self, **kwargs) -> List[str]:
         """
-        Preprocess the training data.
-
-        Parameters
-        ----------
-        data : list
-            List of Atoms objects.
-
-        Returns
-        -------
-        np.ndarray
-            Features.
-        np.ndarray
-            Targets.
-
+        List of strings with model information
         """
-        Y = np.expand_dims(np.array([d.get_potential_energy() for d in data]), axis=1)
+        x = "    "
+        sparsifier_name = (
+            self.sparsifier.name if self.sparsifier is not None else "None"
+        )
+        sparsifier_mpoints = (
+            self.sparsifier.m_points if self.sparsifier is not None else "None"
+        )
+        out = [
+            "------ Model Info ------",
+            "Descriptor:",
+            x + "{}".format(self.descriptor.name),
+            "Kernel:",
+            x + "{}".format(self.kernel),
+            "Sparsifier:",
+            x + "{} selecting {} points".format(sparsifier_name, sparsifier_mpoints),
+            "------ Training Info ------",
+            "Training data size: {}".format(self.X.shape[0]),
+            "Neg. log marginal likelihood.: {:.2f}".format(self.nlml),
+        ]
 
-        if self.prior is None or not self.use_prior_in_training:
-            self.prior_energy = np.zeros(Y.shape)
-        else:
-            self.prior_energy = np.expand_dims(
-                np.array([self.prior.predict_energy(d) for d in data]), axis=1
-            )
+        return out
 
-        Y -= self.prior_energy
+    def calculate(
+        self,
+        atoms: Atoms = None,
+        properties: List[str] = ["energy"],
+        system_changes=all_changes,
+    ) -> None:
+        super().calculate(
+            atoms=atoms, properties=properties, system_changes=system_changes
+        )
+        if "uncertainty" in properties:
+            self.results["uncertainty"] = self.predict_uncertainty(atoms)
+        if "force_uncertainty" in properties:
+            self.results["force_uncertainty"] = self.predict_forces_uncertainty(atoms)
 
-        if self.centralize:
-            self.mean_energy = np.mean(Y)
-
-        Y -= self.mean_energy
-        X = self.get_features(data)
-
-        return X, Y
-
-    def _update(self, training_data):
-        """
-        Update the the features and targets.
-        training_data is all the data.
-
-        Parameters
-        ----------
-        training_data : list
-            List of Atoms objects.
-
-        Returns
-        -------
-        np.ndarray
-            Features.
-        np.ndarray
-            Targets.
-
-        """
-        return self._preprocess(training_data)
-
-    def postprocess_energy(self, atoms, e_pred):
-        """
-        Postprocess the energy.
-
-        Parameters
-        ----------
-        atoms : Atoms
-            Atoms object.
-        e_pred : float
-            Predicted energy.
-
-        Returns
-        -------
-        float
-            Postprocessed energy.
-        """
-        if self.prior is None:
-            prior = 0
-        else:
-            prior = self.prior.predict_energy(atoms)
-
-        return e_pred + prior + self.mean_energy
-
-    def postprocess_forces(self, atoms, f_pred):
-        """
-        Postprocess the forces.
-
-        Parameters
-        ----------
-        atoms : Atoms
-            Atoms object.
-        f_pred : np.ndarray
-            Predicted forces.
-
-        Returns
-        -------
-        np.ndarray
-            Postprocessed forces.
-        """
-        if self.prior is None:
-            prior = 0
-        else:
-            prior = self.prior.predict_forces(atoms)
-
-        return f_pred + prior
-
-    def hyperparameter_search(self):
+    def hyperparameter_search(self) -> None:
         """
         Hyperparameter search
 
@@ -585,16 +470,157 @@ class GPR(ModelBaseClass, RayPoolUser):
         self.kernel.theta = best_theta
         self.nlml = np.min(likelihood)
 
-    def calculate(self, atoms=None, properties=["energy"], system_changes=all_changes):
-        super().calculate(
-            atoms=atoms, properties=properties, system_changes=system_changes
-        )
-        if "uncertainty" in properties:
-            self.results["uncertainty"] = self.predict_uncertainty(atoms)
-        if "force_uncertainty" in properties:
-            self.results["force_uncertainty"] = self.predict_forces_uncertainty(atoms)
+    def _get_features(self, atoms: Atoms) -> np.ndarray:
+        """
+        Get features for a given atoms object
 
-    def _hyperparameter_optimize(self, init_theta=None):
+        Parameters
+        ----------
+        atoms : ase.Atoms
+            Atoms object
+
+        Returns
+        -------
+        np.ndarray
+            Features
+
+        """
+        f = self.feature_method(atoms)
+
+        if isinstance(f, np.ndarray) and len(f.shape) == 1:
+            f = f.reshape(1, -1)
+        f = np.vstack(f)
+
+        return f
+
+    def _train_model(self) -> None:
+        """
+        Train the model
+
+        """
+        if self.sparsifier is not None:
+            self.X, m_idx = self.sparsifier(self.X)
+            self.Y = self.Y[m_idx]
+
+        if self.use_ray:
+            self.pool_synchronize(attributes=["X", "Y"], writer=self.writer)
+            self.hyperparameter_search_parallel()
+        else:
+            self.hyperparameter_search()
+
+        self.K = self.kernel(self.X)
+        self.alpha, self.K_inv, _ = self._solve(self.K, self.Y)
+
+        if self.use_ray:
+            self.pool_synchronize(
+                attributes=["alpha", "K_inv", "kernel", "K"], writer=self.writer
+            )
+
+    def _preprocess(self, data: List[Atoms]) -> None:
+        """
+        Preprocess the training data.
+
+        Parameters
+        ----------
+        data : list
+            List of Atoms objects.
+
+        Returns
+        -------
+        np.ndarray
+            Features.
+        np.ndarray
+            Targets.
+
+        """
+        Y = np.expand_dims(np.array([d.get_potential_energy() for d in data]), axis=1)
+
+        if self.prior is None or not self.use_prior_in_training:
+            self.prior_energy = np.zeros(Y.shape)
+        else:
+            self.prior_energy = np.expand_dims(
+                np.array([self.prior.predict_energy(d) for d in data]), axis=1
+            )
+
+        Y -= self.prior_energy
+
+        if self.centralize:
+            self.mean_energy = np.mean(Y)
+
+        Y -= self.mean_energy
+        X = self._get_features(data)
+
+        return X, Y
+
+    def _update(self, training_data: List[Atoms]) -> None:
+        """
+        Update the the features and targets.
+        training_data is all the data.
+
+        Parameters
+        ----------
+        training_data : list
+            List of Atoms objects.
+
+        Returns
+        -------
+        np.ndarray
+            Features.
+        np.ndarray
+            Targets.
+
+        """
+        return self._preprocess(training_data)
+
+    def _postprocess_energy(self, atoms: Atoms, e_pred: float) -> float:
+        """
+        Postprocess the energy.
+
+        Parameters
+        ----------
+        atoms : Atoms
+            Atoms object.
+        e_pred : float
+            Predicted energy.
+
+        Returns
+        -------
+        float
+            Postprocessed energy.
+        """
+        if self.prior is None:
+            prior = 0
+        else:
+            prior = self.prior.predict_energy(atoms)
+
+        return e_pred + prior + self.mean_energy
+
+    def _postprocess_forces(self, atoms: Atoms, f_pred: np.ndarray) -> np.ndarray:
+        """
+        Postprocess the forces.
+
+        Parameters
+        ----------
+        atoms : Atoms
+            Atoms object.
+        f_pred : np.ndarray
+            Predicted forces.
+
+        Returns
+        -------
+        np.ndarray
+            Postprocessed forces.
+        """
+        if self.prior is None:
+            prior = 0
+        else:
+            prior = self.prior.predict_forces(atoms)
+
+        return f_pred + prior
+
+    def _hyperparameter_optimize(
+        self, init_theta: np.ndarray = None
+    ) -> Tuple[np.ndarray, float]:
         """
         Hyperparameter optimization
 
@@ -620,8 +646,8 @@ class GPR(ModelBaseClass, RayPoolUser):
         bounds = self.kernel.bounds
 
         if init_theta is None:
-            self.key, key = random.split(self.key)
-            init_theta = random.uniform(
+            self.key, key = np.random.split(self.key)
+            init_theta = np.random.uniform(
                 key, shape=(len(bounds),), minval=bounds[:, 0], maxval=bounds[:, 1]
             )
 
@@ -634,7 +660,9 @@ class GPR(ModelBaseClass, RayPoolUser):
 
         return theta_min, fmin
 
-    def _solve(self, K, Y):
+    def _solve(
+        self, K: np.ndarray, Y: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Solve the linear system
 
@@ -660,7 +688,7 @@ class GPR(ModelBaseClass, RayPoolUser):
         K_inv = cho_solve((L, lower), np.eye(K.shape[0]))
         return alpha, K_inv, (L, lower)
 
-    def _log_marginal_likelihood(self, theta):
+    def _log_marginal_likelihood(self, theta: np.ndarray) -> float:
         """
         Marginal log likelihood
 
@@ -690,7 +718,9 @@ class GPR(ModelBaseClass, RayPoolUser):
 
         return np.sum(log_P)
 
-    def _log_marginal_likelihood_gradient(self, theta):
+    def _log_marginal_likelihood_gradient(
+        self, theta: np.ndarray
+    ) -> Tuple[float, np.ndarray]:
         """
         Marginal log likelihood gradient
 
@@ -779,6 +809,5 @@ def ray_hyperparameter_optimize(model, n_opt, use_current_theta=False):
         )
         if fmin < fbest:
             fbest = fmin
-            theta_min_best = theta_min
 
     return theta_min, fmin

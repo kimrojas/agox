@@ -1,4 +1,8 @@
 from abc import ABC, abstractmethod
+from typing import Tuple
+
+import numpy as np
+
 
 class SparsifierBaseClass(ABC):
     """
@@ -20,7 +24,7 @@ class SparsifierBaseClass(ABC):
 
     """
 
-    def __init__(self, m_points=1000, **kwargs):
+    def __init__(self, m_points: int = 1000, **kwargs) -> None:
         """
         Parameters
         ----------
@@ -28,9 +32,9 @@ class SparsifierBaseClass(ABC):
             Number of points to select
         """
         self.m_points = m_points
-    
+
     @abstractmethod
-    def sparsify(self, X):
+    def sparsify(self, X: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Returns a matrix with the same number of columns together with which rows are selected.
 
@@ -53,7 +57,6 @@ class SparsifierBaseClass(ABC):
     @abstractmethod
     def name(self):
         return NotImplementedError
-    
-    
-    def __call__(self, X):
+
+    def __call__(self, X: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         return self.sparsify(X)
