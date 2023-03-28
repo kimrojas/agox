@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, Any
 
 import numpy as np
 from ase import Atoms
@@ -88,7 +88,7 @@ class GPR(ModelBaseClass, RayPoolUser):
         single_atom_energies: Union[List[float], Dict[str, float]] = None,
         use_prior_in_training: bool = False,
         sparsifier_cls: SparsifierBaseClass = CUR,
-        sparsifier_args: Tuple[...] = (1000,),
+        sparsifier_args: Tuple[int, ...] = (1000,),
         sparsifier_kwargs: Dict = {},
         n_optimize: int = 1,
         optimizer_maxiter: int = 100,
@@ -159,7 +159,7 @@ class GPR(ModelBaseClass, RayPoolUser):
             self.actor_model_key = self.pool_add_module(self)
             self.self_synchronizing = True  # Defaults to False, inherited from Module.
 
-    def train_model(self, training_data: List(Atoms), **kwargs) -> None:
+    def train_model(self, training_data: List[Atoms], **kwargs) -> None:
         """
         Train the model.
 
@@ -305,7 +305,7 @@ class GPR(ModelBaseClass, RayPoolUser):
 
     def converter(
         self, atoms: Atoms, reduced: bool = False, **kwargs
-    ) -> Dict(str, np.ndarray):
+    ) -> Dict[str, np.ndarray]:
         """
         Precompute all necessary quantities for the model
 

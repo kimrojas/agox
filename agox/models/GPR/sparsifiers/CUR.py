@@ -9,9 +9,7 @@ from agox.models.GPR.sparsifiers.ABC_sparsifier import SparsifierBaseClass
 class CUR(SparsifierBaseClass):
     name = "CUR"
 
-    def sparsify(
-        self, X: np.ndarray, k: int, **kwargs
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def sparsify(self, X: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         if X.shape[0] < self.m_points:
             m_indices = np.arange(0, X.shape[0])
             return X, m_indices

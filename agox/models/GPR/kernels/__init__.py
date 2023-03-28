@@ -1,1 +1,1 @@
-from .kernels import RBF, Constant, Noise
+from .kernels import RBF, Constant, Noise, Kernel
