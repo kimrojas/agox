@@ -9,7 +9,7 @@ class LSGPRModelCUR(LSGPRModel):
         super().__init__(**kwargs)
     
 
-    def _train_sparse(self, atoms_list):
+    def _train_sparse(self, atoms_list, **kwargs):
         if self.Xn.shape[0] < self.m_points:
             self.Xm = self.Xn
             return True

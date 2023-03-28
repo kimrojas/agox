@@ -1,6 +1,8 @@
 import os
 from abc import ABC, abstractmethod
+from agox.module import Module
 from ase.calculators.calculator import Calculator, all_changes
+from agox.candidates.ABC_candidate import CandidateBaseClass
 import numpy as np
 
 from agox.observer import Observer
@@ -45,7 +47,8 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
         """
         Observer.__init__(self, order=order, surname=surname, gets=gets, sets=sets)
         Writer.__init__(self, verbose=verbose, use_counter=use_counter, prefix=prefix)
-        Calculator.__init__(self)        
+        Calculator.__init__(self)
+        Module.__init__(self)
 
         self.verbose = verbose
         self.iteration_start_training = iteration_start_training
@@ -77,7 +80,7 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
         """
         pass    
 
-
+    
     @abstractmethod
     def predict_energy(self, atoms, **kwargs):
         """Method for energy prediction. 
@@ -100,7 +103,7 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
         """        
         pass
 
-    
+
     @abstractmethod
     def train_model(self, training_data, **kwargs):
         """Method for model training. 

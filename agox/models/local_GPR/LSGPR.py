@@ -272,7 +272,7 @@ class LSGPRModel(ModelBaseClass):
                 self.writer(f'Training:       {t4-t3-self.kernel_timing:.3f} s')
 
 
-    def _train_sparse(self, atoms_list):
+    def _train_sparse(self, atoms_list, **kwargs):
         """
         sparsification scheme: must set self.Xm
         returns boolean: indicates if training nessesary. 

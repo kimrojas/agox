@@ -16,7 +16,7 @@ dimensionality_angles = {
 
 class GeneratorBaseClass(ABC, Observer, Writer, Confinement):
 
-    def __init__(self, confinement_cell=None, confinement_corner=None, c1=0.75, c2=1.25, dimensionality=3, 
+    def __init__(self, confinement_cell=None, confinement_corner=None, c1=0.75, c2=1.25, 
                 use_mic=True, environment=None, sampler=None, gets={}, sets={'set_key':'candidates'}, order=2, 
                 verbose=True, use_counter=True, prefix='', surname=''):
         """
@@ -27,8 +27,7 @@ class GeneratorBaseClass(ABC, Observer, Writer, Confinement):
         """
         Observer.__init__(self, sets=sets, gets=gets, order=order, surname=surname)
         Writer.__init__(self, verbose=verbose, use_counter=use_counter, prefix=prefix)
-        Confinement.__init__(self, confinement_cell=confinement_cell, confinement_corner=confinement_corner, 
-            dimensionality=dimensionality)
+        Confinement.__init__(self, confinement_cell=confinement_cell, confinement_corner=confinement_corner)
 
         self.c1 = c1 # Lower limit on bond lengths. 
         self.c2 = c2 # Upper limit on bond lengths. 
@@ -131,7 +130,7 @@ class GeneratorBaseClass(ABC, Observer, Writer, Confinement):
         """
         from agox.generators import RandomGenerator
         return RandomGenerator(confinement_cell=self.confinement_cell, confinement_corner=self.confinement_corner, 
-                c1=self.c1, c2=self.c2, dimensionality=self.dimensionality, use_mic=self.use_mic)(self.sampler, self.environment)
+                c1=self.c1, c2=self.c2, use_mic=self.use_mic)(self.sampler, self.environment)
 
     @agox_writer
     @Observer.observer_method

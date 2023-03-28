@@ -1,12 +1,16 @@
 import numpy as np
 from agox.postprocessors.ABC_postprocess import PostprocessBaseClass
 from agox.utils.ray_utils import RayPoolUser
+from ase.calculators.calculator import all_properties
+from ase.calculators.singlepoint import SinglePointCalculator
 from ase.optimize import BFGS
 from ase.constraints import FixAtoms
+from agox.candidates.ABC_candidate import disable_cache
 
 def relax(model, candidate, optimizer, optimizer_kwargs, optimizer_run_kwargs):
     candidate = candidate.copy()
     candidate.set_calculator(model)
+    disable_cache(candidate)
     optimizer = optimizer(candidate,**optimizer_kwargs)
     try:
         optimizer.run(**optimizer_run_kwargs)
@@ -66,7 +70,10 @@ class ParallelRelaxPostprocess(PostprocessBaseClass, RayPoolUser):
         # Remove constraints & move relaxed positions to input candidates:
         # This is due to immutability of the candidates coming from pool_map.
         [self.remove_constraints(candidate) for candidate in candidates]
-        [cand.set_positions(relax_cand.positions) for cand, relax_cand in zip(candidates, relaxed_candidates)]
+        for cand, relax_cand in zip(candidates, relaxed_candidates):
+            cand.set_positions(relax_cand.positions)
+            results = {prop: val for prop, val in relax_cand.calc.results.items() if prop in all_properties}
+            cand.calc = SinglePointCalculator(cand, **results)
 
         average_steps = np.mean([candidate.get_meta_information('relaxation_steps') 
             for candidate in relaxed_candidates])
@@ -100,4 +107,3 @@ class ParallelRelaxPostprocess(PostprocessBaseClass, RayPoolUser):
 
     def get_template_constraint(self, candidate):
         return FixAtoms(indices=np.arange(len(candidate.template)))
-

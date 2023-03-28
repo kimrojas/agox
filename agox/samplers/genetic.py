@@ -15,20 +15,33 @@ class GeneticSampler(SamplerBaseClass):
 
         assert comparator is not None
         self.comparator = comparator
-
         self.population = []
         self.population_size = population_size
+        self.sample = self.population
         self.idx = 0
         self.using_add_all = using_add_all
 
     def get_random_member(self):
+        if len(self.sample) == 0:
+            return None
 
         P = self.get_selection_probabilities()
         idx = np.random.choice(np.arange(len(self.population)), 1, p=P)[0]
-
         member = self.population[idx]
         self.increase_times_used(member)
         return member.copy()
+
+    def get_random_member_with_calculator(self):
+        if len(self.sample) == 0:
+            return None
+
+        P = self.get_selection_probabilities()
+        idx = np.random.choice(np.arange(len(self.population)), 1, p=P)[0]
+        member = self.population[idx]
+        self.increase_times_used(member)
+        member = member.copy()
+        self.population[idx].copy_calculator_to(member)
+        return member
 
     def increase_times_used(self, member):
         count = member.get_meta_information('used_count')
@@ -70,6 +83,7 @@ class GeneticSampler(SamplerBaseClass):
             possible_candidates = self.get_recent_candidates(state)
             all_candidates = database.get_all_candidates()
             self.setup(all_candidates, possible_candidates)
+        self.sample = self.population # Lazy renaming, as sample-attribute is used by some methods of the base-class.
 
     def setup(self, all_candidates, possible_candidates):        
         # If the population is empty we just take all of them for now: 
@@ -179,7 +193,7 @@ class DistanceComparator:
         feature = candidate.get_meta_information('population_feature')
 
         if feature is None:
-            feature = self.descriptor.get_global_features(candidate)[0]
+            feature = self.descriptor.get_global_features(candidate)
             candidate.add_meta_information('population_feature', feature)
         
         return feature

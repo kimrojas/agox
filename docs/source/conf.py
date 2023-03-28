@@ -21,9 +21,22 @@ project = 'AGOX'
 copyright = '2022, AGOX Developers'
 author = 'Mads-Peter V. Christiansen'
 
+#from agox.__version__ import __version__ as agox_version
 # The full version, including alpha/beta/rc tags
-release = '2.1.0'
+# Version Number:
+import re
+version_file = '../../agox/__version__.py'
+with open(version_file) as f:
+    lines = f.readlines()
 
+for line in lines:
+    if '__version_info__' in line:
+        result = re.findall('\d+', line)
+        result = [int(x) for x in result]
+        version = '{}.{}.{}'.format(*result)
+        break
+
+release = version
 
 # -- General configuration ---------------------------------------------------
 

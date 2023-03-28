@@ -1,13 +1,22 @@
 from abc import ABC, abstractmethod
+import functools
+from uuid import uuid4
+from copy import copy
 
 class Module:
 
-    dynamic_attributes = []    
+    dynamic_attributes = [] # Attributes that Ray make sure are updated on actors. 
+
     kwargs = ['surname']
 
-    def __init__(self, surname=''):
+    def __init__(self, use_cache=False, surname=''):
         self.surname = surname
+        
+        self.use_cache = use_cache
+        self.cache_key = str(uuid4())
 
+        self.tracked_attributes = [] # Attributes that the logger will track.
+    
     def get_dynamic_attributes(self):
         return {key:self.__dict__[key] for key in self.dynamic_attributes}
 
@@ -19,6 +28,18 @@ class Module:
         assert attribute_name in self.__dict__.keys()
         assert attribute_name in self.dynamic_attributes
         del self.dynamic_attributes[self.dynamic_attributes.index(attribute_name)]
+    
+    def get_tracked_attributes(self):
+        attributes = dict()
+        for key in self.tracked_attributes:
+            try:
+                attributes[key] = self.__dict__[key]
+            except: # To avoid crashing if the attribute is not yet defined.
+                attributes[key] = None
+        return attributes
+    
+    def add_tracked_attribute(self, attribute_name):
+        self.tracked_attributes.append(attribute_name)
 
     @property
     @abstractmethod
@@ -65,5 +86,11 @@ class Module:
         reference.__dict__[submodule_keys[-1]] = value
         
 
-
-
+    @classmethod
+    def reset_cache_key(clc, func):
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            self.cache_key = str(uuid4())            
+            return func(self, *args, **kwargs)
+        return wrapper
+        

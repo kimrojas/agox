@@ -110,6 +110,9 @@ class SamplerBaseClass(ABC, Observer, Writer):
         member.add_meta_information('sample_index', index)
         return member
 
+    def get_all_members(self):
+        return [member.copy() for member in self.sample]
+
     def get_random_member_with_calculator(self):
         if len(self.sample) == 0:
             return None

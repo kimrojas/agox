@@ -11,8 +11,8 @@ As a first example we will again take a look at the generator ABC and its
 
 .. literalinclude:: ../../../agox/generators/ABC_generator.py
     :linenos:
-    :lineno-start: 191
-    :lines: 191-196
+    :lineno-start: 135
+    :lines: 135-143
     :emphasize-lines: 6
 
 In particular this method calls a method :code:`add_to_cache` parsing along 
