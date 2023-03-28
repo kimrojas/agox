@@ -115,9 +115,11 @@ class AGOXGenerator(GeneratorBaseClass):
         internal_model = ModelGPR.default(environment, internal_database, **model_kwargs)
         internal_model.iteration_start_training = 1
 
-        internal_sampler = KMeansSampler(feature_calculator=internal_model.get_feature_calculator(), 
-            database=internal_database, use_saved_features=True, order=1, verbose=verbose, 
-            use_cache=True)
+        internal_descriptor = internal_model.get_descriptor()
+        internal_descriptor.use_cache = True
+
+        internal_sampler = KMeansSampler(descriptor=internal_descriptor, database=internal_database, 
+                order=1, verbose=verbose)
         internal_sampler.attach(internal_database)
 
         ######################################################################################################
