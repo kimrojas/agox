@@ -56,7 +56,7 @@ def line_breaker(string: str, tab_size: int = 4) -> List[str]:
     lines.append(remainder)  # final piece of the string
     return lines
         
-def header_print(string, file=sys.stdout):
+def header_print(string):
     
     string = ' ' + string + ' '
     num_markers = int((LINE_LENGTH - len(string))/2) - 1
@@ -65,17 +65,18 @@ def header_print(string, file=sys.stdout):
     if len(header_string) < LINE_LENGTH:
         header_string = header_string[:-2] + PADDING_CHARACTER*2 + TERMINATE_CHARACTER        
 
-    print(header_string, file=file)
+    print(header_string)
 
-def pretty_print(string, file=sys.stdout, *args, **kwargs):
+def pretty_print(string, *args, **kwargs):
     string = str(string)
     for arg in args:
         string += str(arg)
 
     all_strings = line_breaker(string)
+
     for string in all_strings:
         string = TERMINATE_CHARACTER + ' ' + string + (LINE_LENGTH - len(string)-3) * ' ' + TERMINATE_CHARACTER       
-        print(string, **kwargs, file=file)
+        print(string, **kwargs)
 
 def agox_writer(func):
     @functools.wraps(func)
@@ -94,33 +95,20 @@ def agox_writer(func):
 
 class Writer:
 
-    def __init__(self, verbose=True, use_counter=True, prefix='', file=sys.stdout):
+    def __init__(self, verbose=True, use_counter=True, prefix=''):
         self.verbose = verbose
         self.use_counter = use_counter
         self.lines_to_print = []
         self.writer_prefix = prefix
 
-        if isinstance(file, str): 
-            # Perhaps this is somewwhat bad as the file is kept open.            
-            self.output_file = open(file, 'w')
-        else:
-            self.output_file = file
-
     def writer(self, string, *args, **kwargs):
         if self.verbose:
             if self.use_counter:
-                kwargs['file'] = self.output_file
                 self.lines_to_print.append((string, args, kwargs))
             else:
                 string = self.writer_prefix + str(string)
-                pretty_print(string, file=self.output_file, *args, **kwargs)
+                pretty_print(string, *args, **kwargs)
 
     def header_print(self, string):
         if self.verbose:
-            header_print(string, self.output_file)
-
-    def set_output_file(self, file):
-        if isinstance(file, str):
-            self.output_file = open(file, 'w')
-        else:
-            self.output_file = file
+            header_print(string)
