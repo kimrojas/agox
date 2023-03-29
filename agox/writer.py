@@ -1,5 +1,6 @@
 import functools
 from typing import List
+import sys
 import numpy as np
 
 from agox.__version__ import __version__
@@ -55,7 +56,7 @@ def line_breaker(string: str, tab_size: int = 4) -> List[str]:
     lines.append(remainder)  # final piece of the string
     return lines
         
-def header_print(string):
+def header_print(string, file=sys.stdout):
     
     string = ' ' + string + ' '
     num_markers = int((LINE_LENGTH - len(string))/2) - 1
@@ -64,9 +65,9 @@ def header_print(string):
     if len(header_string) < LINE_LENGTH:
         header_string = header_string[:-2] + PADDING_CHARACTER*2 + TERMINATE_CHARACTER        
 
-    print(header_string)
+    print(header_string, file=file)
 
-def pretty_print(string, *args, **kwargs):
+def pretty_print(string, file=sys.stdout, *args, **kwargs):
     string = str(string)
     for arg in args:
         string += str(arg)
@@ -74,16 +75,16 @@ def pretty_print(string, *args, **kwargs):
     all_strings = line_breaker(string)
     for string in all_strings:
         string = TERMINATE_CHARACTER + ' ' + string + (LINE_LENGTH - len(string)-3) * ' ' + TERMINATE_CHARACTER       
-        print(string, **kwargs)
+        print(string, **kwargs, file=file)
 
 def agox_writer(func):
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
         if not self.use_counter:
-            header_print(self.name)
+            self.header_print(self.name)
         func(self, *args, **kwargs)
         if self.use_counter and len(self.lines_to_print) > 0:
-            header_print(self.name)
+            self.header_print(self.name)
             for string, args, kwargs in self.lines_to_print:
                 string = self.writer_prefix + str(string)
                 pretty_print(string, *args, **kwargs)
@@ -91,37 +92,35 @@ def agox_writer(func):
         
     return wrapper
 
-# def agox_writer(func):
-#     @functools.wraps(func)
-#     def wrapper(self, state, *args, **kwargs):
-#         if not self.use_counter:
-#             header_print(self.name)
-#         state = func(self, state, *args, **kwargs)
-#         if self.use_counter and len(self.lines_to_print) > 0:
-#             header_print(self.name)
-#             for string, args, kwargs in self.lines_to_print:
-#                 string = self.writer_prefix + str(string)
-#                 pretty_print(string, *args, **kwargs)
-#         self.lines_to_print = []
-        
-#     return wrapper
-
 class Writer:
 
-    def __init__(self, verbose=True, use_counter=True, prefix=''):
+    def __init__(self, verbose=True, use_counter=True, prefix='', file=sys.stdout):
         self.verbose = verbose
         self.use_counter = use_counter
         self.lines_to_print = []
         self.writer_prefix = prefix
 
+        if isinstance(file, str): 
+            # Perhaps this is somewwhat bad as the file is kept open.            
+            self.output_file = open(file, 'w')
+        else:
+            self.output_file = file
+
     def writer(self, string, *args, **kwargs):
         if self.verbose:
             if self.use_counter:
+                kwargs['file'] = self.output_file
                 self.lines_to_print.append((string, args, kwargs))
             else:
                 string = self.writer_prefix + str(string)
-                pretty_print(string, *args, **kwargs)
+                pretty_print(string, file=self.output_file, *args, **kwargs)
 
     def header_print(self, string):
         if self.verbose:
-            header_print(string)
+            header_print(string, self.output_file)
+
+    def set_output_file(self, file):
+        if isinstance(file, str):
+            self.output_file = open(file, 'w')
+        else:
+            self.output_file = file
