@@ -58,6 +58,17 @@ class MemoryDatabase(DatabaseBaseClass):
     def reset(self):
         self.candidates = []
         self.candidate_energies = []
+        self.delete_timers()
+
+    def delete_timers(self):
+        """
+        This is neccessary to avoid timing timers, which is probably not 
+        really a performance issue but it is very ugly in the output. 
+        """
+        from agox.tracker import Timer
+        for key, observer in self.observers.items():
+            if isinstance(observer.class_reference, Timer):
+                del self.observers[key]
 
     def set_number_of_preset_candidates(self, number):
         self.number_of_preset_candidates = number
