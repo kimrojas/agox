@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Union
+from typing import List, Union, Tuple
 
 from ase import Atoms
 
@@ -12,14 +12,23 @@ class FilterBaseClass(ABC):
 
     This class is used to define the interface for filters. All filters
     should inherit from this class and implement the methods defined here.
+
+    Attributes
+    ----------
+
+    Methods
+    -------
+    filter(atoms: List[Atoms]) -> List[Atoms]
+        Filter the atoms.
+
     """
 
     def __init__(self, **kwargs):
         """Initialize the filter."""
-        pass
+        super().__init__(**kwargs)
 
     @abstractmethod
-    def filter(self, atoms: List[Atoms]) -> List[Atoms]:
+    def filter(self, atoms: List[Atoms]) -> Tuple[List[Atoms], List[Atoms]]:
         """Filter the atoms object.
 
         Parameters
@@ -30,7 +39,9 @@ class FilterBaseClass(ABC):
         Returns
         -------
         List[Atoms]
-            The filtered atoms object.
+            The selected atoms object by the filter.
+        List[Atoms]
+            The rest of the atoms object not selected by the filter.
         """
         pass
 
@@ -54,8 +65,15 @@ class FilterBaseClass(ABC):
 class SumFilter(FilterBaseClass):
     """Sum filter.
 
-    This filter adds the number of atoms in the first and second
-    atoms object.
+    This class implement to sum of two filters.
+
+    Attributes
+    ----------
+    f0 : FilterBaseClass
+        The first filter.
+    f1 : FilterBaseClass
+        The second filter.
+
     """
 
     def __init__(self, f0: FilterBaseClass, f1: FilterBaseClass, **kwargs):
@@ -77,7 +95,8 @@ class SumFilter(FilterBaseClass):
         List[Atoms]
             The filtered atoms object.
         """
-        return self.f1(self.f0(atoms))
+        f0, _ = self.f0.filter(atoms)
+        return self.f1(f0)
 
     @property
     def name(self) -> str:

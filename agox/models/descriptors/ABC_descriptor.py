@@ -198,3 +198,8 @@ class DescriptorBaseClass(ABC, Module):
         """
         return
 
+
+    def __eq__(self, other):
+        if not isinstance(other, DescriptorBaseClass):
+            return False
+        return self.cache_key == other.cache_key

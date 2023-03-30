@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Union, Any
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 from ase import Atoms
@@ -9,10 +9,10 @@ from scipy.optimize import fmin_l_bfgs_b
 from agox.models.ABC_model import ModelBaseClass
 from agox.models.descriptors import DescriptorBaseClass
 from agox.models.GPR.kernels import Kernel
-from agox.models.GPR.sparsifiers import SparsifierBaseClass
-from agox.models.GPR.sparsifiers.CUR import CUR
 from agox.utils import candidate_list_comprehension
+from agox.utils.filters import EnergyFilter, FilterBaseClass
 from agox.utils.ray_utils import RayPoolUser, ray_kwarg_keys
+from agox.utils.sparsifiers import CUR, SparsifierBaseClass
 
 
 class GPR(ModelBaseClass, RayPoolUser):
@@ -87,9 +87,9 @@ class GPR(ModelBaseClass, RayPoolUser):
         prior: ModelBaseClass = None,
         single_atom_energies: Union[List[float], Dict[str, float]] = None,
         use_prior_in_training: bool = False,
-        sparsifier_cls: SparsifierBaseClass = CUR,
-        sparsifier_args: Tuple[int, ...] = (1000,),
-        sparsifier_kwargs: Dict = {},
+        sparsifier_cls: List[SparsifierBaseClass] = [EnergyFilter, CUR],
+        sparsifier_args: List[Tuple[int, ...]] = [(200,), (1000,)],
+        sparsifier_kwargs: List[Dict] = List[{}],
         n_optimize: int = 1,
         optimizer_maxiter: int = 100,
         centralize: bool = True,
@@ -138,7 +138,34 @@ class GPR(ModelBaseClass, RayPoolUser):
         self.prior = prior
         self.single_atom_energies = single_atom_energies
         self.use_prior_in_training = use_prior_in_training
-        self.sparsifier = sparsifier_cls(*sparsifier_args, **sparsifier_kwargs)
+
+        if sparsifier_cls is not None:
+            sparsifier_list = []
+            for cls, args, kwargs in zip(
+                sparsifier_cls, sparsifier_args, sparsifier_kwargs
+            ):
+                if issubclass(cls, SparsifierBaseClass):
+                    sparsifier = cls(
+                        descriptor=descriptor,
+                        descriptor_type=descriptor_type,
+                        *args,
+                        **kwargs
+                    )
+                elif issubclass(cls, FilterBaseClass):
+                    sparsifier = cls(*args, **kwargs)
+                else:
+                    raise ValueError(
+                        "Sparsifier class must be a subclass of SparsifierBaseClass or FilterBaseClass"
+                    )
+
+            self.sparsifier = sum(sparsifier_list)
+            assert isinstance(
+                self.sparsifier, SparsifierBaseClass
+            ), "Sparsifier must be a subclass of SparsifierBaseClass"
+        else:
+            self.sparsifier = None
+
+
         self.n_optimize = n_optimize
         self.optimizer_maxiter = optimizer_maxiter
         self.centralize = centralize

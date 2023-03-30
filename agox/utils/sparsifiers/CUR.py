@@ -1,15 +1,20 @@
-from typing import Tuple
+from typing import List, Optional
 
 import numpy as np
+from ase import Atoms
 from scipy.linalg import svd
 
-from agox.models.GPR.sparsifiers.ABC_sparsifier import SparsifierBaseClass
+from agox.utils.sparsifiers.ABC_sparsifier import SparsifierBaseClass
 
 
 class CUR(SparsifierBaseClass):
     name = "CUR"
 
-    def sparsify(self, X: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def sparsify(
+        self, atoms: Optional[List[Atoms]] = None, X: Optional[np.ndarray] = None
+    ) -> np.ndarray:
+        X = self.preprocess(atoms, X)
+
         if X.shape[0] < self.m_points:
             m_indices = np.arange(0, X.shape[0])
             return X, m_indices
@@ -19,4 +24,4 @@ class CUR(SparsifierBaseClass):
         sorter = np.argsort(score)[::-1]
         Xm = X[sorter, :][: self.m_points, :]
 
-        return Xm, sorter[: self.m_points]
+        return Xm

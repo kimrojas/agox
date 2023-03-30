@@ -1,9 +1,10 @@
-from typing import Optional, Tuple
+from typing import List, Optional
 
 import numpy as np
+from ase import Atoms
 from sklearn.cluster import MiniBatchKMeans
 
-from agox.models.GPR.sparsifiers.ABC_sparsifier import SparsifierBaseClass
+from agox.utils.sparsifiers.ABC_sparsifier import SparsifierBaseClass
 
 
 class MBkmeans(SparsifierBaseClass):
@@ -30,7 +31,11 @@ class MBkmeans(SparsifierBaseClass):
             n_init=3,
         )
 
-    def sparsify(self, X: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def sparsify(
+        self, atoms: Optional[List[Atoms]] = None, X: Optional[np.ndarray] = None
+    ) -> np.ndarray:
+        X = self.preprocess(atoms, X)
+
         if X.shape[0] < self.m_points:
             m_indices = np.arange(0, X.shape[0])
             return X, m_indices
@@ -44,11 +49,10 @@ class MBkmeans(SparsifierBaseClass):
             dists = self.cluster.transform(X)
             min_idx = np.argmin(dists, axis=0)
             Xm = X[min_idx, :]
-            return Xm, min_idx
         else:
             Xm = self.cluster.cluster_centers_
 
-        return Xm, None
+        return Xm
 
     def _MB_episode(self, X: np.ndarray) -> None:
         n_samples = X.shape[0]

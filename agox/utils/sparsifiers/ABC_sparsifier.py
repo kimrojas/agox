@@ -23,9 +23,8 @@ class SparsifierBaseClass(ABC):
 
     Methods
     -------
-    sparsify(X)
-        Returns a matrix with the same number of columns together with which rows are selected (if available).
-
+    sparsify(atoms: List[Atoms] X): np.ndarray) -> np.ndarray:
+        Sparsify the data
     """
 
     def __init__(
@@ -38,9 +37,15 @@ class SparsifierBaseClass(ABC):
         """
         Parameters
         ----------
+        descriptor : DescriptorBaseClass
+            Descriptor to use for computing the features
         m_points : int
             Number of points to select
+        descriptor_type : str
+            Type of descriptor to use. Can be "global" or "local"
+
         """
+        super().__init__(**kwargs)
         self.m_points = m_points
         self.descriptor = descriptor
         self.feature_method = getattr(
@@ -107,6 +112,18 @@ class SparsifierBaseClass(ABC):
 
 
 class SumSparsifier(SparsifierBaseClass):
+    """
+    Sum of two sparsifiers or a filter and a sparsifier.
+
+    Attributes
+    ----------
+    s0 : Union[SparsifierBaseClass, FilterBaseClass]
+        First sparsifier or filter
+    s1 : SparsifierBaseClass
+        Second sparsifier
+
+    """
+
     def __init__(
         self,
         s0: Union[SparsifierBaseClass, FilterBaseClass],
@@ -137,13 +154,28 @@ class SumSparsifier(SparsifierBaseClass):
     def sparsify(
         self, atoms: Optional[List[Atoms]] = None, X: Optional[np.ndarray] = None
     ) -> np.ndarray:
+        """
+        Returns a matrix with the same number of columns together with which rows are selected.
+
+        Parameters
+        ----------
+        atoms : List[Atoms]
+            List of atoms objects
+        X : np.ndarray
+            Matrix with rows corresponding to features
+
+        Returns
+        -------
+        X_sparsified : array-like, shape (m_points, n_features)
+            Matrix with rows corresponding to feaures.
+        """
         # select with s0
         out = self.s0(atoms=atoms, X=X)
 
         if self.output == "X":
             return self.s1(X=out)
         elif self.output == "atoms":
-            return self.s1(atoms=out)
+            return self.s1(atoms=out[0])
         else:
             raise ValueError(
                 "Cannot sum something that is not a sparsifier or a filter"
