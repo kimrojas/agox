@@ -18,8 +18,11 @@ class FilterBaseClass(ABC):
 
     Methods
     -------
-    filter(atoms: List[Atoms]) -> List[Atoms]
+    _filter(atoms: List[Atoms]) -> np.ndarray:
         Filter the atoms.
+
+    __call__(atoms: List[Atoms]) -> Tuple[List[Atoms], np.ndarray]:
+        Filter the atoms and return the selected atoms and indexes of the filtered atoms.
 
     """
 
@@ -28,7 +31,7 @@ class FilterBaseClass(ABC):
         super().__init__(**kwargs)
 
     @abstractmethod
-    def filter(self, atoms: List[Atoms]) -> Tuple[List[Atoms], List[Atoms]]:
+    def _filter(self, atoms: List[Atoms]) -> Tuple[List[Atoms], List[Atoms]]:
         """Filter the atoms object.
 
         Parameters
@@ -38,10 +41,8 @@ class FilterBaseClass(ABC):
 
         Returns
         -------
-        List[Atoms]
-            The selected atoms object by the filter.
-        List[Atoms]
-            The rest of the atoms object not selected by the filter.
+        indexes: array-like
+            The indexes of the atoms that are kept.
         """
         pass
 
@@ -50,8 +51,9 @@ class FilterBaseClass(ABC):
     def name(self) -> str:
         return NotImplementedError
 
-    def __call__(self, atoms: List[Atoms]) -> List[Atoms]:
-        return self.filter(atoms)
+    def __call__(self, atoms: List[Atoms], **kwargs) -> List[Atoms]:
+        indexes = self._filter(atoms)
+        return atoms[indexes], indexes
 
     def __add__(self, other: Union["FilterBaseClass", SparsifierBaseClass]):
         if isinstance(other, FilterBaseClass):
@@ -95,8 +97,9 @@ class SumFilter(FilterBaseClass):
         List[Atoms]
             The filtered atoms object.
         """
-        f0, _ = self.f0.filter(atoms)
-        return self.f1(f0)
+        f0, idx0 = self.f0(atoms)
+        f1, idx1 = self.f1(atoms)
+        return f1, idx0[idx1]
 
     @property
     def name(self) -> str:

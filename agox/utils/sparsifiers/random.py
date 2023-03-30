@@ -23,4 +23,4 @@ class Random(SparsifierBaseClass):
         else:
             Xm = X
 
-        return Xm
+        return Xm, m_indices

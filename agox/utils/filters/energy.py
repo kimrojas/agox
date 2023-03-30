@@ -1,5 +1,6 @@
 from typing import List, Tuple
 
+import numpy as np
 from ase import Atoms
 
 from agox.utils.filters.ABC_filter import FilterBaseClass
@@ -25,14 +26,13 @@ class EnergyFilter(FilterBaseClass):
 
     def filter(self, atoms: List[Atoms]) -> Tuple[List[Atoms], List[Atoms]]:
         filtered = []
-        rejected = []
-        Es = [a.get_potential_energy() for a in atoms]
-        E_min = min(Es)
+        indexes = []
+        Es = np.array([a.get_potential_energy() for a in atoms])
+        E_min = np.min(Es)
         E_boundary = E_min + self.delta_E
-        for a, E in zip(atoms, Es):
+        for i, (a, E) in enumerate(zip(atoms, Es)):
             if E < E_boundary:
                 filtered.append(a)
-            else:
-                rejected.append(a)
+                indexes.append(i)
 
-        return filtered, rejected
+        return filtered, np.array(indexes)

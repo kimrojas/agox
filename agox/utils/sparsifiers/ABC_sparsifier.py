@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Tuple
 
 import numpy as np
 from ase import Atoms
@@ -55,7 +55,7 @@ class SparsifierBaseClass(ABC):
     @abstractmethod
     def sparsify(
         self, atoms: Optional[List[Atoms]] = None, X: Optional[np.ndarray] = None
-    ) -> np.ndarray:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Returns a matrix with the same number of columns together with which rows are selected.
 
@@ -70,7 +70,7 @@ class SparsifierBaseClass(ABC):
         -------
         X_sparsified : array-like, shape (m_points, n_samples)
             Matrix with rows corresponding to feaures.
-
+        selected : array-like, shape (m_points,)
 
         """
         pass
@@ -153,7 +153,7 @@ class SumSparsifier(SparsifierBaseClass):
 
     def sparsify(
         self, atoms: Optional[List[Atoms]] = None, X: Optional[np.ndarray] = None
-    ) -> np.ndarray:
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Returns a matrix with the same number of columns together with which rows are selected.
 
@@ -168,14 +168,17 @@ class SumSparsifier(SparsifierBaseClass):
         -------
         X_sparsified : array-like, shape (m_points, n_features)
             Matrix with rows corresponding to feaures.
+        selected : array-like, shape (m_points,)
         """
         # select with s0
-        out = self.s0(atoms=atoms, X=X)
+        input, opt = self.s0(atoms=atoms, X=X)
 
         if self.output == "X":
-            return self.s1(X=out)
+            Xm, selected = self.s1(X=input)
+            return Xm, opt[selected]
         elif self.output == "atoms":
-            return self.s1(atoms=out[0])
+            Xm, selected = self.s1(atoms=input)
+            return Xm, opt[selected]
         else:
             raise ValueError(
                 "Cannot sum something that is not a sparsifier or a filter"

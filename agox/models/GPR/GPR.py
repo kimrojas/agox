@@ -203,7 +203,7 @@ class GPR(ModelBaseClass, RayPoolUser):
 
         self._training_record(training_data)
 
-        self._train_model()
+        self._train_model(training_data)
 
         validation = self.validate()
 
@@ -404,9 +404,14 @@ class GPR(ModelBaseClass, RayPoolUser):
         sparsifier_name = (
             self.sparsifier.name if self.sparsifier is not None else "None"
         )
-        sparsifier_mpoints = (
-            self.sparsifier.m_points if self.sparsifier is not None else "None"
-        )
+        
+        try:
+            sparsifier_mpoints = (
+                self.sparsifier.m_points if self.sparsifier is not None else "None"
+            )
+        except AttributeError:
+            sparsifier_mpoints = "None"
+            
         out = [
             "------ Model Info ------",
             "Descriptor:",
@@ -520,13 +525,13 @@ class GPR(ModelBaseClass, RayPoolUser):
 
         return f
 
-    def _train_model(self) -> None:
+    def _train_model(self, training_data: List[Atoms]) -> None:
         """
         Train the model
 
         """
         if self.sparsifier is not None:
-            self.X, m_idx = self.sparsifier(self.X)
+            self.X, m_idx = self.sparsifier(atoms=training_data, X=self.X)
             self.Y = self.Y[m_idx]
 
         if self.use_ray:

@@ -1,5 +1,5 @@
 import warnings
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 from ase import Atoms
@@ -7,6 +7,7 @@ from scipy.linalg import lstsq, qr
 
 from agox.models.GPR.GPR import GPR
 from agox.utils import candidate_list_comprehension
+from agox.utils.sparsifiers import CUR, SparsifierBaseClass
 
 
 class SparseGPR(GPR):
@@ -49,6 +50,9 @@ class SparseGPR(GPR):
         noise: float = 0.05,
         centralize: bool = False,
         jitter: float = 1e-8,
+        sparsifier_cls: List[SparsifierBaseClass] = [CUR],
+        sparsifier_args: List[Tuple[int, ...]] = [(200,), (1000,)],
+        sparsifier_kwargs: List[Dict] = List[{}],
         **kwargs
     ) -> None:
         """
@@ -61,7 +65,13 @@ class SparseGPR(GPR):
             Jitter level
 
         """
-        super().__init__(centralize=centralize, **kwargs)
+        super().__init__(
+            centralize=centralize,
+            sparsifier_cls=sparsifier_cls,
+            sparsifier_args=sparsifier_args,
+            sparsifier_kwargs=sparsifier_kwargs,
+            **kwargs
+        )
 
         self.jitter = jitter
         self.noise = noise
@@ -255,7 +265,7 @@ class SparseGPR(GPR):
 
         return out
 
-    def _train_model(self) -> None:
+    def _train_model(self, data: List[Atoms]) -> None:
         """
         Train the model
 
@@ -263,8 +273,8 @@ class SparseGPR(GPR):
         assert self.Xn is not None, "self.Xn must be set prior to call"
         assert self.L is not None, "self.L must be set prior to call"
         assert self.Y is not None, "self.Y must be set prior to call"
-
-        self.Xm, _ = self.sparsifier(self.Xn)
+        
+        self.Xm, _ = self.sparsifier(atoms=self.transfer_data + data, X=self.Xn)
         self.X = self.Xm
 
         self.K_mm = self.kernel(self.Xm)

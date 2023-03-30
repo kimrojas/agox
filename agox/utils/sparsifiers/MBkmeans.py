@@ -1,3 +1,4 @@
+from warnings import UserWarning
 from typing import List, Optional
 
 import numpy as np
@@ -20,6 +21,13 @@ class MBkmeans(SparsifierBaseClass):
     ):
         super().__init__(**kwargs)
 
+        #Throw a warning saying that this cannot be used with other sparsifiers
+        UserWarning(
+            "MBkmeans cannot be used with other sparsifiers. "
+            "Or together with a method that requires indices of selected features"
+            "Use k-medoids instead."
+        )
+        
         self.batch_size = batch_size
         self.fast = fast
 
@@ -52,7 +60,7 @@ class MBkmeans(SparsifierBaseClass):
         else:
             Xm = self.cluster.cluster_centers_
 
-        return Xm
+        return Xm, None
 
     def _MB_episode(self, X: np.ndarray) -> None:
         n_samples = X.shape[0]

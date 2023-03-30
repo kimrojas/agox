@@ -24,4 +24,4 @@ class CUR(SparsifierBaseClass):
         sorter = np.argsort(score)[::-1]
         Xm = X[sorter, :][: self.m_points, :]
 
-        return Xm
+        return Xm, sorter[: self.m_points]
