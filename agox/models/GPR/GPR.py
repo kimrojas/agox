@@ -360,6 +360,10 @@ class GPR(ModelBaseClass, RayPoolUser):
         """
         x = "    "
         filter_name = self.filter.name if self.filter is not None else "None"
+        try:
+            filter_removed_data = self._data_before_filter - self._data_after_filter
+        except AttributeError:
+            filter_removed_data = 0
 
         out = [
             "------ Model Info ------",
@@ -368,10 +372,10 @@ class GPR(ModelBaseClass, RayPoolUser):
             "Kernel:",
             x + "{}".format(self.kernel),
             "Filter:",
-            x + "{}".format(filter_name),
+            x + "{} removed {} data points".format(filter_name, filter_removed_data),
             "------ Training Info ------",
             "Training data size: {}".format(self.X.shape[0]),
-            "Neg. log marginal likelihood.: {:.2f}".format(self.nlml),
+            "Neg. log marginal likelihood.: {:.2f}".format(self._nlml),
         ]
 
         return out
@@ -416,7 +420,7 @@ class GPR(ModelBaseClass, RayPoolUser):
                 thetas.append(theta_min)
 
             self.kernel.theta = thetas[np.argmin(np.array(fmins))]
-            self.nlml = np.min(fmins)
+            self._nlml = np.min(fmins)
 
     def hyperparameter_search_parallel(self):
         """
@@ -449,7 +453,7 @@ class GPR(ModelBaseClass, RayPoolUser):
 
         # Set the best theta
         self.kernel.theta = best_theta
-        self.nlml = np.min(likelihood)
+        self._nlml = np.min(likelihood)
 
     def _get_features(self, atoms: Atoms) -> np.ndarray:
         """
@@ -510,8 +514,10 @@ class GPR(ModelBaseClass, RayPoolUser):
             Targets.
 
         """
+        self._data_before_filter = len(data)
         if self.filter is not None:
             data, _ = self.filter(data)
+        self._data_after_filter = len(data)
 
         Y = np.expand_dims(np.array([d.get_potential_energy() for d in data]), axis=1)
 

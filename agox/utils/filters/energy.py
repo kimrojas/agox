@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List
 
 import numpy as np
 from ase import Atoms
@@ -24,12 +24,11 @@ class EnergyFilter(FilterBaseClass):
         super().__init__(**kwargs)
         self.delta_E = delta_E
 
-    def _filter(self, atoms: List[Atoms]) -> Tuple[List[Atoms], List[Atoms]]:
-        indexes = []
+    def _filter(self, atoms: List[Atoms]) -> np.ndarray:
         Es = np.array([a.get_potential_energy() for a in atoms])
         E_min = np.min(Es)
         E_boundary = E_min + self.delta_E
         # get indicies where Es is greater than E_boundary
-        indexes = np.array([i for i, E in enumerate(Es) if E > E_boundary])
+        indexes = np.array([i for i, E in enumerate(Es) if E < E_boundary])
 
         return indexes
