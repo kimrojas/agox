@@ -65,10 +65,14 @@ class MemoryDatabase(DatabaseBaseClass):
         This is neccessary to avoid timing timers, which is probably not 
         really a performance issue but it is very ugly in the output. 
         """
-        from agox.tracker import Timer
+        from agox.tracker import TimerEntry
+        keys_to_delete = []
         for key, observer in self.observers.items():
-            if isinstance(observer.class_reference, Timer):
-                del self.observers[key]
+            if isinstance(observer.class_reference, TimerEntry):
+                keys_to_delete.append(key)
+        
+        for key in keys_to_delete:
+            del self.observers[key]
 
     def set_number_of_preset_candidates(self, number):
         self.number_of_preset_candidates = number
