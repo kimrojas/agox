@@ -28,7 +28,8 @@ class Database(DatabaseBaseClass):
     forces blob, 
     pbc blob,
     template_indices blob,
-    iteration int
+    iteration int,
+    cache_key text
     )""", 
 
     """CREATE TABLE text_key_values (
@@ -66,8 +67,8 @@ class Database(DatabaseBaseClass):
     
     # Pack: Positions, energy, type, cell, forces, pbc, template_indices, iteration
     # Unpack: ID, time, -//-
-    pack_functions = [blob, nothing, blob, blob, blob, blob, blob, nothing]
-    unpack_functions = [nothing, nothing, deblob, nothing, deblob, deblob, deblob, deblob, deblob, nothing]
+    pack_functions = [blob, nothing, blob, blob, blob, blob, blob, nothing, nothing]
+    unpack_functions = [nothing, nothing, deblob, nothing, deblob, deblob, deblob, deblob, deblob, nothing, nothing]
 
     name = 'Database'
 
@@ -83,7 +84,7 @@ class Database(DatabaseBaseClass):
         self.write_frequency = write_frequency
 
         # Important that this matches the init_statements list. 
-        self.storage_keys = ['positions', 'energy', 'type', 'cell', 'forces', 'pbc', 'template_indices', 'iteration']
+        self.storage_keys = ['positions', 'energy', 'type', 'cell', 'forces', 'pbc', 'template_indices', 'iteration', 'cache_key']
 
         # Memory-based stuff:        
         self.candidate_instanstiator = StandardCandidate
@@ -177,6 +178,7 @@ class Database(DatabaseBaseClass):
             self.storage_dict['pbc'].append(np.array(candidate.pbc.astype(int), dtype=np.float64))
             self.storage_dict['template_indices'].append(np.array(candidate.get_template_indices(), dtype=np.float64))
             self.storage_dict['iteration'].append(self.get_iteration_counter())
+            self.storage_dict['cache_key'].append(candidate.cache_key)
             self.number_of_rows += 1
 
             if self.store_meta_information:
@@ -264,6 +266,7 @@ class Database(DatabaseBaseClass):
         cell = structure['cell']
         pbc = structure.get('pbc', None)
         template_indices = structure.get('template_indices', None)
+        cache_key = structure.get('cache_key', None)
         
         if hasattr(self, 'template') and template_indices is None:
             template = self.template
@@ -271,6 +274,7 @@ class Database(DatabaseBaseClass):
             template = None            
 
         candidate = self.candidate_instanstiator(symbols = num, positions = pos, cell = cell, pbc=pbc, template=template, template_indices=template_indices)        
+        candidate.cache_key = cache_key
         calc = SinglePointCalculator(candidate, energy=e, forces=f)
         candidate.set_calculator(calc)
 
