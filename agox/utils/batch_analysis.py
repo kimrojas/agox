@@ -704,7 +704,7 @@ class Analysis:
 
 class KeyBoardEvent:
 
-    def __init__(self, struct_scat, structures, energies, named_axes):
+    def __init__(self, fig, struct_scat, structures, energies, named_axes):
         self.ind = 0
 
         self.structures = structures
@@ -712,7 +712,7 @@ class KeyBoardEvent:
         self.num = len(self.structures)
 
         # Plot objects:
-        self.struct_scat = struct_scat
+        self.fig = fig
 
         # Axes:
         self.named_axes = named_axes
@@ -761,7 +761,7 @@ class KeyBoardEvent:
             if self.hist:
                 self.update_hist(i)
 
-            fig.canvas.draw_idle()
+            self.fig.canvas.draw_idle()
 
         if event.key == 'left':
             self.ind -= 1
@@ -771,7 +771,7 @@ class KeyBoardEvent:
             if self.hist:
                 self.update_hist(i)
 
-            fig.canvas.draw_idle()
+            self.fig.canvas.draw_idle()
 
 def command_line_analysis():
     # Input arguments:
@@ -892,7 +892,7 @@ def command_line_analysis():
         if animate:
             if plot_structure:
                 named_axes = [struct_ax, cdf_ax, energy_ax, hist_ax]
-                callback = KeyBoardEvent(struct_scat, structures, energies, named_axes=named_axes)
+                callback = KeyBoardEvent(fig, struct_scat, structures, energies, named_axes=named_axes)
                 fig.canvas.mpl_connect('key_press_event', callback.press)
             else:
                 print("To use the animation, the structure has to be plotted")
