@@ -69,7 +69,7 @@ class SparseGPR(GPR):
 
         """
 
-        super().__init__(centralize=centralize, filter=filter**kwargs)
+        super().__init__(centralize=centralize, filter=filter, **kwargs)
 
         self.jitter = jitter
         self.noise = noise

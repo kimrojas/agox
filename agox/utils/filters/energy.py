@@ -25,14 +25,11 @@ class EnergyFilter(FilterBaseClass):
         self.delta_E = delta_E
 
     def _filter(self, atoms: List[Atoms]) -> Tuple[List[Atoms], List[Atoms]]:
-        filtered = []
         indexes = []
         Es = np.array([a.get_potential_energy() for a in atoms])
         E_min = np.min(Es)
         E_boundary = E_min + self.delta_E
-        for i, (a, E) in enumerate(zip(atoms, Es)):
-            if E < E_boundary:
-                filtered.append(a)
-                indexes.append(i)
+        # get indicies where Es is greater than E_boundary
+        indexes = np.array([i for i, E in enumerate(Es) if E > E_boundary])
 
-        return filtered, np.array(indexes)
+        return indexes
