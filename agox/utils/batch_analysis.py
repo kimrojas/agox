@@ -513,25 +513,6 @@ class Analysis:
         ax.set_xticks([])
         ax.set_yticks([])
 
-    def plot_structure_nice(self, ax, structure, scaling=radii_scaling, energy=None):
-        cell = structure.get_cell()
-        positions = structure.get_positions()
-
-        # Sort according to Z-axis: 
-        sort_idx = np.argsort(positions[:, 2])
-        positions = positions[sort_idx, :]
-
-        atom_types = structure.get_atomic_numbers()[sort_idx]
-        colors = [jmol_colors[num] for num in atom_types]
-        sizes = np.power(np.array([covalent_radii[num] for num in atom_types]) * scaling, 2)
-        scat = ax.scatter(positions[:, 0], positions[:, 1], color=colors, edgecolor='black', s=sizes)
-        
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_aspect('equal')
-        #ax.set_xlim([0, cell[0, 0]])
-        #ax.set_ylim([0, cell[1, 1]])
-
     def plot_energy(self, ax, set_labels=True):
         ax.set_title('Energy')
         for dir_idx in range(self.num_directories):
