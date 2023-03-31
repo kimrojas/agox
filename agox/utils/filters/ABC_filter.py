@@ -30,7 +30,7 @@ class FilterBaseClass(ABC):
 
     def filter(self, atoms: List[Atoms]) -> Tuple[List[Atoms], np.ndarray]:
         indexes = self._filter(atoms)
-        return atoms[indexes], indexes
+        return [atoms[i] for i in indexes], indexes
 
     @abstractmethod
     def _filter(self, atoms: List[Atoms]) -> Tuple[List[Atoms], np.ndarray]:
@@ -93,9 +93,9 @@ class SumFilter(FilterBaseClass):
         List[Atoms]
             The filtered atoms object.
         """
-        f0, idx0 = self.f0(atoms)
-        f1, idx1 = self.f1(atoms)
-        return f1, idx0[idx1]
+        f0_atoms, idx0 = self.f0(atoms)
+        _, idx1 = self.f1(f0_atoms)
+        return idx0[idx1]
 
     @property
     def name(self) -> str:
