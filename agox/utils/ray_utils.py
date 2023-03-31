@@ -39,7 +39,6 @@ def ray_startup(cpu_count, memory, tmp_dir):
         tmp_dir = os.path.join(path, 'ray')
 
         number_of_bytes = len(tmp_dir.encode('utf-8')) + 61
-        print(number_of_bytes)
 
         if number_of_bytes >= 107:
             tmp_dir = os.path.expanduser('~') + '/tmp/ray'
