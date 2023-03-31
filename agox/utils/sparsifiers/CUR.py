@@ -1,7 +1,4 @@
-from typing import List, Optional
-
 import numpy as np
-from ase import Atoms
 from scipy.linalg import svd
 
 from agox.utils.sparsifiers.ABC_sparsifier import SparsifierBaseClass
@@ -10,11 +7,7 @@ from agox.utils.sparsifiers.ABC_sparsifier import SparsifierBaseClass
 class CUR(SparsifierBaseClass):
     name = "CUR"
 
-    def sparsify(
-        self, atoms: Optional[List[Atoms]] = None, X: Optional[np.ndarray] = None
-    ) -> np.ndarray:
-        X = self.preprocess(atoms, X)
-
+    def sparsify(self, X: np.ndarray) -> np.ndarray:
         if X.shape[0] < self.m_points:
             m_indices = np.arange(0, X.shape[0])
             return X, m_indices

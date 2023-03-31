@@ -36,6 +36,8 @@ class SparseGPR(GPR):
         Inverse of K_mm
     L : np.ndarray
         Matrix of ones and zeros indicating which atoms are in which configuration
+    sparsifier: SparsifierBaseClass
+        Sparsifier object
     
 
     Methods
@@ -50,9 +52,8 @@ class SparseGPR(GPR):
         noise: float = 0.05,
         centralize: bool = False,
         jitter: float = 1e-8,
-        sparsifier_cls: List[SparsifierBaseClass] = [CUR],
-        sparsifier_args: List[Tuple[int, ...]] = [(200,), (1000,)],
-        sparsifier_kwargs: List[Dict] = List[{}],
+        filter=None,
+        sparsifier: SparsifierBaseClass = CUR(),
         **kwargs
     ) -> None:
         """
@@ -61,20 +62,19 @@ class SparseGPR(GPR):
         ----------
         noise : float
             Noise level
+        sparsifier : SparsifierBaseClass
+            Sparsifier object
         jitter : float
             Jitter level
 
         """
-        super().__init__(
-            centralize=centralize,
-            sparsifier_cls=sparsifier_cls,
-            sparsifier_args=sparsifier_args,
-            sparsifier_kwargs=sparsifier_kwargs,
-            **kwargs
-        )
+
+        super().__init__(centralize=centralize, filter=filter**kwargs)
 
         self.jitter = jitter
         self.noise = noise
+
+        self.sparsifier = sparsifier
 
         self._transfer_data = []
         self._transfer_noise = np.array([])
@@ -273,7 +273,7 @@ class SparseGPR(GPR):
         assert self.Xn is not None, "self.Xn must be set prior to call"
         assert self.L is not None, "self.L must be set prior to call"
         assert self.Y is not None, "self.Y must be set prior to call"
-        
+
         self.Xm, _ = self.sparsifier(atoms=self.transfer_data + data, X=self.Xn)
         self.X = self.Xm
 

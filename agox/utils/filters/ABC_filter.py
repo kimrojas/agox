@@ -1,16 +1,14 @@
 from abc import ABC, abstractmethod
-from typing import List, Union, Tuple
+from typing import List, Tuple
 
+import numpy as np
 from ase import Atoms
-
-from agox.utils.sparsifiers.ABC_sparsifier import (SparsifierBaseClass,
-                                                   SumSparsifier)
 
 
 class FilterBaseClass(ABC):
     """Base class for filters.
 
-    This class is used to define the interface for filters. All filters
+    This class is used to define the base class for filters. All filters
     should inherit from this class and implement the methods defined here.
 
     Attributes
@@ -30,8 +28,12 @@ class FilterBaseClass(ABC):
         """Initialize the filter."""
         super().__init__(**kwargs)
 
+    def filter(self, atoms: List[Atoms]) -> Tuple[List[Atoms], np.ndarray]:
+        indexes = self._filter(atoms)
+        return atoms[indexes], indexes
+
     @abstractmethod
-    def _filter(self, atoms: List[Atoms]) -> Tuple[List[Atoms], List[Atoms]]:
+    def _filter(self, atoms: List[Atoms]) -> Tuple[List[Atoms], np.ndarray]:
         """Filter the atoms object.
 
         Parameters
@@ -51,17 +53,11 @@ class FilterBaseClass(ABC):
     def name(self) -> str:
         return NotImplementedError
 
-    def __call__(self, atoms: List[Atoms], **kwargs) -> List[Atoms]:
-        indexes = self._filter(atoms)
-        return atoms[indexes], indexes
+    def __call__(self, atoms: List[Atoms]) -> List[Atoms]:
+        return self.filter(atoms)
 
-    def __add__(self, other: Union["FilterBaseClass", SparsifierBaseClass]):
-        if isinstance(other, FilterBaseClass):
-            return SumFilter(f0=self, f1=other)
-        elif isinstance(other, SparsifierBaseClass):
-            return SumSparsifier(s0=self, s1=other)
-        else:
-            raise TypeError(f"Cannot add {type(self)} and {type(other)}")
+    def __add__(self, other: "FilterBaseClass"):
+        return SumFilter(f0=self, f1=other)
 
 
 class SumFilter(FilterBaseClass):
@@ -84,7 +80,7 @@ class SumFilter(FilterBaseClass):
         self.f0 = f0
         self.f1 = f1
 
-    def filter(self, atoms: List[Atoms]) -> List[Atoms]:
+    def _filter(self, atoms: List[Atoms]) -> List[Atoms]:
         """Filter the atoms object.
 
         Parameters

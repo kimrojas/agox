@@ -34,6 +34,7 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
     def __init__(
         self,
         database=None,
+        filter=None,
         order=0,
         verbose=True,
         use_counter=True,
@@ -68,6 +69,7 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
         Calculator.__init__(self)
         Module.__init__(self)
 
+        self.filter = filter
         self._save_attributes = ["_ready_state"]
 
         self.verbose = verbose

@@ -1,11 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Union, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 from ase import Atoms
-
-from agox.models.descriptors import DescriptorBaseClass
-from agox.utils.filters import FilterBaseClass
 
 
 class SparsifierBaseClass(ABC):
@@ -29,9 +26,7 @@ class SparsifierBaseClass(ABC):
 
     def __init__(
         self,
-        descriptor: DescriptorBaseClass,
         m_points: int = 1000,
-        descriptor_type: str = "global",
         **kwargs,
     ) -> None:
         """
@@ -47,22 +42,14 @@ class SparsifierBaseClass(ABC):
         """
         super().__init__(**kwargs)
         self.m_points = m_points
-        self.descriptor = descriptor
-        self.feature_method = getattr(
-            self.descriptor, "get_" + descriptor_type + "_features"
-        )
 
     @abstractmethod
-    def sparsify(
-        self, atoms: Optional[List[Atoms]] = None, X: Optional[np.ndarray] = None
-    ) -> tuple[np.ndarray, np.ndarray]:
+    def sparsify(self, X: Optional[np.ndarray] = None) -> Tuple[np.ndarray, np.ndarray]:
         """
         Returns a matrix with the same number of columns together with which rows are selected.
 
         Parameters
         ----------
-        atoms : List[Atoms]
-            List of atoms objects
         X : np.ndarray
             Matrix with rows corresponding to features
 
@@ -80,28 +67,6 @@ class SparsifierBaseClass(ABC):
     def name(self) -> str:
         return NotImplementedError
 
-    def preprocess(
-        self, atoms: Optional[List[Atoms]] = None, X: Optional[np.ndarray] = None
-    ) -> np.ndarray:
-        """
-        Preprocess the data by computing the features.
-
-        Parameters
-        ----------
-        atoms : List[Atoms]
-            List of atoms objects
-
-        Returns
-        -------
-        X : np.ndarray
-            Matrix with rows corresponding to features
-
-        """
-        if X is None:
-            assert atoms is not None, "Either atoms or X must be provided"
-            X = self.feature_method(atoms)
-        return X
-
     def __call__(
         self, atoms: Optional[List[Atoms]] = None, X: Optional[np.ndarray] = None
     ) -> np.ndarray:
@@ -113,12 +78,12 @@ class SparsifierBaseClass(ABC):
 
 class SumSparsifier(SparsifierBaseClass):
     """
-    Sum of two sparsifiers or a filter and a sparsifier.
+    Sum of two sparsifiers
 
     Attributes
     ----------
-    s0 : Union[SparsifierBaseClass, FilterBaseClass]
-        First sparsifier or filter
+    s0 : SparsifierBaseClass
+        First sparsifier
     s1 : SparsifierBaseClass
         Second sparsifier
 
@@ -126,7 +91,7 @@ class SumSparsifier(SparsifierBaseClass):
 
     def __init__(
         self,
-        s0: Union[SparsifierBaseClass, FilterBaseClass],
+        s0: SparsifierBaseClass,
         s1: SparsifierBaseClass,
         **kwargs,
     ) -> None:
@@ -135,32 +100,14 @@ class SumSparsifier(SparsifierBaseClass):
         self.s0 = s0
         self.s1 = s1
 
-        if isinstance(s0, SparsifierBaseClass):
-            self.output = "X"
-            # assert that the descriptor is the same
-            assert s0.descriptor == s1.descriptor, "Descriptors must be the same"
+        self.m_points = s1.m_points
 
-        elif isinstance(s0, FilterBaseClass):
-            self.output = "atoms"
-        else:
-            raise ValueError(
-                "Cannot sum something that is not a sparsifier or a filter"
-            )
-
-        # assert that s1 is not a filter
-        if isinstance(s1, FilterBaseClass):
-            raise ValueError("Cannot do: sparsifier + filter!")
-
-    def sparsify(
-        self, atoms: Optional[List[Atoms]] = None, X: Optional[np.ndarray] = None
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def sparsify(self, X: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         Returns a matrix with the same number of columns together with which rows are selected.
 
         Parameters
         ----------
-        atoms : List[Atoms]
-            List of atoms objects
         X : np.ndarray
             Matrix with rows corresponding to features
 
@@ -171,18 +118,9 @@ class SumSparsifier(SparsifierBaseClass):
         selected : array-like, shape (m_points,)
         """
         # select with s0
-        input, opt = self.s0(atoms=atoms, X=X)
-
-        if self.output == "X":
-            Xm, selected = self.s1(X=input)
-            return Xm, opt[selected]
-        elif self.output == "atoms":
-            Xm, selected = self.s1(atoms=input)
-            return Xm, opt[selected]
-        else:
-            raise ValueError(
-                "Cannot sum something that is not a sparsifier or a filter"
-            )
+        Xm0, idxs0 = self.s0(X=X)
+        Xm, idxs1 = self.s1(X=Xm0)
+        return Xm, idxs0[idxs1]
 
     @property
     def name(self):

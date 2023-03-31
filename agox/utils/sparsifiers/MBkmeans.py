@@ -1,8 +1,7 @@
+from typing import Optional
 from warnings import UserWarning
-from typing import List, Optional
 
 import numpy as np
-from ase import Atoms
 from sklearn.cluster import MiniBatchKMeans
 
 from agox.utils.sparsifiers.ABC_sparsifier import SparsifierBaseClass
@@ -21,13 +20,12 @@ class MBkmeans(SparsifierBaseClass):
     ):
         super().__init__(**kwargs)
 
-        #Throw a warning saying that this cannot be used with other sparsifiers
         UserWarning(
             "MBkmeans cannot be used with other sparsifiers. "
             "Or together with a method that requires indices of selected features"
             "Use k-medoids instead."
         )
-        
+
         self.batch_size = batch_size
         self.fast = fast
 
@@ -39,11 +37,7 @@ class MBkmeans(SparsifierBaseClass):
             n_init=3,
         )
 
-    def sparsify(
-        self, atoms: Optional[List[Atoms]] = None, X: Optional[np.ndarray] = None
-    ) -> np.ndarray:
-        X = self.preprocess(atoms, X)
-
+    def sparsify(self, X: np.ndarray) -> np.ndarray:
         if X.shape[0] < self.m_points:
             m_indices = np.arange(0, X.shape[0])
             return X, m_indices

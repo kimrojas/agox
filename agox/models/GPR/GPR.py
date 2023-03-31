@@ -12,7 +12,6 @@ from agox.models.GPR.kernels import Kernel
 from agox.utils import candidate_list_comprehension
 from agox.utils.filters import EnergyFilter, FilterBaseClass
 from agox.utils.ray_utils import RayPoolUser, ray_kwarg_keys
-from agox.utils.sparsifiers import CUR, SparsifierBaseClass
 
 
 class GPR(ModelBaseClass, RayPoolUser):
@@ -33,14 +32,10 @@ class GPR(ModelBaseClass, RayPoolUser):
         Descriptor type.
     prior : ModelBaseClass
         Prior model object.
-    sparsifier : SparsifierBaseClass
-        Sparsifier object.
     single_atom_energies : dict
         Dictionary of single atom energies.
     use_prior_in_training : bool
         Whether to use prior in training.
-    sparsifier : SparsifierBaseClass
-        Sparsifier object.
     centralize : bool
         Whether to centralize the energy.
     alpha : np.ndarray
@@ -87,12 +82,10 @@ class GPR(ModelBaseClass, RayPoolUser):
         prior: ModelBaseClass = None,
         single_atom_energies: Union[List[float], Dict[str, float]] = None,
         use_prior_in_training: bool = False,
-        sparsifier_cls: List[SparsifierBaseClass] = [EnergyFilter, CUR],
-        sparsifier_args: List[Tuple[int, ...]] = [(200,), (1000,)],
-        sparsifier_kwargs: List[Dict] = List[{}],
         n_optimize: int = 1,
         optimizer_maxiter: int = 100,
         centralize: bool = True,
+        filter: FilterBaseClass = EnergyFilter(),
         **kwargs
     ) -> None:
         """
@@ -106,25 +99,17 @@ class GPR(ModelBaseClass, RayPoolUser):
             Feature method.
         prior : ModelBaseClass
             Prior model object.
-        sparsifier_cls : SparsifierBaseClass
-            Sparsifier object
-        sparsifier_args : tuple
-            Arguments for the sparsifier
-        sparsifier_kwargs : dict
-            Keyword arguments for the sparsifier
         single_atom_energies : dict
             Dictionary of single atom energies.
         use_prior_in_training : bool
             Whether to use prior in training.
-        sparsifier : SparsifierBaseClass
-            Sparsifier object
 
         centralize : bool
             Whether to centralize the energy.
 
         """
         ray_kwargs = {key: kwargs.pop(key, None) for key in ray_kwarg_keys}
-        ModelBaseClass.__init__(self, **kwargs)
+        ModelBaseClass.__init__(self, filter=filter, **kwargs)
         RayPoolUser.__init__(self, **ray_kwargs)
 
         self.descriptor = descriptor
@@ -138,33 +123,6 @@ class GPR(ModelBaseClass, RayPoolUser):
         self.prior = prior
         self.single_atom_energies = single_atom_energies
         self.use_prior_in_training = use_prior_in_training
-
-        if sparsifier_cls is not None:
-            sparsifier_list = []
-            for cls, args, kwargs in zip(
-                sparsifier_cls, sparsifier_args, sparsifier_kwargs
-            ):
-                if issubclass(cls, SparsifierBaseClass):
-                    sparsifier = cls(
-                        descriptor=descriptor,
-                        descriptor_type=descriptor_type,
-                        *args,
-                        **kwargs
-                    )
-                elif issubclass(cls, FilterBaseClass):
-                    sparsifier = cls(*args, **kwargs)
-                else:
-                    raise ValueError(
-                        "Sparsifier class must be a subclass of SparsifierBaseClass or FilterBaseClass"
-                    )
-
-            self.sparsifier = sum(sparsifier_list)
-            assert isinstance(
-                self.sparsifier, SparsifierBaseClass
-            ), "Sparsifier must be a subclass of SparsifierBaseClass"
-        else:
-            self.sparsifier = None
-
 
         self.n_optimize = n_optimize
         self.optimizer_maxiter = optimizer_maxiter
@@ -401,25 +359,16 @@ class GPR(ModelBaseClass, RayPoolUser):
         List of strings with model information
         """
         x = "    "
-        sparsifier_name = (
-            self.sparsifier.name if self.sparsifier is not None else "None"
-        )
-        
-        try:
-            sparsifier_mpoints = (
-                self.sparsifier.m_points if self.sparsifier is not None else "None"
-            )
-        except AttributeError:
-            sparsifier_mpoints = "None"
-            
+        filter_name = self.filter.name if self.filter is not None else "None"
+
         out = [
             "------ Model Info ------",
             "Descriptor:",
             x + "{}".format(self.descriptor.name),
             "Kernel:",
             x + "{}".format(self.kernel),
-            "Sparsifier:",
-            x + "{} selecting {} points".format(sparsifier_name, sparsifier_mpoints),
+            "Filter:",
+            x + "{}".format(filter_name),
             "------ Training Info ------",
             "Training data size: {}".format(self.X.shape[0]),
             "Neg. log marginal likelihood.: {:.2f}".format(self.nlml),
@@ -530,10 +479,6 @@ class GPR(ModelBaseClass, RayPoolUser):
         Train the model
 
         """
-        if self.sparsifier is not None:
-            self.X, m_idx = self.sparsifier(atoms=training_data, X=self.X)
-            self.Y = self.Y[m_idx]
-
         if self.use_ray:
             self.pool_synchronize(attributes=["X", "Y"], writer=self.writer)
             self.hyperparameter_search_parallel()
@@ -565,6 +510,9 @@ class GPR(ModelBaseClass, RayPoolUser):
             Targets.
 
         """
+        if self.filter is not None:
+            data, _ = self.filter(data)
+
         Y = np.expand_dims(np.array([d.get_potential_energy() for d in data]), axis=1)
 
         if self.prior is None or not self.use_prior_in_training:

@@ -24,7 +24,7 @@ class EnergyFilter(FilterBaseClass):
         super().__init__(**kwargs)
         self.delta_E = delta_E
 
-    def filter(self, atoms: List[Atoms]) -> Tuple[List[Atoms], List[Atoms]]:
+    def _filter(self, atoms: List[Atoms]) -> Tuple[List[Atoms], List[Atoms]]:
         filtered = []
         indexes = []
         Es = np.array([a.get_potential_energy() for a in atoms])
