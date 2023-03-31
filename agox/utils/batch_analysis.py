@@ -6,6 +6,7 @@ import re
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
 from agox.databases.database import Database, export_candidates
+from agox.utils.plot import plot_atoms, plot_cell
 from ase.data.colors import jmol_colors
 from ase.data import covalent_radii
 from time import strftime
@@ -582,36 +583,15 @@ class Analysis:
         return structures, energies
 
     def animate_structure(self, ax):
-        from agox.helpers.plot_confinement import plot_cell
-
         structures, energies = self.get_best_structures()
 
-        cell = structures[0].get_cell()
-        positions = structures[0].get_positions()
-        atom_types = structures[0].get_atomic_numbers()
+        pcs = plot_atoms(ax, structures[0])
+        plot_cell(ax, structures[0].cell, collection_kwargs=dict(zorder=2))
+        ax.autoscale_view()
 
-        # Sort according to Z-axis: 
-        sort_idx = np.argsort(positions[:, 2])
-        positions = positions[sort_idx, :]
-        atom_types = atom_types[sort_idx]
-
-        colors = [jmol_colors[num] for num in atom_types]
-        sizes = np.power(np.array([covalent_radii[num] for num in atom_types]) * radii_scaling, 2)
-
-        scat = ax.scatter(positions[:, 0], positions[:, 1], color=colors, edgecolor='black', s=sizes)
-
-        plot_cell(ax, cell, np.array([0, 0, 0]), color='black', linestyle='--', use_combinations=False)
-
-        # im = ax.imshow(images[0], cmap='gray', interpolation='nearest')
         ax.set_title('Best Structure')
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_aspect('equal')
 
-        #ax.set_xlim([0, cell[0, 0]])
-        #ax.set_ylim([0, cell[1, 1]])
-
-        return scat, structures, energies
+        return pcs, structures, energies
 
     def plot_energy_distribution(self, ax, energy_range = 50, iteration_start=100, iteration_end=101, best=True): # New
         """
@@ -685,7 +665,7 @@ class Analysis:
 
 class KeyBoardEvent:
 
-    def __init__(self, fig, struct_scat, structures, energies, named_axes):
+    def __init__(self, fig, atoms_pcs, structures, energies, named_axes):
         self.ind = 0
 
         self.structures = structures
@@ -694,9 +674,11 @@ class KeyBoardEvent:
 
         # Plot objects:
         self.fig = fig
+        self.atoms_pcs = atoms_pcs
 
         # Axes:
         self.named_axes = named_axes
+        self.struct_ax = self.named_axes[0]
         self.hist_ax = self.named_axes[3]
 
         self.hist = self.hist_ax is not None
@@ -705,29 +687,17 @@ class KeyBoardEvent:
             limits = self.hist_ax.get_ylim()
             self.hist_line, = self.hist_ax.plot([self.energies[0], self.energies[0]], [0, limits[1]], color='black')
 
-    def update_scatter(self, index):
-        cell = self.structures[index].get_cell()
-        structure = self.structures[index].repeat((3,3,1))
-        structure.translate(-cell[0]-cell[1])
-        positions = structure.get_positions()
-        atomic_numbers = structure.get_atomic_numbers()
+    def update_atoms(self, index):
+        for pc in self.atoms_pcs:
+            pc.remove()
+        
+        self.atoms_pcs = plot_atoms(self.struct_ax, self.structures[index])
 
-        # Sort according to z-coordiantes   
-        sort_idx = np.argsort(positions[:, 2])
-        positions = positions[sort_idx, :][:, 0:2]
-        atomic_numbers = atomic_numbers[sort_idx]
-
-        colors = np.array([jmol_colors[t] for t in atomic_numbers])
-        sizes = np.power(np.array([covalent_radii[num] for num in atomic_numbers]) * radii_scaling, 2)
-
-        self.struct_scat.set_offsets(positions)
-        self.struct_scat.set_facecolor(colors)
-        self.struct_scat.set_sizes(sizes)
         try:
             energy = '${:8.3f}$'.format(self.structures[index].get_potential_energy())
         except:
             energy = 'NaN'
-        title = '{}\n{}'.format(self.structures[index].db,energy)
+        title = '{}\n{}'.format(self.structures[index].db, energy)
         self.named_axes[0].set_title(title)
 
     def update_hist(self, index):
@@ -737,7 +707,7 @@ class KeyBoardEvent:
         if event.key == 'right':
             self.ind += 1
             i = self.ind % self.num
-            self.update_scatter(i)
+            self.update_atoms(i)
 
             if self.hist:
                 self.update_hist(i)
@@ -747,7 +717,7 @@ class KeyBoardEvent:
         if event.key == 'left':
             self.ind -= 1
             i = self.ind % self.num
-            self.update_scatter(i)
+            self.update_atoms(i)
 
             if self.hist:
                 self.update_hist(i)
@@ -840,7 +810,7 @@ def command_line_analysis():
         ax_idx = 0
         if plot_structure:
             if animate:
-                struct_scat, structures, energies = A.animate_structure(axes[ax_idx])
+                atoms_pcs, structures, energies = A.animate_structure(axes[ax_idx])
             else:
                 A.plot_structure(axes[ax_idx], A.global_best_structure)
 
@@ -873,7 +843,7 @@ def command_line_analysis():
         if animate:
             if plot_structure:
                 named_axes = [struct_ax, cdf_ax, energy_ax, hist_ax]
-                callback = KeyBoardEvent(fig, struct_scat, structures, energies, named_axes=named_axes)
+                callback = KeyBoardEvent(fig, atoms_pcs, structures, energies, named_axes=named_axes)
                 fig.canvas.mpl_connect('key_press_event', callback.press)
             else:
                 print("To use the animation, the structure has to be plotted")
