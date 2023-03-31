@@ -54,6 +54,7 @@ class SparseGPR(GPR):
         jitter: float = 1e-8,
         filter=None,
         sparsifier: SparsifierBaseClass = CUR(),
+        descriptor_type="local",
         **kwargs
     ) -> None:
         """
@@ -69,7 +70,12 @@ class SparseGPR(GPR):
 
         """
 
-        super().__init__(centralize=centralize, filter=filter, **kwargs)
+        super().__init__(
+            centralize=centralize,
+            filter=filter,
+            descriptor_type=descriptor_type,
+            **kwargs
+        )
 
         self.jitter = jitter
         self.noise = noise
@@ -241,24 +247,38 @@ class SparseGPR(GPR):
         List of strings with model information
         """
         x = "    "
+
+        filter_name = self.filter.name if self.filter is not None else "None"
+        try:
+            data_before_filter = self._data_before_filter
+            data_after_filter = self._data_after_filter
+            filter_removed_data = self._data_before_filter - self._data_after_filter
+        except AttributeError:
+            filter_removed_data = 0
+
         sparsifier_name = (
             self.sparsifier.name if self.sparsifier is not None else "None"
         )
         sparsifier_mpoints = (
             self.sparsifier.m_points if self.sparsifier is not None else "None"
         )
+
         out = [
             "------ Model Info ------",
             "Descriptor:",
             x + "{}".format(self.descriptor.name),
             "Kernel:",
             x + "{}".format(self.kernel),
+            "Filter:",
+            x + "{} removed {} structures".format(filter_name, filter_removed_data),
+            x+x + "Data before filter: {}".format(data_before_filter),
+            x+x + "Data after filter: {}".format(data_after_filter),            
             "Sparsifier:",
             x + "{} selecting {} points".format(sparsifier_name, sparsifier_mpoints),
             "Noise:",
             x + "{}".format(self.noise),
             "------ Training Info ------",
-            "Training data size: {}".format(self.X.shape[0]),
+            "Training data size: {}".format(self.Y.shape[0]),
             "Number of local environments: {}".format(self.Xn.shape[0]),
             "Number of inducing points: {}".format(self.Xm.shape[0]),
         ]
@@ -273,9 +293,6 @@ class SparseGPR(GPR):
         assert self.Xn is not None, "self.Xn must be set prior to call"
         assert self.L is not None, "self.L must be set prior to call"
         assert self.Y is not None, "self.Y must be set prior to call"
-
-        self.Xm, _ = self.sparsifier(atoms=self.transfer_data + data, X=self.Xn)
-        self.X = self.Xm
 
         self.K_mm = self.kernel(self.Xm)
         self.K_nm = self.kernel(self.Xn, self.Xm)
@@ -315,7 +332,12 @@ class SparseGPR(GPR):
         self.L = self._make_L(self.transfer_data + data, X.shape)
         self.sigma_inv = self._make_sigma(self.transfer_data + data)
 
-        return X, Y
+        if self.sparsifier is not None:
+            self.Xm, _ = self.sparsifier(self.Xn)
+        else:
+            self.Xm = self.Xn
+
+        return self.Xm, Y
 
     def _update(self, data: List[Atoms]) -> None:
         """

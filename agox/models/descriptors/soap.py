@@ -46,7 +46,6 @@ class SOAP(DescriptorBaseClass):
             sparse=False)
 
         self.lenght = self.soap.get_number_of_features()
-        print('SOAP length:', self.lenght)
 
     def create_local_features(self, atoms):
         """Returns soap descriptor for "atoms".

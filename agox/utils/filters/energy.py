@@ -14,7 +14,7 @@ class EnergyFilter(FilterBaseClass):
 
     name = "EnergyFilter"
 
-    def __init__(self, delta_E: float = 100, **kwargs):
+    def __init__(self, delta_E: float = 1000, **kwargs):
         """
         Parameters
         ----------

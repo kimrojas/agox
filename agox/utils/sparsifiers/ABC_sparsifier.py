@@ -67,9 +67,7 @@ class SparsifierBaseClass(ABC):
     def name(self) -> str:
         return NotImplementedError
 
-    def __call__(
-        self, atoms: Optional[List[Atoms]] = None, X: Optional[np.ndarray] = None
-    ) -> np.ndarray:
+    def __call__(self, X: np.ndarray) -> np.ndarray:
         return self.sparsify(X)
 
     def __add__(self, other: "SparsifierBaseClass"):

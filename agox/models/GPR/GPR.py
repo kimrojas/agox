@@ -81,7 +81,7 @@ class GPR(ModelBaseClass, RayPoolUser):
         descriptor_type: str = "global",
         prior: ModelBaseClass = None,
         single_atom_energies: Union[List[float], Dict[str, float]] = None,
-        use_prior_in_training: bool = False,
+        use_prior_in_training: bool = True,
         n_optimize: int = 1,
         optimizer_maxiter: int = 100,
         centralize: bool = True,
@@ -154,6 +154,13 @@ class GPR(ModelBaseClass, RayPoolUser):
             List of Atoms objects.
 
         """
+        
+        self._data_before_filter = len(training_data)
+        if self.filter is not None:
+            training_data, _ = self.filter(training_data)
+        self._data_after_filter = len(training_data)
+
+        
         if self.update:
             self.X, self.Y = self._update(training_data, **kwargs)
         else:
@@ -361,6 +368,8 @@ class GPR(ModelBaseClass, RayPoolUser):
         x = "    "
         filter_name = self.filter.name if self.filter is not None else "None"
         try:
+            data_before_filter = self._data_before_filter
+            data_after_filter = self._data_after_filter
             filter_removed_data = self._data_before_filter - self._data_after_filter
         except AttributeError:
             filter_removed_data = 0
@@ -372,7 +381,9 @@ class GPR(ModelBaseClass, RayPoolUser):
             "Kernel:",
             x + "{}".format(self.kernel),
             "Filter:",
-            x + "{} removed {} data points".format(filter_name, filter_removed_data),
+            x + "{} removed {} structures".format(filter_name, filter_removed_data),
+            x+x + "Data before filter: {}".format(data_before_filter),
+            x+x + "Data after filter: {}".format(data_after_filter),
             "------ Training Info ------",
             "Training data size: {}".format(self.X.shape[0]),
             "Neg. log marginal likelihood.: {:.2f}".format(self._nlml),
@@ -514,10 +525,6 @@ class GPR(ModelBaseClass, RayPoolUser):
             Targets.
 
         """
-        self._data_before_filter = len(data)
-        if self.filter is not None:
-            data, _ = self.filter(data)
-        self._data_after_filter = len(data)
 
         Y = np.expand_dims(np.array([d.get_potential_energy() for d in data]), axis=1)
 
