@@ -358,7 +358,9 @@ class SparseGPR(GPR):
         new, old = self._get_new_data(data)
         if len(new) == len(data):
             return self._preprocess(data)
-
+        if len(new) == 0:
+            return self.X, self.Y
+        
         X_new, Y_new = super()._preprocess(new)
 
         X = np.vstack((self.X, X_new))
