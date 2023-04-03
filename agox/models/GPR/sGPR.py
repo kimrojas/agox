@@ -49,7 +49,7 @@ class SparseGPR(GPR):
 
     def __init__(
         self,
-        noise: float = 0.05,
+        noise: float = 0.01,
         centralize: bool = False,
         jitter: float = 1e-8,
         filter=None,
@@ -58,7 +58,7 @@ class SparseGPR(GPR):
         **kwargs
     ) -> None:
         """
-
+        
         Parameters
         ----------
         noise : float
@@ -69,7 +69,6 @@ class SparseGPR(GPR):
             Jitter level
 
         """
-
         super().__init__(
             centralize=centralize,
             filter=filter,

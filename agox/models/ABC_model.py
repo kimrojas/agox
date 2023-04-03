@@ -443,8 +443,8 @@ class ModelBaseClass(Calculator, Observer, Writer, ABC):
             "Energy MAE [eV]": np.mean(np.abs(E_true - E_pred)),
             "Energy RMSE [eV]": np.sqrt(np.mean((E_true - E_pred) ** 2)),
             "Max absolute energy error [eV]": np.max(np.abs(E_true - E_pred)),
-            "Max relative energy error [\%]": np.max(E_true - E_pred / E_true),
-            "Min relative energy error [\%]": np.min(E_true - E_pred / E_true),
+            "Max relative energy error [%]": np.max((E_true - E_pred) / E_true)*100,
+            "Min relative energy error [%]": np.min((E_true - E_pred) / E_true)*100,
         }
 
     def _training_record(self, data):
