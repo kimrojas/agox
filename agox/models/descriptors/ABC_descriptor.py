@@ -11,7 +11,7 @@ class DescriptorBaseClass(ABC, Module):
 
     feature_types = []
 
-    def __init__(self, environment, surname='', use_cache=False, **kwargs):
+    def __init__(self, environment, surname='', use_cache=True, **kwargs):
         Module.__init__(self, surname=surname, use_cache=use_cache)
         assert np.array([feature_type in all_feature_types for feature_type in self.feature_types]).all(), 'Unknown feature type declared.'
         
