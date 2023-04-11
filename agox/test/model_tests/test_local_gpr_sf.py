@@ -1,17 +1,20 @@
 import pytest
 import numpy as np
-from agox.models.local_GPR.LSGPR_MBKMeans import LSGPRModelMBKMeans
+from agox.models.local_GPR.LSGPR_CUR import LSGPRModelCUR
 from agox.models.descriptors.soap import SOAP
+from agox.models.descriptors.simple_fingerprint import SimpleFingerprint
 
 from agox.test.model_tests.model_utils import model_tester
 from agox.test.test_utils import get_test_data, get_test_environment, load_expected_data, save_expected_data, label_dict_list
 from agox.test.test_utils import test_data_dicts, get_name, check_file_is_deleted
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 
+
+
 # Weird kernel specification is because of accurcay in Sklearn that does such a conversion. 
 kernel = C(1.)*RBF(length_scale=np.exp(np.log(20.)))
-model_class = LSGPRModelMBKMeans
-model_maker = LSGPRModelMBKMeans
+model_class = LSGPRModelCUR
+model_maker = LSGPRModelCUR
 model_base_args = []
 model_base_kwargs = {}
 
@@ -27,7 +30,7 @@ def update_kwargs(request):
 
 @pytest.mark.parametrize('test_data_dict', test_data_dicts)
 def test_model(test_data_dict, update_kwargs, cmd_options):
-    pytest.skip('This test is not yet working, due to tolerances on different machines making it unreliable.')
+    pytest.skip('This test is not yet working always due to tolerances on different machines.')
     create_mode = cmd_options['create_mode']
     test_mode = not create_mode
     tolerance = cmd_options['tolerance']
@@ -39,11 +42,13 @@ def test_model(test_data_dict, update_kwargs, cmd_options):
     dataset_name = test_data_dict['name']
     parameter_index = 0
 
+    # Gather environment and data:
     environment = get_test_environment(path, remove)
     data = get_test_data(path, environment)
 
-    # Extra stuff:
-    descriptor = SOAP(environment.get_all_species(), periodic=environment.get_template().pbc.any())
+    # Update the kwargs for the model. 
+    #descriptor = SOAP(environment.get_all_species(), periodic=environment.get_template().pbc.any())
+    descriptor = SimpleFingerprint(environment.get_all_species())
     update_kwargs['descriptor'] = descriptor
     # Slightly complicated way of building input args & kwargs:
     if 'environment' in update_kwargs.keys():
@@ -54,7 +59,7 @@ def test_model(test_data_dict, update_kwargs, cmd_options):
 
     # Where to load/save data. 
     subfolder = 'model_tests/'
-    module_name = model_class.name
+    module_name = model_class.name + 'sf'
     name = get_name(module_name, subfolder, dataset_name, parameter_index)
     if test_mode:
         expected_data = load_expected_data(name) 
@@ -67,3 +72,13 @@ def test_model(test_data_dict, update_kwargs, cmd_options):
     if not test_mode:
         check_file_is_deleted(name)
         save_expected_data(name, output)
+
+
+
+
+
+
+
+
+
+
