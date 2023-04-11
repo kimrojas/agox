@@ -56,7 +56,6 @@ setup(
             "dscribe",
             "ray==2.0.0",
             "pytest",
-            "jax",
         ]
     },
     python_requires=">=3.5",
