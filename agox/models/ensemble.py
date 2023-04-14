@@ -2,15 +2,17 @@ from agox.models.ABC_model import ModelBaseClass
 import numpy as np
 from agox.observer import Observer
 from agox.writer import agox_writer
+from ase.calculators.calculator import Calculator, all_changes
 
 class Ensemble(ModelBaseClass):
 
     name = 'Ensemble'
     implemented_properties = ['energy', 'forces', 'uncertainty', 'force_uncertainty']
 
-    def __init__(self, model_list, **kwargs):
+    def __init__(self, model_list, uncertainty_bound=np.inf, **kwargs):
         super().__init__(**kwargs)
         self.model_list = model_list
+        self.uncertainty_bound = uncertainty_bound
 
     ############################################################################
     # Ensemble methods for training and predicting
@@ -84,3 +86,17 @@ class Ensemble(ModelBaseClass):
 
         data = database.get_all_candidates()
         self.train_model(data)
+
+    def calculate(self, atoms=None,
+                  properties=['energy'],
+                  system_changes=all_changes):
+        Calculator.calculate(self, atoms, properties, system_changes)
+
+        E, E_err = self.predict_energy(self.atoms, return_uncertainty=True)
+        self.results['energy'] = E
+        self.results['uncertainty'] = E_err
+        
+        if 'forces' in properties:
+            forces,f_err = self.predict_forces(self.atoms, return_uncertainty=True)
+            self.results['forces'] = forces
+            self.results['force_uncertainty'] = f_err
