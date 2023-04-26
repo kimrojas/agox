@@ -3,16 +3,20 @@ import numpy as np
 from agox.observer import Observer
 from agox.writer import agox_writer
 from ase.calculators.calculator import Calculator, all_changes
+from agox.module import register_modules
 
 class Ensemble(ModelBaseClass):
 
     name = 'Ensemble'
     implemented_properties = ['energy', 'forces', 'uncertainty', 'force_uncertainty']
+    dynamic_attributes = ['model_list']
 
     def __init__(self, model_list, uncertainty_bound=np.inf, **kwargs):
         super().__init__(**kwargs)
         self.model_list = model_list
         self.uncertainty_bound = uncertainty_bound
+
+        #register_modules(self, self.model_list, name='model_list')
 
     ############################################################################
     # Ensemble methods for training and predicting
