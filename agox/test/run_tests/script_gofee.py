@@ -45,7 +45,7 @@ environment = Environment(template=template, symbols='Au8Ni8',
     confinement_cell=confinement_cell, confinement_corner=confinement_corner)
 
 # Database
-db_path = 'db{}.db'.format(0) # From input argument!
+db_path = 'db{}.db'.format(database_index) # From input argument!
 database = Database(filename=db_path, order=6, write_frequency=1)
 
 ##############################################################################
@@ -81,7 +81,8 @@ relaxer = ParallelRelaxPostprocess(model=acquisitor.get_acquisition_calculator()
 evaluator = LocalOptimizationEvaluator(calc, 
     gets={'get_key':'prioritized_candidates'}, 
     optimizer_kwargs={'logfile':None}, store_trajectory=True,
-    optimizer_run_kwargs={'fmax':0.05, 'steps':1}, order=5)
+    optimizer_run_kwargs={'fmax':0.05, 'steps':1}, order=5, 
+    constraints=environment.get_constraints())
 
 ##############################################################################
 # Let get the show running! 
