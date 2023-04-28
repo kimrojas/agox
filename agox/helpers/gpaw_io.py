@@ -2,6 +2,7 @@ import numpy as np
 from ase.calculators.calculator import Calculator
 import os
 from ase.io import read, write, Trajectory
+import importlib.util
 import pickle
 
 """
@@ -95,7 +96,10 @@ class GPAW_IO(Calculator):
 
     def __init__(self, parexe=True, par_command='mpiexec', script_name='gpaw_calc.py', settings_name='gpaw_settings.pckl', modules=[], **kwargs):
         Calculator.__init__(self)
-        
+
+        if importlib.util.find_spec('gpaw') is None:
+            raise ModuleNotFoundError('GPAW Python module not found.')
+
         self.parexe = parexe
         self.par_command = par_command
 
@@ -163,6 +167,3 @@ class GPAW_IO(Calculator):
         # Write the script:
         with open(self.script_name, 'w') as f:
             print(calc_script, file=f)        
-
-
-
