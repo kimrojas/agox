@@ -10,6 +10,8 @@ test:
   image: registry.gitlab.com/agox/agox:latest
   script: 
   - virtualenv venv
+  - pip install matscipy
+  - pip list 
   - source venv/bin/activate
   - pip install --no-deps -e .
   - pytest agox/test/

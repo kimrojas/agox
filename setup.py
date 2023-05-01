@@ -50,6 +50,7 @@ setup(
         "matplotlib",
         "cymem",
         "scikit-learn",
+        "matscipy"
     ],
     extras_require={
         'full': [
