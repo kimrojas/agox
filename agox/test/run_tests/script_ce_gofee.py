@@ -13,9 +13,13 @@ from agox.models import ModelGPR
 from agox.acquisitors import LowerConfidenceBoundAcquisitor
 from agox.postprocessors import ParallelRelaxPostprocess
 from ase import Atoms
+from agox.models.descriptors.exponential_density import ExponentialDensity
+from agox.generators.ce_generator import ComplementaryEnergyGenerator
+from agox.generators.complementary_energy.ce_calculators import ComplementaryEnergyDistanceCalculator
+from agox.generators.complementary_energy.attractor_methods.ce_attractors_current_structure import AttractorCurrentStructure
 
 # Manually set seed and database-index
-seed = 41
+seed = 42
 database_index = 0
 
 # Using argparse if e.g. using array-jobs on Slurm to do several independent searches. 
@@ -45,7 +49,7 @@ environment = Environment(template=template, symbols='Au8Ni8',
     confinement_cell=confinement_cell, confinement_corner=confinement_corner)
 
 # Database
-db_path = 'db{}.db'.format(database_index) # From input argument!
+db_path = 'db{}.db'.format(0) # From input argument!
 database = Database(filename=db_path, order=6, write_frequency=1)
 
 ##############################################################################
@@ -61,9 +65,17 @@ sampler = KMeansSampler(feature_calculator=model.get_feature_calculator(),
 rattle_generator = RattleGenerator(**environment.get_confinement())
 random_generator = RandomGenerator(**environment.get_confinement())
 
+lambs = [0.5, 1, 1.5]
+rc = 10.
+desc = ExponentialDensity(['Au', 'Ni'], lambs = lambs, rc = rc)
+ce_calc = ComplementaryEnergyDistanceCalculator(descriptor = desc)
+ce_attractors = AttractorCurrentStructure(desc, attractors_from_template = False)
+ce_attractors.attach(database)
+ce_generator = ComplementaryEnergyGenerator(ce_calc, desc, ce_attractors, **environment.get_confinement())
+
 # Dict specificies how many candidates are created with and the dict-keys are iterations. 
-generators = [random_generator, rattle_generator]
-num_candidates = {0:[10, 0], 5:[3, 7]}
+generators = [random_generator, rattle_generator, ce_generator]
+num_candidates = {0:[10, 0], 5:[3, 6, 1]}
 
 acquisitor = LowerConfidenceBoundAcquisitor(model_calculator=model, 
     kappa=2, order=4)
@@ -81,8 +93,7 @@ relaxer = ParallelRelaxPostprocess(model=acquisitor.get_acquisition_calculator()
 evaluator = LocalOptimizationEvaluator(calc, 
     gets={'get_key':'prioritized_candidates'}, 
     optimizer_kwargs={'logfile':None}, store_trajectory=True,
-    optimizer_run_kwargs={'fmax':0.05, 'steps':1}, order=5, 
-    constraints=environment.get_constraints())
+    optimizer_run_kwargs={'fmax':0.05, 'steps':1}, order=5)
 
 ##############################################################################
 # Let get the show running! 
