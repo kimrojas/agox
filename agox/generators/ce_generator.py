@@ -94,7 +94,8 @@ class ComplementaryEnergyGenerator(GeneratorBaseClass):
         return [candidate]
 
     @classmethod
-    def default(cls, species, database, move_all = 1, mover_indices = None, attractors_from_template = False, predefined_attractors = None, **kwargs):
+    def default(cls, environment, database, move_all=1, mover_indices=None, 
+                attractors_from_template = False, predefined_attractors = None, **kwargs):
 
         from agox.models.descriptors.exponential_density import ExponentialDensity
         from agox.generators.complementary_energy.ce_calculators import ComplementaryEnergyDistanceCalculator
@@ -102,10 +103,13 @@ class ComplementaryEnergyGenerator(GeneratorBaseClass):
 
         lambs = [0.5, 1, 1.5]
         rc = 10.
-        descriptor = ExponentialDensity(species, lambs = lambs, rc = rc)
+        descriptor = ExponentialDensity(environment.get_all_species(), lambs=lambs, rc=rc)
         ce_calc = ComplementaryEnergyDistanceCalculator(descriptor = descriptor)
-        ce_attractors = AttractorCurrentStructure(descriptor = descriptor, attractors_from_template = attractors_from_template, predefined_attractors = predefined_attractors)
+        ce_attractors = AttractorCurrentStructure(descriptor=descriptor, 
+                            attractors_from_template=attractors_from_template, 
+                            predefined_attractors=predefined_attractors)
         ce_attractors.attach(database)
 
-        return cls(calculator = ce_calc, descriptor = descriptor, attractor_method = ce_attractors, **kwargs)
+        return cls(calculator=ce_calc, descriptor=descriptor, 
+                   attractor_method=ce_attractors, **environment.get_confinement())
 
