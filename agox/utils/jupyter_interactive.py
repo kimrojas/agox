@@ -4,7 +4,7 @@ import numpy as np
 from datetime import date
 import os
 
-from agox.helpers.plot_confinement import plot_atoms, plot_cell
+from agox.utils.plot import plot_atoms, plot_cell
 
 FONTCOLOR = 'black'
 
@@ -49,19 +49,15 @@ class InteractiveStructureHistogram:
 
         #self.analysis.plot_structure_nice(ax[0], self.structures[index])
         if self.template_indices is None:
-            plot_atoms(self.structures[index], ax=ax[0])
+            plot_atoms(ax[0], self.structures[index])
         else:
-            plot_atoms(self.structures[index][self.template_indices], ax=ax[0], alpha=0.5)
-            structure_indices = [i for i in range(len(self.structures[index])) if i not in self.template_indices]        
-            plot_atoms(self.structures[index][structure_indices], ax=ax[0])
+            structure_indices = [i for i in range(len(self.structures[index])) if i not in self.template_indices]
+            plot_atoms(ax[0], self.structures[index][self.template_indices], patch_kwargs=dict(alpha=0.5))
+            plot_atoms(ax[0], self.structures[index][structure_indices])
 
-        plot_cell(ax[0], self.structures[index].cell, np.array([0, 0, 0]), linestyle='--', color='black')
-        if self.xlim is not None:
-            ax[0].set_xlim(self.xlim)
-        if self.ylim is not None:
-            ax[0].set_ylim(self.ylim)
+        plot_cell(ax[0], self.structures[index].cell)
         
-        ax[0].axis('equal')
+        ax[0].autoscale_view()
 
         ax[0].set_title('Structure {}: Energy = {:7.2f}'.format(index, self.energies[index]))
 
@@ -316,5 +312,3 @@ def sorted_species(atoms):
         sorted_atoms += atoms[idx]
 
     return sorted_atoms
-
-

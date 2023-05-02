@@ -8,7 +8,6 @@
 
 import numpy as np
 from agox.observer import ObserverHandler, FinalizationHandler
-#from agox.logger import Logger
 from agox.writer import Writer, agox_writer, ICON, header_print
 from agox.tracker import Tracker
 from copy import copy
