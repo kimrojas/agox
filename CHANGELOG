@@ -1,0 +1,9 @@
+Version 2.3.0: 
+* Gitlab CI now enabled. 
+* Complemenetary Energy Generator added.
+* GPAW_IO bug fixes.
+* Plotting code cleaned up.
+* Cache for e.g. descriptors added.
+* Bug fixes for parallel collector with updatable generators.
+* Replaced the logger with a more general tracker module.
+* Removed 'test_scripts' directory which was not supposed to be used anymore.
