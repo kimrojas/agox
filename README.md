@@ -26,6 +26,8 @@ The main AGOX framework has been written by
 * Nikolaj Rønne
 * Bjørk Hammer
 with inspiration and help from current and previous members of the Hammer group at Aarhus University, Denmark.
+Parts of the code have been contributed by
+* Andreas Slavensky (Complementary Energy Generator)
 
 # License
 
