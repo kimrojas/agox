@@ -55,8 +55,10 @@ database = Database(filename=db_path, order=6, write_frequency=1)
 model = ModelGPR.default(environment, database)
 
 sample_size = 10
-sampler = KMeansSampler(feature_calculator=model.get_feature_calculator(), 
-    database=database, sample_size=sample_size, order=1)
+descriptor = model.get_descriptor()
+descriptor.use_cache = True
+sampler = KMeansSampler(descriptor=descriptor, database=database, 
+            sample_size=sample_size)
 
 rattle_generator = RattleGenerator(**environment.get_confinement())
 random_generator = RandomGenerator(**environment.get_confinement())
@@ -87,7 +89,9 @@ evaluator = LocalOptimizationEvaluator(calc,
 ##############################################################################
 # Let get the show running! 
 ##############################################################################
-    
-agox = AGOX(collector, acquisitor, relaxer, database, evaluator, seed=seed)
+
+# The oder of things here does not matter. But it can be simpler to understand 
+# what the expected behaviour is if they are put in order. 
+agox = AGOX(collector, relaxer, acquisitor, evaluator, database, seed=seed)
 
 agox.run(N_iterations=10)
