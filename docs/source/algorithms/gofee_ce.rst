@@ -8,6 +8,7 @@ energy landscape based on local motiffs is used to generate high quality
 candidates. 
 
 It offers a high degree of customization, with options for choosing: 
+
 * The descriptor 
 * The energy function
 * How attractors are chosen 
