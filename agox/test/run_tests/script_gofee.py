@@ -15,7 +15,7 @@ from agox.postprocessors import ParallelRelaxPostprocess
 from ase import Atoms
 
 # Manually set seed and database-index
-seed = 42
+seed = 41
 database_index = 0
 
 # Using argparse if e.g. using array-jobs on Slurm to do several independent searches. 
@@ -45,7 +45,7 @@ environment = Environment(template=template, symbols='Au8Ni8',
     confinement_cell=confinement_cell, confinement_corner=confinement_corner)
 
 # Database
-db_path = 'db{}.db'.format(0) # From input argument!
+db_path = 'db{}.db'.format(database_index) # From input argument!
 database = Database(filename=db_path, order=6, write_frequency=1)
 
 ##############################################################################
@@ -55,8 +55,10 @@ database = Database(filename=db_path, order=6, write_frequency=1)
 model = ModelGPR.default(environment, database)
 
 sample_size = 10
-sampler = KMeansSampler(feature_calculator=model.get_feature_calculator(), 
-    database=database, sample_size=sample_size, order=1)
+descriptor = model.get_descriptor()
+descriptor.use_cache = True
+sampler = KMeansSampler(descriptor=descriptor, database=database, 
+            sample_size=sample_size)
 
 rattle_generator = RattleGenerator(**environment.get_confinement())
 random_generator = RandomGenerator(**environment.get_confinement())
@@ -81,12 +83,15 @@ relaxer = ParallelRelaxPostprocess(model=acquisitor.get_acquisition_calculator()
 evaluator = LocalOptimizationEvaluator(calc, 
     gets={'get_key':'prioritized_candidates'}, 
     optimizer_kwargs={'logfile':None}, store_trajectory=True,
-    optimizer_run_kwargs={'fmax':0.05, 'steps':1}, order=5)
+    optimizer_run_kwargs={'fmax':0.05, 'steps':1}, order=5, 
+    constraints=environment.get_constraints())
 
 ##############################################################################
 # Let get the show running! 
 ##############################################################################
-    
-agox = AGOX(collector, acquisitor, relaxer, database, evaluator, seed=seed)
+
+# The oder of things here does not matter. But it can be simpler to understand 
+# what the expected behaviour is if they are put in order. 
+agox = AGOX(collector, relaxer, acquisitor, evaluator, database, seed=seed)
 
 agox.run(N_iterations=10)

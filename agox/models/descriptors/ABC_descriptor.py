@@ -1,6 +1,9 @@
 import numpy as np
 from abc import ABC, abstractmethod
 from agox.module import Module
+from agox.candidates.ABC_candidate import CandidateBaseClass
+from agox.utils import candidate_list_comprehension
+
 
 all_feature_types = ['global', 'local', 'global_gradient', 'local_gradient']
 
@@ -8,10 +11,9 @@ class DescriptorBaseClass(ABC, Module):
 
     feature_types = []
 
-    def __init__(self, surname='', **kwargs):
-        Module.__init__(self, surname=surname)
+    def __init__(self, surname='', use_cache=False, **kwargs):
+        Module.__init__(self, surname=surname, use_cache=use_cache)
         assert np.array([feature_type in all_feature_types for feature_type in self.feature_types]).all(), 'Unknown feature type declared.'
-
 
     ##########################################################################################################
     # Create methods - Implemented by classes that inherit from this base-class.
@@ -102,6 +104,8 @@ class DescriptorBaseClass(ABC, Module):
     # Get methods - Ones to use in other scripts.
     ##########################################################################################################
 
+    @candidate_list_comprehension
+    @CandidateBaseClass.cache('global_features')
     def get_global_features(self, atoms):
         """
         Method to get global features.
@@ -117,10 +121,11 @@ class DescriptorBaseClass(ABC, Module):
             Global features for the given atoms.
         """
         self.feature_type_check('global')
-        if not (type(atoms) == list):
-            atoms = [atoms]
-        return [self.create_global_features(a) for a in atoms]
+        return self.create_global_features(atoms)
 
+
+    @candidate_list_comprehension
+    @CandidateBaseClass.cache('global_feature_gradient')
     def get_global_feature_gradient(self, atoms):
         """
         Method to get global features.
@@ -136,10 +141,10 @@ class DescriptorBaseClass(ABC, Module):
             Global feature gradients for the given atoms.
         """
         self.feature_type_check('global_gradient')
-        if not (type(atoms) == list):
-            atoms = [atoms]
-        return [self.create_global_feature_gradient(a) for a in atoms]
+        return self.create_global_feature_gradient(atoms)
 
+    @candidate_list_comprehension    
+    @CandidateBaseClass.cache('local_features')
     def get_local_features(self, atoms):
         """
         Method to get local features.
@@ -155,10 +160,10 @@ class DescriptorBaseClass(ABC, Module):
             Local features for the given atoms.
         """
         self.feature_type_check('local')
-        if not (type(atoms) == list):
-            atoms = [atoms]
-        return [self.create_local_features(a) for a in atoms]
+        return self.create_local_features(atoms)
 
+    @candidate_list_comprehension    
+    @CandidateBaseClass.cache('local_feature_gradient')
     def get_local_feature_gradient(self, atoms):
         """
         Method to get local feature gradients.
@@ -174,10 +179,20 @@ class DescriptorBaseClass(ABC, Module):
             Local feature gradients for the given atoms.
         """
         self.feature_type_check('local_gradient')
-        if not (type(atoms) == list):
-            atoms = [atoms]
-        return [self.create_local_feature_gradient(a) for a in atoms]
+        return self.create_local_feature_gradient(atoms)
 
     def feature_type_check(self, feature_type):
         if not feature_type in self.feature_types:
             raise NotImplementedError(f'This descriptor does not support {feature_type} features')
+
+    @Module.reset_cache_key
+    def change_descriptor_somehow(self):
+        """
+        This is not a real method. 
+
+        This is just to illustrate that if you use the caching capability of the 
+        descriptor-baseclass then you MUST use the @Module.reset_cache_key decorator 
+        on any function that changes the descriptor - e.g. changing parameters. 
+        """
+        return
+

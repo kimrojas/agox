@@ -13,3 +13,4 @@ agox/local/
 *~
 docs/old_stuff/
 agox/test/run_tests/expected_outputs/*/*.png
+.gitlab-ci-local/

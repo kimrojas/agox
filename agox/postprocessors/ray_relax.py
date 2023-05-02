@@ -8,6 +8,7 @@ from ase.constraints import FixAtoms
 
 from agox.postprocessors.ABC_postprocess import PostprocessBaseClass
 from agox.utils.ray_utils import RayBaseClass, ray_kwarg_keys
+from agox.candidates.ABC_candidate import disable_cache
 
 @ray.remote
 def ray_relaxation_function(structure, calculator, 
@@ -35,6 +36,7 @@ def ray_relaxation_function(structure, calculator,
     """
     structure_copy=structure.copy()
     structure_copy.set_calculator(calculator)
+    disable_cache(structure_copy)
     optimizer = optimizer(structure_copy,**optimizer_kwargs)
     try:
         optimizer.run(**optimizer_run_kwargs)

@@ -145,7 +145,8 @@ class AcquisitonCalculatorBaseClass(Calculator, Module):
     name = 'AcqusitionCalculator'
 
     def __init__(self, model_calculator, **kwargs):
-        super().__init__(**kwargs)
+        Calculator.__init__(self, **kwargs)
+        Module.__init__(self)
         self.model_calculator = model_calculator
     
     @property

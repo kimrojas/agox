@@ -142,11 +142,26 @@ class GeneratorBaseClass(ABC, Observer, Writer, Confinement):
         state.add_to_cache(self, self.set_key, candidates, mode='a')
         
     def plot_confinement(self, environment):
-        from agox.helpers.plot_confinement import plot_confinement
-        import matplotlib.pyplot as plt
-        from agox.utils.matplotlib_utils import use_agox_mpl_backend; use_agox_mpl_backend()
+        if not self.confined:
+            return
 
-        if self.confined:
-            fig, ax = plot_confinement(environment.get_template(), self.confinement_cell, self.confinement_corner)
-            plt.savefig(f'confinement_plot_{self.name}.png')
-            plt.close()
+        import matplotlib.pyplot as plt
+        from agox.utils.matplotlib_utils import use_agox_mpl_backend
+        from agox.utils.plot import plot_atoms, plot_cell
+
+        use_agox_mpl_backend()
+
+        atoms = environment.get_template()
+
+        fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+
+        for ax, plane in zip(axs, ['xy', 'xz', 'yz']):
+            plot_atoms(ax, atoms, plane=plane)
+            plot_cell(ax, atoms.cell, plane=plane,
+                      collection_kwargs=dict(edgecolors='black', linestyles='dotted'))
+            plot_cell(ax, self.confinement_cell, plane=plane, offset=self.confinement_corner,
+                      collection_kwargs=dict(edgecolors='red', linestyles='dashed'))
+            ax.autoscale_view()
+
+        fig.savefig(f'confinement_plot_{self.name}.png')
+        plt.close()

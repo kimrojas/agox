@@ -1,7 +1,26 @@
-image: python:3.7-alpine
+variables:
+  OMP_NUM_THREADS: "1"
 
+stages:
+  - test
+  - deploy 
+
+test:
+  stage: test
+  image: registry.gitlab.com/agox/agox:latest
+  script: 
+  - virtualenv venv
+  - pip install matscipy
+  - pip list 
+  - source venv/bin/activate
+  - pip install --no-deps -e .
+  - pytest agox/test/
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  
 pages:
   stage: deploy
+  image: python:3.8
   script:
   - pip install -U sphinx
   - pip install -U sphinx-book-theme
@@ -12,4 +31,17 @@ pages:
     paths:
     - public
   only:
-  - stable
+  - dev
+
+full_install:
+  stage: test
+  image: python:3.8
+  script:
+  - pip install virtualenv 
+  - virtualenv venv
+  - source venv/bin/activate
+  - pip install --upgrade pip setuptools 
+  - pip install -e .[full]
+  - pytest agox/test/
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"

@@ -6,7 +6,7 @@ from ase import Atoms
 from agox.generators import RandomGenerator, RattleGenerator, CenterOfGeometryGenerator, ReplaceGenerator, ReuseGenerator, SamplingGenerator, PermutationGenerator
 from agox.candidates import CandidateBaseClass
 
-from agox.test.test_utils import environment_and_dataset
+from agox.test.test_utils import environment_and_dataset, TemporaryFolder
 
 @pytest.mark.parametrize('generator_class', [RandomGenerator, RattleGenerator, ReplaceGenerator, CenterOfGeometryGenerator, SamplingGenerator])
 class TestGenerator:
@@ -18,21 +18,24 @@ class TestGenerator:
             assert (candidate.cell == environment.get_template().get_cell()).all()
 
     def setup_generator(self, generator_class, environment, **kwargs):
-        return generator_class(**environment.get_confinement(), **kwargs)
+        return generator_class(environment=environment, **environment.get_confinement(), **kwargs)
 
     def setup_sampler(self, dataset):
         sampler = MetropolisSampler()
         sampler.sample = [dataset[0]]
         return sampler
 
-    def test_generators(self, generator_class, environment_and_dataset):
-        environment, dataset = environment_and_dataset
-        
-        generator = self.setup_generator(generator_class, environment)
-        sampler = self.setup_sampler(dataset)
-        candidates = [None]
-        for i in range(1):
-            candidates = generator(sampler, environment)
-            if not candidates[0] == None:
-                break
-        self.assertions(candidates, environment, sampler)
+    def test_generators(self, generator_class, environment_and_dataset, tmp_path):
+        with TemporaryFolder(tmp_path):
+            environment, dataset = environment_and_dataset
+            
+            generator = self.setup_generator(generator_class, environment)
+            sampler = self.setup_sampler(dataset)
+            candidates = [None]
+            for i in range(1):
+                candidates = generator(sampler, environment)
+                if not candidates[0] == None:
+                    break
+            self.assertions(candidates, environment, sampler)
+
+            assert (tmp_path / f'confinement_plot_{generator.name}.png').is_file()

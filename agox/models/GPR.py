@@ -21,7 +21,7 @@ class ModelGPR(ModelBaseClass):
     
     def __init__(self, model=None, max_training_data=10e8, iteration_start_training=7,
                  update_interval=1, max_energy=1000, max_adapt_iters=0, n_adapt=25, 
-                 force_kappa=0, extrapolate=False, optimize_loglikelyhood=True, use_saved_features=False,
+                 force_kappa=0, extrapolate=False, optimize_loglikelyhood=True,
                  sparsifier=None, **kwargs):
         super().__init__(**kwargs)
         self.model = model
@@ -32,7 +32,6 @@ class ModelGPR(ModelBaseClass):
         self.optimize_loglikelyhood = optimize_loglikelyhood
         self.max_adapt_iters = max_adapt_iters
         self.n_adapt = n_adapt
-        self.use_saved_features = use_saved_features
 
         self.force_kappa = force_kappa
         self.extrapolate = extrapolate
@@ -108,26 +107,11 @@ class ModelGPR(ModelBaseClass):
         training_energies = [energies[i] for i in allowed_idx]
         remaining = [arg for arg in args if arg not in allowed_idx]
         
-        # calculate features
-        if self.use_saved_features:
-            features = []
-            deltas = []
-            for candidate in training_data:
-                F = candidate.get_meta_information('GPR_feature')
-                d = candidate.get_meta_information('GPR_delta')
-                if F is None:
-                    F = self.model.descriptor.get_global_features(candidate)[0]
-                    candidate.add_meta_information('GPR_feature', F)
-                    d = self.model.delta_function.energy(candidate)
-                    candidate.add_meta_information('GPR_delta', d)
-                features.append(F)
-                deltas.append(d)
-            features = np.array(features)
-            deltas = np.array(deltas)
-        else:
-            features = np.array(self.model.descriptor.get_global_features(training_data))
+        features = np.array(self.model.descriptor.get_global_features(training_data))
+        if self.model.delta_function is not None:
             deltas = np.array([self.model.delta_function.energy(cand) for cand in training_data]) #np.array([c.get_meta_information('GPR_delta') for c in training_data])
-
+        else:
+            deltas = np.zeros(len(training_data))
         
         if self.max_training_data is not None and self.max_training_data < len(training_data):
             self.writer('Performing structure sparsification using CUR')
@@ -343,7 +327,7 @@ class ModelGPR(ModelBaseClass):
 
         if descriptor is None:
             from agox.models.descriptors import Fingerprint
-            descriptor = Fingerprint(temp_atoms)
+            descriptor = Fingerprint(temp_atoms, use_cache=True)
 
         lambda1ini = (lambda1max - lambda1min)/2 + lambda1min
         lambda2ini = (lambda2max - lambda2min)/2 + lambda2min
@@ -386,7 +370,7 @@ class ModelGPR(ModelBaseClass):
                 n_maxiter_optimizer = max_iterations,
                 use_delta_in_training=False)
 
-        return cls(gpr, database=database, update_interval=1, optimize_loglikelyhood=True, use_saved_features=True, max_training_data=max_training_data)
+        return cls(gpr, database=database, update_interval=1, optimize_loglikelyhood=True, max_training_data=max_training_data)
 
     def get_feature_calculator(self):
         print(DeprecationWarning("The 'get_feature_calculator'-method will be deprecated in a future release, please use 'get_descriptor'-method instead."))
