@@ -20,9 +20,10 @@ class AcquisitorBaseClass(ABC, Observer, Writer):
     """
 
     def __init__(self, order=4, gets={'get_key':'candidates'}, sets={'set_key':'prioritized_candidates'}, verbose=True, 
-                use_counter=True, prefix='', surname=''):
+                use_counter=True, prefix='', surname='', maximize=False):
         Observer.__init__(self, gets=gets, sets=sets, order=order, surname=surname)
         Writer.__init__(self, verbose=verbose, use_counter=use_counter, prefix=prefix)
+        self.maximize = maximize
 
         self.add_observer_method(self.prioritize_candidates,
                                  sets=self.sets[0], gets=self.gets[0], order=self.order[0],
@@ -103,8 +104,11 @@ class AcquisitorBaseClass(ABC, Observer, Writer):
         """
         acquisition_values = self.calculate_acquisition_function(candidates)
         sort_idx = np.argsort(acquisition_values)
+        if self.maximize: # Sometimes we will want to maximize the acquisition function instead of minimizing it.
+            sort_idx = sort_idx[::-1]
         sorted_candidates = [candidates[i] for i in sort_idx]
         acquisition_values = acquisition_values[sort_idx]
+
         [candidate.add_meta_information('acquisition_value', acquisition_value) for candidate, acquisition_value in zip(sorted_candidates, acquisition_values)]          
         return sorted_candidates, acquisition_values
 
