@@ -66,14 +66,8 @@ sampler = KMeansSampler(descriptor=descriptor, database=database,
 
 rattle_generator = RattleGenerator(**environment.get_confinement())
 random_generator = RandomGenerator(**environment.get_confinement())
-
-lambs = [0.5, 1, 1.5]
-rc = 10.
-desc = ExponentialDensity(['Au', 'Ni'], lambs = lambs, rc = rc)
-ce_calc = ComplementaryEnergyDistanceCalculator(descriptor = desc)
-ce_attractors = AttractorCurrentStructure(desc, attractors_from_template = False)
-ce_attractors.attach(database)
-ce_generator = ComplementaryEnergyGenerator(ce_calc, desc, ce_attractors, **environment.get_confinement())
+ce_generator = ComplementaryEnergyGenerator.default(
+                environment=environment, database=database)
 
 # Dict specificies how many candidates are created with and the dict-keys are iterations. 
 generators = [random_generator, rattle_generator, ce_generator]
