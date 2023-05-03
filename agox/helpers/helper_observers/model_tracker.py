@@ -90,7 +90,46 @@ class ModelTrackerAfterTraining(Observer, Writer):
                 
             self.writer(f'TRACKER {i:04d} {E_dft:8.3f} {E_old_model:8.3f} {E_new_model:8.3f} {Delta_old_E:8.3f} {Delta_new_E:8.3f} {arrow:s}')
 
+class ModelValidator(Observer, Writer):
 
+    name = 'ModelValidator'
+
+    def __init__(self, model, validation_data, sets={}, gets={}, order=7.5):
+        Observer.__init__(self, sets=sets, gets=gets, order=order)
+        Writer.__init__(self, verbose=True)
+        self.model = model
+        self.add_observer_method(self.dump_model_energies, sets=self.sets[0], gets=self.gets[0], order=self.order[0])
+        self.validation_data = validation_data
+        self.save_path = ''
+        self.save_name = 'validation'
+
+    @agox_writer
+    @Observer.observer_method
+    def dump_model_energies(self, state):
+
+        if not self.model.ready_state:
+            return 
+
+        self.writer(f'VALIDATOR      {"DFT":8s} {"Emodel":8s} {"Emodel-DFT":8s} {"sigma":8s}')
+
+        energies = []
+        sigmas = []
+        for i,candidate in enumerate(self.validation_data):
+            E_dft = candidate.get_potential_energy()
+            E_model, sigma = self.model.predict_energy(candidate, return_uncertainty=True)
+            energies.append(E_model)
+            sigmas.append(sigma)
+
+            Delta_E = E_model - E_dft
+            arrow = '<-- LARGE DELTA' if abs(Delta_E) > 0.5 else ''
+                
+            self.writer(f'VALIDATOR {i:04d} {E_dft:8.3f} {E_model:8.3f} {Delta_E:8.3f} {sigma:8.3f} {arrow:s}')
+
+
+        path = os.path.join(self.save_path, f'{self.save_name}_{self.get_iteration_counter():04d}.npy')
+        with open(path, 'wb') as f:
+            np.save(f, np.array(energies))
+            np.save(f, np.array(sigmas))
         
 
 
