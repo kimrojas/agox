@@ -46,7 +46,9 @@ release = version
 extensions = [
     'sphinx.ext.duration',
     'sphinx_tabs.tabs',
-    'sphinx.ext.autosectionlabel',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
+    #'sphinx.ext.autosectionlabel',
             ]
 
 # Add any paths that contain templates here, relative to this directory.
