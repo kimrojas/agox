@@ -20,8 +20,9 @@ test:
   
 pages:
   stage: deploy
-  image: python:3.8
+  image: registry.gitlab.com/agox/agox:latest
   script:
+  - pip install --no-deps -e .
   - pip install -U sphinx
   - pip install -U sphinx-book-theme
   - pip install -U sphinxcontrib-fulltoc
