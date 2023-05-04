@@ -10,15 +10,18 @@ class Ensemble(ModelBaseClass):
     name = 'Ensemble'
     implemented_properties = ['energy', 'forces', 'uncertainty', 'force_uncertainty']
 
-    def __init__(self, model_list, uncertainty_bound=np.inf, **kwargs):
+    def __init__(self, model_list, **kwargs):
         super().__init__(**kwargs)
-        self.model_list = model_list
-        self.uncertainty_bound = uncertainty_bound
+        self.n_models = len(model_list)
         register_modules(self, model_list, name='model')
 
     ############################################################################
     # Ensemble methods for training and predicting
     ############################################################################
+
+    @property
+    def models(self):
+        return [getattr(self, f'model_{i}') for i in range(self.n_models)]
 
     def predict_energy(self, atoms=None, X=None, return_uncertainty=False, **kwargs):
 
@@ -39,8 +42,7 @@ class Ensemble(ModelBaseClass):
         return prediction
 
     def train_model(self, training_data, **kwargs):
-        model_list = [getattr(self, f'model_{i}') for i in range(5)]
-        for model in model_list:
+        for model in self.models:
             model.train_model(training_data, **kwargs)
         
         self.ready_state = True
@@ -50,12 +52,10 @@ class Ensemble(ModelBaseClass):
     ############################################################################
 
     def predict_ensemble_energies(self, atoms=None, X=None):
-        model_list = [getattr(self, f'model_{i}') for i in range(5)]
-        return np.array([model.predict_energy(atoms=atoms, return_uncertainty=False) for model in model_list])
+        return np.array([model.predict_energy(atoms=atoms, return_uncertainty=False) for model in self.models])
     
     def predict_ensemble_forces(self, atoms=None, X=None):
-        model_list = [getattr(self, f'model_{i}') for i in range(5)]
-        return np.array([model.predict_forces(atoms=atoms, return_uncertainty=False) for model in model_list])
+        return np.array([model.predict_forces(atoms=atoms, return_uncertainty=False) for model in self.models])
 
     # def predict_ensemble_forces(self, atoms=None, X=None):
     #     """
