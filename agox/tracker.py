@@ -55,6 +55,7 @@ class Tracker(Observer, Writer):
         self.modules_to_track = all_modules
 
     def find_database_name(self):
+        database_filename = 'tracker'            
         for module in self.modules_to_track.values():
             if issubclass(module.__class__, DatabaseBaseClass):
                 if hasattr(module, 'filename'):
@@ -62,8 +63,6 @@ class Tracker(Observer, Writer):
                     # Without extension:
                     database_filename = database_filename.split('.')[0]
                     break
-                else:
-                    database_filename = 'tracker'            
         return database_filename
             
     def get_attribute_name(self, module, attribute_key):
