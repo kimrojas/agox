@@ -10,7 +10,7 @@ class Config:
         self.parser.read(config_path)
 
 def get_default_config_path():
-    agox_path = os.path.abspath(__file__) #inspect.getfile(AGOX)
+    agox_path = os.path.abspath(__file__)
     agox_path = Path(os.path.dirname(os.path.dirname(os.path.dirname(agox_path))))
     return agox_path / 'default_config.ini'
 
