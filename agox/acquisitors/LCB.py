@@ -33,7 +33,8 @@ class LowerConfidenceBoundAcquisitor(AcquisitorBaseClass):
                 fitness = acquisition_values[i]
                 Emodel = candidate.get_meta_information('model_energy')
                 sigma = candidate.get_meta_information('uncertainty')
-                self.writer('Candidate: E={:8.3f}, s={:8.3f}, F={:8.3f}'.format(Emodel, sigma, fitness))
+                description = candidate.get_meta_information('description')
+                self.writer('Candidate: E={:8.3f}, s={:8.3f}, F={:8.3f}, {}'.format(Emodel, sigma, fitness, description))
 
     def get_acquisition_calculator(self):
         return LowerConfidenceBoundCalculator(self.model_calculator, self.acquisition_function, self.acquisition_force)
