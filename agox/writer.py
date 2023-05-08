@@ -1,12 +1,14 @@
 import functools
 from typing import List
 import numpy as np
+from agox.utils.config import cfg
 
 from agox.__version__ import __version__
 
-LINE_LENGTH = 79
-PADDING_CHARACTER = '='
-TERMINATE_CHARACTER = '|'
+LINE_LENGTH = int(cfg.parser['writer'].get('line_length', 79))
+PADDING_CHARACTER = cfg.parser['writer'].get('padding_character', '=')
+START_CHARACTER = cfg.parser['writer'].get('start_character', '|')
+END_CHARACTER = cfg.parser['writer'].get('end_character', '|')
 
 ICON = f"""
        _            _  _  _        _  _  _  _    _           _ 
@@ -59,10 +61,10 @@ def header_print(string):
     
     string = ' ' + string + ' '
     num_markers = int((LINE_LENGTH - len(string))/2) - 1
-    header_string = TERMINATE_CHARACTER + num_markers * PADDING_CHARACTER + string + num_markers * PADDING_CHARACTER + TERMINATE_CHARACTER
+    header_string = START_CHARACTER + num_markers * PADDING_CHARACTER + string + num_markers * PADDING_CHARACTER + END_CHARACTER
 
     if len(header_string) < LINE_LENGTH:
-        header_string = header_string[:-2] + PADDING_CHARACTER*2 + TERMINATE_CHARACTER        
+        header_string = header_string[:-2] + PADDING_CHARACTER*2 + END_CHARACTER
 
     print(header_string)
 
@@ -73,7 +75,7 @@ def pretty_print(string, *args, **kwargs):
 
     all_strings = line_breaker(string)
     for string in all_strings:
-        string = TERMINATE_CHARACTER + ' ' + string + (LINE_LENGTH - len(string)-3) * ' ' + TERMINATE_CHARACTER       
+        string = START_CHARACTER + ' ' + string + (LINE_LENGTH - len(string)-3) * ' ' + END_CHARACTER       
         print(string, **kwargs)
 
 def agox_writer(func):
