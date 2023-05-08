@@ -10,10 +10,10 @@ class Ensemble(ModelBaseClass):
     name = 'Ensemble'
     implemented_properties = ['energy', 'forces', 'uncertainty', 'force_uncertainty']
 
-    def __init__(self, model_list, **kwargs):
+    def __init__(self, models=None, **kwargs):
         super().__init__(**kwargs)
-        self.n_models = len(model_list)
-        register_modules(self, model_list, name='model')
+        self.n_models = len(models)
+        register_modules(self, models, name='model')
 
     ############################################################################
     # Ensemble methods for training and predicting
