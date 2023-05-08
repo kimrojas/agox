@@ -21,6 +21,7 @@ Contents
    writing_modules/writing_modules
    algorithms/algorithms
    models/models
+   api/modules
    bonus_topics/bonus_topics
    command_line_tools/command_line
    references/references

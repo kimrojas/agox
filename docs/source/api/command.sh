@@ -1,0 +1,1 @@
+sphinx-apidoc -o . ../../../agox/ ../../agox/test -e -t ../../apidoc_templates/ -f 

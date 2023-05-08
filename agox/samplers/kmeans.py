@@ -105,7 +105,7 @@ class KMeansSampler(SamplerBaseClass):
             return None
         
         # find out what cluster we belong to
-        f_this = np.array(self.descriptor.get_global_features(candidate_object))
+        f_this = np.array(self.descriptor.get_global_features([candidate_object]))
         distances = cdist(f_this, self.sample_features, metric='euclidean').reshape(-1)
 
 
