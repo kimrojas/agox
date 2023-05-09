@@ -30,7 +30,7 @@ class Process:
             title_line = title_line.capitalize()
 
         if 'agox.module.rst' in rst.path:
-            title_line = 'module'
+            title_line = 'module \n'
 
         rst.lines[0] = title_line
 
@@ -46,7 +46,9 @@ if __name__ == '__main__':
     path = Path(args.path)
 
     files = glob.glob(args.path + '*.rst')
-    print(files)
+
+    print(f'Files to process: {len(files)}')
+
     p = Process()
 
     for file in files:
@@ -70,6 +72,7 @@ if __name__ == '__main__':
 
     rst_modules.lines = rst_agox.lines
     rst_modules.lines[0] = 'API Reference \n'
+    rst_modules.lines[1] = len(rst_modules.lines[0]) * '=' + '\n'
     rst_modules.write()
 
 
