@@ -27,7 +27,8 @@ pages:
   - pip install -U sphinx-book-theme
   - pip install -U sphinxcontrib-fulltoc
   - pip install -U sphinx-tabs
-  - sphinx-apidoc -o docs/source/api/ agox/ agox/test -e -t docs/apidoc_templates/ -f 
+  - sphinx-apidoc -o docs/source/api/ agox/ agox/test -efM -t docs/apidoc_templates/
+  - python docs/source/api/postprocess.py -p docs/source/api/
   - sphinx-build -b html docs/source/. public
   artifacts:
     paths:
