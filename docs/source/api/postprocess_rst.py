@@ -20,17 +20,18 @@ class Process:
 
     def edit_title(self, rst):
         title_line = rst.lines[0]
-        title_line = title_line.replace('agox.', '')    
-
+    
         if 'module' in title_line:
             title_line = title_line.replace('module', '')
 
         elif 'package' in title_line:
             title_line = title_line.replace('package', '')
-            title_line = title_line.capitalize()
 
         if 'agox.module.rst' in rst.path:
             title_line = 'module \n'
+
+        # Want the title to just be the last part of the name of the file
+        title_line = title_line.split('.')[-1]
 
         rst.lines[0] = title_line
 
@@ -61,9 +62,8 @@ if __name__ == '__main__':
         # Write:
         rst.write()
 
-    # Want to change such that there an indent so the contents of agox.rst should go 
-    # in module.rst 
-
+    # Want to change such that there is an indent so the contents of agox.rst 
+    # should go in module.rst 
     rst_modules = rst_file(path / 'modules.rst')
     rst_agox = rst_file(path / 'agox.rst')
 
