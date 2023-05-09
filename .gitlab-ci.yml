@@ -28,6 +28,7 @@ pages:
   - pip install -U sphinxcontrib-fulltoc
   - pip install -U sphinx-tabs
   - make -C docs html
+  - cp -rf docs/build/html public/
   artifacts:
     paths:
     - public
