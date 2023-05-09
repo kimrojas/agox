@@ -5,10 +5,10 @@ from agox.utils.config import cfg
 
 from agox.__version__ import __version__
 
-LINE_LENGTH = int(cfg.parser['writer'].get('line_length', 79))
-PADDING_CHARACTER = cfg.parser['writer'].get('padding_character', '=')
-START_CHARACTER = cfg.parser['writer'].get('start_character', '|')
-END_CHARACTER = cfg.parser['writer'].get('end_character', '|')
+LINE_LENGTH = int(cfg.parser['writer'].get('line_length'))
+PADDING_CHARACTER = cfg.parser['writer'].get('padding_character')
+START_CHARACTER = cfg.parser['writer'].get('start_character')
+END_CHARACTER = cfg.parser['writer'].get('end_character')
 
 ICON = f"""
        _            _  _  _        _  _  _  _    _           _ 
